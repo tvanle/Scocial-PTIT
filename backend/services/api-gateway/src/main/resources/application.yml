@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/api/posts/**
+          filters:
+            - JwtAuthFilter
+
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/api/comments/**
+          filters:
+            - JwtAuthFilter
+
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/**,/ws/**
+          filters:
+            - JwtAuthFilter
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/
+
+jwt:
+  secret: ptit-social-network-secret-key-2024-very-secure-key

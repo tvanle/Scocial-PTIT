@@ -1,0 +1,37 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+*.log
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.eclipse/
+
+# Android
+*.apk
+*.ap_
+*.dex
+.gradle/
+build/
+local.properties
+.DS_Store
+captures/
+.externalNativeBuild
+.cxx
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+*.pid

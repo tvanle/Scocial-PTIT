@@ -1,0 +1,12 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: chat-service
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/ptit_social_chat
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/

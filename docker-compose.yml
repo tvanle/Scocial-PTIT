@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: ptit-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - ptit-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: ptit-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - ptit-network
+
+  # Service Discovery (Eureka)
+  service-discovery:
+    build: ./backend/services/service-discovery
+    container_name: ptit-service-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - ptit-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Auth Service
+  auth-service:
+    build: ./backend/services/auth-service
+    container_name: ptit-auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - service-discovery
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ptit_social_auth
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+    networks:
+      - ptit-network
+
+  # Post Service
+  post-service:
+    build: ./backend/services/post-service
+    container_name: ptit-post-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - service-discovery
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ptit_social_post
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+    networks:
+      - ptit-network
+
+  # Comment Service
+  comment-service:
+    build: ./backend/services/comment-service
+    container_name: ptit-comment-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - service-discovery
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ptit_social_comment
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+    networks:
+      - ptit-network
+
+  # Chat Service
+  chat-service:
+    build: ./backend/services/chat-service
+    container_name: ptit-chat-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mongodb
+      - service-discovery
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/ptit_social_chat
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+    networks:
+      - ptit-network
+
+  # API Gateway
+  api-gateway:
+    build: ./backend/services/api-gateway
+    container_name: ptit-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - service-discovery
+      - auth-service
+      - post-service
+      - comment-service
+      - chat-service
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+    networks:
+      - ptit-network
+
+networks:
+  ptit-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongodb-data:
