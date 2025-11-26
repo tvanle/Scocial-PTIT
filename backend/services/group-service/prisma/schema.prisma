@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GroupPrivacy {
+  PUBLIC
+  PRIVATE
+  SECRET
+}
+
+enum MemberRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+  OWNER
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Group {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  coverPhoto  String?
+  privacy     GroupPrivacy @default(PUBLIC)
+
+  // Rules and info
+  rules       String?
+  location    String?
+  category    String?
+  tags        String[]
+
+  // Stats
+  membersCount Int @default(0)
+  postsCount   Int @default(0)
+
+  // Settings
+  requireApproval    Boolean @default(false)
+  allowMemberPosts   Boolean @default(true)
+  allowMemberInvites Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      GroupMember[]
+  joinRequests GroupJoinRequest[]
+  invites      GroupInvite[]
+  posts        GroupPost[]
+
+  @@index([name])
+  @@index([privacy])
+  @@index([category])
+}
+
+model GroupMember {
+  id        String     @id @default(uuid())
+  groupId   String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  nickname  String?
+
+  // Notification settings
+  notifyPosts    Boolean @default(true)
+  notifyComments Boolean @default(true)
+
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model GroupJoinRequest {
+  id        String            @id @default(uuid())
+  groupId   String
+  userId    String
+  message   String?
+  status    JoinRequestStatus @default(PENDING)
+
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId, status])
+  @@index([userId])
+}
+
+model GroupInvite {
+  id        String   @id @default(uuid())
+  groupId   String
+  inviterId String
+  inviteeId String
+  message   String?
+
+  acceptedAt DateTime?
+  declinedAt DateTime?
+  expiresAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, inviteeId])
+  @@index([inviteeId])
+}
+
+model GroupPost {
+  id        String   @id @default(uuid())
+  groupId   String
+  authorId  String
+  content   String
+  media     Json?
+
+  isPinned     Boolean @default(false)
+  isAnnouncement Boolean @default(false)
+
+  likesCount    Int @default(0)
+  commentsCount Int @default(0)
+  sharesCount   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group    Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  likes    GroupPostLike[]
+  comments GroupComment[]
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@index([authorId])
+}
+
+model GroupPostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post GroupPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model GroupComment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  media     Json?
+  parentId  String?
+
+  likesCount   Int @default(0)
+  repliesCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post    GroupPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  GroupComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies GroupComment[] @relation("CommentReplies")
+  likes   GroupCommentLike[]
+
+  @@index([postId, createdAt(sort: Desc)])
+}
+
+model GroupCommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment GroupComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+}

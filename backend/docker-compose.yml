@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
+      - CHAT_SERVICE_URL=http://chat-service:3004
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3005
+      - MEDIA_SERVICE_URL=http://media-service:3006
+      - GROUP_SERVICE_URL=http://group-service:3007
+    depends_on:
+      - auth-service
+      - user-service
+      - post-service
+      - chat-service
+      - notification-service
+      - media-service
+      - group-service
+    networks:
+      - ptit-network
+
+  # Auth Service
+  auth-service:
+    build: ./services/auth-service
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_auth
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - ptit-network
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    environment:
+      - PORT=3002
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_users
+    depends_on:
+      - postgres
+    networks:
+      - ptit-network
+
+  # Post Service
+  post-service:
+    build: ./services/post-service
+    environment:
+      - PORT=3003
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_posts
+    depends_on:
+      - postgres
+    networks:
+      - ptit-network
+
+  # Chat Service
+  chat-service:
+    build: ./services/chat-service
+    environment:
+      - PORT=3004
+      - MONGODB_URI=mongodb://mongo:27017/ptit_chat
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - mongo
+    networks:
+      - ptit-network
+
+  # Notification Service
+  notification-service:
+    build: ./services/notification-service
+    environment:
+      - PORT=3005
+      - MONGODB_URI=mongodb://mongo:27017/ptit_notifications
+    depends_on:
+      - mongo
+    networks:
+      - ptit-network
+
+  # Media Service
+  media-service:
+    build: ./services/media-service
+    environment:
+      - PORT=3006
+      - USE_S3=${USE_S3:-false}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    volumes:
+      - media-uploads:/app/uploads
+    networks:
+      - ptit-network
+
+  # Group Service
+  group-service:
+    build: ./services/group-service
+    environment:
+      - PORT=3007
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_groups
+    depends_on:
+      - postgres
+    networks:
+      - ptit-network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - ptit-network
+
+  # MongoDB
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - ptit-network
+
+  # Redis (for caching)
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - ptit-network
+
+networks:
+  ptit-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongo-data:
+  redis-data:
+  media-uploads:

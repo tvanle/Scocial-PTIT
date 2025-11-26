@@ -8,6 +8,10 @@ import { useAuthStore } from '../store/slices/authSlice';
 import { RootStackParamList } from '../types';
 import { Colors } from '../constants/theme';
 import { FullScreenLoading } from '../components/common';
+import CreatePostScreen from '../screens/home/CreatePostScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
+import GroupListScreen from '../screens/groups/GroupListScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -15,11 +19,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const PostDetailScreen = () => null;
 const UserProfileScreen = () => null;
 const EditProfileScreen = () => null;
-const GroupDetailScreen = () => null;
 const CreateGroupScreen = () => null;
-const CreatePostModalScreen = () => null;
 const ImageViewerScreen = () => null;
-const SettingsScreen = () => null;
 const FriendsScreen = () => null;
 const FriendRequestsScreen = () => null;
 
@@ -50,12 +51,15 @@ const RootNavigator: React.FC = () => {
             {/* Modal Screens */}
             <Stack.Screen
               name="CreatePostModal"
-              component={CreatePostModalScreen}
+              component={CreatePostScreen}
               options={{
                 presentation: 'modal',
                 animation: 'slide_from_bottom',
               }}
             />
+
+            {/* Groups */}
+            <Stack.Screen name="GroupList" component={GroupListScreen} />
 
             {/* Chat Screens */}
             <Stack.Screen name="Messages" component={ChatListScreen} />
