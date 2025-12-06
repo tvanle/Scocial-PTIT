@@ -17,6 +17,7 @@ import { colors, typography, spacing, borderRadius } from '../../constants/theme
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
 import PostCard from '../../components/home/PostCard';
+import { Post } from '../../types';
 
 const { width } = Dimensions.get('window');
 
@@ -27,18 +28,7 @@ interface GroupMember {
   role: 'OWNER' | 'ADMIN' | 'MODERATOR' | 'MEMBER';
 }
 
-interface GroupPost {
-  id: string;
-  author: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  content: string;
-  media?: { url: string; type: string }[];
-  likesCount: number;
-  commentsCount: number;
-  createdAt: string;
+interface GroupPost extends Post {
   isPinned?: boolean;
 }
 
@@ -80,29 +70,47 @@ const GroupDetailScreen: React.FC = () => {
   const posts: GroupPost[] = [
     {
       id: '1',
-      author: { id: '1', name: 'Admin PTIT', avatar: 'https://i.pravatar.cc/150?img=1' },
+      author: { id: '1', email: 'admin@ptit.edu.vn', fullName: 'Admin PTIT', avatar: 'https://i.pravatar.cc/150?img=1', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
       content: '📢 THÔNG BÁO: Lịch thi học kỳ 1 năm học 2024-2025 đã được cập nhật. Các bạn sinh viên vui lòng kiểm tra trên cổng thông tin sinh viên.',
       likesCount: 234,
       commentsCount: 45,
+      sharesCount: 12,
+      privacy: 'public',
+      isLiked: false,
+      isSaved: false,
+      isShared: false,
       createdAt: '2024-01-15T10:00:00Z',
+      updatedAt: '2024-01-15T10:00:00Z',
       isPinned: true,
     },
     {
       id: '2',
-      author: { id: '2', name: 'Trần Thị B', avatar: 'https://i.pravatar.cc/150?img=2' },
+      author: { id: '2', email: 'tranb@ptit.edu.vn', fullName: 'Trần Thị B', avatar: 'https://i.pravatar.cc/150?img=2', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
       content: 'Có ai có tài liệu môn Cấu trúc dữ liệu và giải thuật không ạ? Em cần gấp 🙏',
       likesCount: 15,
       commentsCount: 23,
+      sharesCount: 0,
+      privacy: 'public',
+      isLiked: false,
+      isSaved: false,
+      isShared: false,
       createdAt: '2024-01-15T09:30:00Z',
+      updatedAt: '2024-01-15T09:30:00Z',
     },
     {
       id: '3',
-      author: { id: '3', name: 'Lê Văn C', avatar: 'https://i.pravatar.cc/150?img=3' },
+      author: { id: '3', email: 'lec@ptit.edu.vn', fullName: 'Lê Văn C', avatar: 'https://i.pravatar.cc/150?img=3', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
       content: 'Chia sẻ kinh nghiệm phỏng vấn intern tại các công ty IT cho các bạn sinh viên năm 3, năm 4.',
-      media: [{ url: 'https://picsum.photos/400/300', type: 'IMAGE' }],
+      media: [{ id: '1', url: 'https://picsum.photos/400/300', type: 'image' }],
       likesCount: 156,
       commentsCount: 67,
+      sharesCount: 8,
+      privacy: 'public',
+      isLiked: true,
+      isSaved: false,
+      isShared: false,
       createdAt: '2024-01-14T15:00:00Z',
+      updatedAt: '2024-01-14T15:00:00Z',
     },
   ];
 
@@ -168,7 +176,7 @@ const GroupDetailScreen: React.FC = () => {
         <View style={styles.memberAvatars}>
           {members.slice(0, 5).map((member, index) => (
             <View key={member.id} style={[styles.memberAvatar, { marginLeft: index > 0 ? -10 : 0 }]}>
-              <Avatar source={{ uri: member.avatar }} size={32} />
+              <Avatar uri={member.avatar} size={32} />
             </View>
           ))}
           <Text style={styles.memberText}>
@@ -276,7 +284,7 @@ const GroupDetailScreen: React.FC = () => {
         const badge = getRoleBadge(member.role);
         return (
           <TouchableOpacity key={member.id} style={styles.memberItem}>
-            <Avatar source={{ uri: member.avatar }} size={48} />
+            <Avatar uri={member.avatar} size={48} />
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
               {badge && (
@@ -305,7 +313,7 @@ const GroupDetailScreen: React.FC = () => {
       {/* Create Post Box */}
       {isMember && (
         <TouchableOpacity style={styles.createPostBox}>
-          <Avatar source={{ uri: 'https://i.pravatar.cc/150?img=3' }} size={40} />
+          <Avatar uri="https://i.pravatar.cc/150?img=3" size={40} />
           <View style={styles.createPostInput}>
             <Text style={styles.createPostPlaceholder}>Viết bài đăng...</Text>
           </View>
@@ -324,18 +332,7 @@ const GroupDetailScreen: React.FC = () => {
               <Text style={styles.pinnedText}>Bài viết ghim</Text>
             </View>
           )}
-          <PostCard
-            post={{
-              id: post.id,
-              user: post.author,
-              content: post.content,
-              images: post.media?.map(m => m.url),
-              likes: post.likesCount,
-              comments: post.commentsCount,
-              shares: 0,
-              createdAt: post.createdAt,
-            }}
-          />
+          <PostCard post={post} />
         </View>
       ))}
     </View>

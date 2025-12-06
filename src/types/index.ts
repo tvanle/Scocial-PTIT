@@ -301,9 +301,12 @@ export type RootStackParamList = {
   UserProfile: { userId: string };
   EditProfile: undefined;
   GroupDetail: { groupId: string };
+  GroupList: undefined;
   CreateGroup: undefined;
   ChatRoom: { conversationId: string };
+  Messages: undefined;
   CreatePost: { groupId?: string };
+  CreatePostModal: { groupId?: string };
   ImageViewer: { images: Media[]; initialIndex: number };
   Settings: undefined;
   Search: undefined;

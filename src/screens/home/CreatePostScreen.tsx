@@ -154,7 +154,7 @@ const CreatePostScreen: React.FC = () => {
           {/* User Info & Privacy */}
           <View style={styles.userSection}>
             <Avatar
-              source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+              uri="https://i.pravatar.cc/150?img=3"
               size={48}
             />
             <View style={styles.userInfo}>

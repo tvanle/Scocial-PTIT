@@ -127,7 +127,7 @@ const Button: React.FC<ButtonProps> = ({
       ) : (
         <>
           {icon && iconPosition === 'left' && <>{icon}</>}
-          <Text style={[getTextStyle(), textStyle, icon && (iconPosition === 'left' ? styles.textWithIconLeft : styles.textWithIconRight)]}>
+          <Text style={[getTextStyle(), textStyle, icon ? (iconPosition === 'left' ? styles.textWithIconLeft : styles.textWithIconRight) : undefined]}>
             {title}
           </Text>
           {icon && iconPosition === 'right' && <>{icon}</>}

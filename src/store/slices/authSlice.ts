@@ -4,7 +4,15 @@ import * as SecureStore from 'expo-secure-store';
 import { User, LoginCredentials, RegisterData, AuthState } from '../../types';
 import { authService } from '../../services/auth/authService';
 
-interface AuthStore extends AuthState {
+interface AuthStore {
+  // State
+  user: User | null;
+  accessToken: string | null;
+  refreshTokenValue: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -32,7 +40,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
+      refreshTokenValue: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -44,7 +52,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: response.user,
             accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -64,7 +72,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: response.user,
             accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -87,7 +95,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: null,
             accessToken: null,
-            refreshToken: null,
+            refreshTokenValue: null,
             isAuthenticated: false,
             isLoading: false,
             error: null,
@@ -96,16 +104,16 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshToken: async () => {
-        const { refreshToken: currentRefreshToken } = get();
-        if (!currentRefreshToken) {
+        const { refreshTokenValue } = get();
+        if (!refreshTokenValue) {
           throw new Error('No refresh token');
         }
 
         try {
-          const response = await authService.refreshToken(currentRefreshToken);
+          const response = await authService.refreshToken(refreshTokenValue);
           set({
             accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            refreshTokenValue: response.refreshToken,
           });
         } catch (error) {
           // If refresh fails, logout user
@@ -131,7 +139,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        refreshTokenValue: state.refreshTokenValue,
         isAuthenticated: state.isAuthenticated,
       }),
     }

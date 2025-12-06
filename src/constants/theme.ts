@@ -156,6 +156,88 @@ export const Layout = {
   },
 };
 
+// Lowercase aliases for compatibility
+export const colors = {
+  primary: Colors.primary,
+  primaryDark: Colors.primaryDark,
+  primaryLight: Colors.primaryLight,
+  white: '#FFFFFF',
+  black: '#000000',
+  text: {
+    primary: Colors.textPrimary,
+    secondary: Colors.textSecondary,
+    tertiary: Colors.textTertiary,
+    placeholder: Colors.textTertiary,
+  },
+  border: Colors.border,
+  background: Colors.background,
+  gray: {
+    50: '#F9FAFB',
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+    900: '#111827',
+  },
+  success: Colors.success,
+  warning: Colors.warning,
+  error: Colors.error,
+  info: Colors.info,
+};
+
+export const spacing = {
+  xs: Spacing.xs,
+  sm: Spacing.sm,
+  md: Spacing.md,
+  lg: Spacing.lg,
+  xl: Spacing.xl,
+  xxl: Spacing.xxl,
+};
+
+export const borderRadius = {
+  xs: BorderRadius.xs,
+  sm: BorderRadius.sm,
+  md: BorderRadius.md,
+  lg: BorderRadius.lg,
+  xl: BorderRadius.xl,
+  full: BorderRadius.round,
+};
+
+export const typography = {
+  h1: {
+    fontSize: FontSize.header,
+    fontWeight: FontWeight.bold,
+  },
+  h2: {
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.bold,
+  },
+  h3: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.semiBold,
+  },
+  body: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.regular,
+  },
+  bodyLarge: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.regular,
+  },
+  caption: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.regular,
+  },
+  small: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.regular,
+  },
+};
+
 export default {
   Colors,
   Spacing,
@@ -164,4 +246,9 @@ export default {
   FontWeight,
   Shadow,
   Layout,
+  // Lowercase exports
+  colors,
+  spacing,
+  borderRadius,
+  typography,
 };

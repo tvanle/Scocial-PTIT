@@ -3,10 +3,12 @@ import { View, Image, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, FontSize, FontWeight, Layout } from '../../constants/theme';
 
+type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'profile';
+
 interface AvatarProps {
   uri?: string | null;
   name?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'profile';
+  size?: AvatarSize | number;
   showOnlineStatus?: boolean;
   isOnline?: boolean;
   onPress?: () => void;
@@ -26,7 +28,7 @@ const Avatar: React.FC<AvatarProps> = ({
   showEditButton = false,
   onEditPress,
 }) => {
-  const avatarSize = Layout.avatarSize[size];
+  const avatarSize = typeof size === 'number' ? size : Layout.avatarSize[size];
 
   const getInitials = (fullName: string): string => {
     const names = fullName.trim().split(' ');
@@ -37,6 +39,9 @@ const Avatar: React.FC<AvatarProps> = ({
   };
 
   const getFontSize = (): number => {
+    if (typeof size === 'number') {
+      return Math.max(10, size / 3);
+    }
     switch (size) {
       case 'xs':
         return FontSize.xs;
@@ -58,6 +63,9 @@ const Avatar: React.FC<AvatarProps> = ({
   };
 
   const getOnlineIndicatorSize = (): number => {
+    if (typeof size === 'number') {
+      return Math.max(6, size / 4);
+    }
     switch (size) {
       case 'xs':
       case 'sm':

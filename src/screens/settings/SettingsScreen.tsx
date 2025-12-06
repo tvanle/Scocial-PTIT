@@ -91,7 +91,7 @@ const SettingsScreen: React.FC = () => {
                 {
                   text: 'Xác nhận',
                   style: 'destructive',
-                  onPress: (text) => {
+                  onPress: (text?: string) => {
                     if (text === 'DELETE') {
                       // TODO: Delete account API call
                       console.log('Delete account');
@@ -124,7 +124,7 @@ const SettingsScreen: React.FC = () => {
         {/* Profile Section */}
         <TouchableOpacity style={styles.profileSection}>
           <Avatar
-            source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+            uri="https://i.pravatar.cc/150?img=3"
             size={60}
           />
           <View style={styles.profileInfo}>

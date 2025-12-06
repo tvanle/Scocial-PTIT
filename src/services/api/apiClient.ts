@@ -40,9 +40,9 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { refreshToken } = useAuthStore.getState();
+        const { refreshTokenValue } = useAuthStore.getState();
 
-        if (refreshToken) {
+        if (refreshTokenValue) {
           await useAuthStore.getState().refreshToken();
           const { accessToken } = useAuthStore.getState();
 

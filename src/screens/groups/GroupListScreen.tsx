@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import Button from '../../components/common/Button';
 
@@ -26,8 +28,10 @@ interface Group {
   postsToday?: number;
 }
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const GroupListScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<'my' | 'discover'>('my');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -110,7 +114,7 @@ const GroupListScreen: React.FC = () => {
   const renderGroupCard = ({ item }: { item: Group }) => (
     <TouchableOpacity
       style={styles.groupCard}
-      onPress={() => navigation.navigate('GroupDetail' as never, { groupId: item.id } as never)}
+      onPress={() => navigation.navigate('GroupDetail', { groupId: item.id })}
     >
       <Image source={{ uri: item.coverPhoto }} style={styles.groupCover} />
       <View style={styles.groupContent}>

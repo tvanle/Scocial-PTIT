@@ -9,7 +9,9 @@ import { NotificationScreen } from '../screens/notification';
 import { SearchScreen } from '../screens/search';
 import { Colors, FontSize, Spacing } from '../constants/theme';
 import { Strings } from '../constants/strings';
-import { MainTabParamList } from '../types';
+import { MainTabParamList, RootStackParamList } from '../types';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -101,7 +103,7 @@ const MainTabNavigator: React.FC = () => {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('CreatePostModal');
+            (navigation as unknown as NativeStackNavigationProp<RootStackParamList>).navigate('CreatePostModal', {});
           },
         })}
       />
