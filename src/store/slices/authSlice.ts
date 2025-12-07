@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
-import { User, LoginCredentials, RegisterData, AuthState } from '../../types';
+import { User, LoginCredentials, RegisterData } from '../../types';
 import { authService } from '../../services/auth/authService';
 
 interface AuthStore {
@@ -22,21 +20,7 @@ interface AuthStore {
   setLoading: (loading: boolean) => void;
 }
 
-// Custom storage for Expo SecureStore
-const secureStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    return await SecureStore.getItemAsync(name);
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    await SecureStore.setItemAsync(name, value);
-  },
-  removeItem: async (name: string): Promise<void> => {
-    await SecureStore.deleteItemAsync(name);
-  },
-};
-
 export const useAuthStore = create<AuthStore>()(
-  persist(
     (set, get) => ({
       user: null,
       accessToken: null,
@@ -132,18 +116,7 @@ export const useAuthStore = create<AuthStore>()(
       clearError: () => set({ error: null }),
 
       setLoading: (loading: boolean) => set({ isLoading: loading }),
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        refreshTokenValue: state.refreshTokenValue,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    }
-  )
+    })
 );
 
 export default useAuthStore;
