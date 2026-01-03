@@ -30,64 +30,94 @@ services:
   # Auth Service
   auth-service:
     build: ./services/auth-service
+    ports:
+      - "3001:3001"
     environment:
+      - NODE_ENV=development
       - PORT=3001
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_auth
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
+      - redis
     networks:
       - ptit-network
 
   # User Service
   user-service:
     build: ./services/user-service
+    ports:
+      - "3002:3002"
     environment:
+      - NODE_ENV=development
       - PORT=3002
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_users
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
+      - redis
     networks:
       - ptit-network
 
   # Post Service
   post-service:
     build: ./services/post-service
+    ports:
+      - "3003:3003"
     environment:
+      - NODE_ENV=development
       - PORT=3003
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_posts
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
+      - redis
     networks:
       - ptit-network
 
   # Chat Service
   chat-service:
     build: ./services/chat-service
+    ports:
+      - "3004:3004"
     environment:
+      - NODE_ENV=development
       - PORT=3004
-      - MONGODB_URI=mongodb://mongo:27017/ptit_chat
+      - DATABASE_URL=mongodb://mongo:27017/ptit_chat
       - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - mongo
+      - redis
     networks:
       - ptit-network
 
   # Notification Service
   notification-service:
     build: ./services/notification-service
+    ports:
+      - "3005:3005"
     environment:
+      - NODE_ENV=development
       - PORT=3005
-      - MONGODB_URI=mongodb://mongo:27017/ptit_notifications
+      - DATABASE_URL=mongodb://mongo:27017/ptit_notifications
+      - REDIS_URL=redis://redis:6379
+      - FIREBASE_CREDENTIALS=${FIREBASE_CREDENTIALS}
     depends_on:
       - mongo
+      - redis
     networks:
       - ptit-network
 
   # Media Service
   media-service:
     build: ./services/media-service
+    ports:
+      - "3006:3006"
     environment:
+      - NODE_ENV=development
       - PORT=3006
       - USE_S3=${USE_S3:-false}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -102,11 +132,16 @@ services:
   # Group Service
   group-service:
     build: ./services/group-service
+    ports:
+      - "3007:3007"
     environment:
+      - NODE_ENV=development
       - PORT=3007
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_groups
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
+      - redis
     networks:
       - ptit-network
 
