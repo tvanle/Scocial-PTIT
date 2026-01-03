@@ -1,7 +1,15 @@
--- Create databases for each service
+-- Initialize databases for PTIT Social microservices
+
+-- Auth Service Database
 CREATE DATABASE ptit_auth;
+
+-- User Service Database
 CREATE DATABASE ptit_users;
+
+-- Post Service Database
 CREATE DATABASE ptit_posts;
+
+-- Group Service Database
 CREATE DATABASE ptit_groups;
 
 -- Grant privileges
