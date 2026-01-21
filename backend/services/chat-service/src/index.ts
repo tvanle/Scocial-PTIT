@@ -1,25 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import chatRoutes from './routes/chat';
-import { setupSocketHandlers } from './socket';
-
-dotenv.config();
+import { config } from './config';
+import routes from './routes';
+import { errorHandler } from './middleware';
+import { initializeSocket } from './socket';
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
 
-const PORT = process.env.PORT || 3004;
-const MONGODB_URI = process.env.DATABASE_URL || 'mongodb://localhost:27017/ptit_chat';
+// Initialize Socket.io
+const io = initializeSocket(server);
 
 // Middleware
 app.use(cors());
@@ -29,23 +21,23 @@ app.use(express.json());
 app.set('io', io);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'chat-service' });
 });
 
-// Routes
-app.use('/api/chat', chatRoutes);
+// API routes
+app.use('/api', routes);
 
-// Socket.io
-setupSocketHandlers(io);
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Connect to MongoDB and start server
 mongoose
-  .connect(MONGODB_URI)
+  .connect(config.mongodb.uri)
   .then(() => {
     console.log('📦 Connected to MongoDB');
-    server.listen(PORT, () => {
-      console.log(`💬 Chat Service running on port ${PORT}`);
+    server.listen(config.port, () => {
+      console.log(`💬 Chat Service running on port ${config.port}`);
     });
   })
   .catch((err) => {

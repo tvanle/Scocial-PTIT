@@ -1,14 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import groupRoutes from './routes/groups';
-import postRoutes from './routes/posts';
-
-dotenv.config();
+import config from './config';
+import routes from './routes';
+import { errorHandler } from './middleware';
 
 const app = express();
-const PORT = process.env.PORT || 3007;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -17,18 +15,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'group-service' });
 });
 
-// Routes
-app.use('/api/groups', groupRoutes);
-app.use('/api/groups', postRoutes);
+// API Routes
+app.use('/api/groups', routes);
 
-// Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`👥 Group Service running on port ${PORT}`);
+app.listen(config.port, () => {
+  console.log(`👥 Group Service running on port ${config.port}`);
 });
 
 export default app;

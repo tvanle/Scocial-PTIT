@@ -1,14 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import postRoutes from './routes/posts';
-import commentRoutes from './routes/comments';
-
-dotenv.config();
+import { config } from './config';
+import routes from './routes';
+import { errorMiddleware } from './middleware';
 
 const app = express();
-const PORT = process.env.PORT || 3003;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -17,18 +15,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'post-service' });
 });
 
-// Routes
-app.use('/api/posts', postRoutes);
-app.use('/api/posts', commentRoutes);
+// API Routes
+app.use('/api', routes);
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
+app.use(errorMiddleware);
 
-app.listen(PORT, () => {
-  console.log(`📝 Post Service running on port ${PORT}`);
+// Start server
+app.listen(config.port, () => {
+  console.log(`📝 Post Service running on port ${config.port}`);
 });
 
 export default app;

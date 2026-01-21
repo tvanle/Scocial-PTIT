@@ -1,34 +1,32 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import notificationRoutes from './routes/notifications';
+import { config } from './config';
+import routes from './routes';
+import { errorHandler, notFoundHandler } from './middleware';
+import { ERROR_MESSAGES } from './constants';
 
-dotenv.config();
-
+// Initialize Express app
 const app = express();
 const httpServer = createServer(app);
-const PORT = process.env.PORT || 3005;
 
 // Socket.io setup
 const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST'],
-  },
+  cors: config.socket.cors,
 });
 
+// Store io instance in app for access in routes
 app.set('io', io);
 
-app.use(cors());
+// Middleware
+app.use(cors(config.cors));
 app.use(express.json());
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ptit_notifications';
-
-mongoose.connect(MONGODB_URI)
+mongoose
+  .connect(config.mongodb.uri)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -37,14 +35,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'notification-service' });
 });
 
-// Routes
-app.use('/api/notifications', notificationRoutes);
+// API Routes
+app.use('/api', routes);
 
 // Socket.io authentication and handlers
 io.use((socket, next) => {
   const userId = socket.handshake.auth.userId;
   if (!userId) {
-    return next(new Error('Authentication error'));
+    return next(new Error(ERROR_MESSAGES.AUTHENTICATION_ERROR));
   }
   (socket as any).userId = userId;
   next();
@@ -62,14 +60,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-httpServer.listen(PORT, () => {
-  console.log(`🔔 Notification Service running on port ${PORT}`);
+// Start server
+httpServer.listen(config.port, () => {
+  console.log(`🔔 Notification Service running on port ${config.port}`);
 });
 
 export default app;

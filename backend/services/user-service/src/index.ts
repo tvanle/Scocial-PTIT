@@ -1,14 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import userRoutes from './routes/users';
-import friendRoutes from './routes/friends';
-
-dotenv.config();
+import { config } from './config';
+import routes from './routes';
+import { errorMiddleware } from './middleware';
 
 const app = express();
-const PORT = process.env.PORT || 3002;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -17,18 +15,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'user-service' });
 });
 
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/users', friendRoutes);
+// API Routes
+app.use('/api', routes);
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
+app.use(errorMiddleware);
 
-app.listen(PORT, () => {
-  console.log(`👤 User Service running on port ${PORT}`);
+// Start server
+app.listen(config.port, () => {
+  console.log(`👤 User Service running on port ${config.port}`);
 });
 
 export default app;
