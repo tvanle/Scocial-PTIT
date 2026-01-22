@@ -10,7 +10,7 @@ export const uploadMiddleware = multer({
     fileSize: config.upload.maxFileSize,
   },
   fileFilter: (req, file, cb) => {
-    if (config.upload.allowedMimeTypes.includes(file.mimetype)) {
+    if ((config.upload.allowedMimeTypes as readonly string[]).includes(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error(ERROR_MESSAGES.FILE_TYPE_NOT_ALLOWED));
