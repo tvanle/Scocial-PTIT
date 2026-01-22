@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, FontSize, FontWeight, Layout } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Layout } from '../../constants/theme';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'profile';
 
@@ -133,15 +133,15 @@ const Avatar: React.FC<AvatarProps> = ({
               width: getOnlineIndicatorSize(),
               height: getOnlineIndicatorSize(),
               borderRadius: getOnlineIndicatorSize() / 2,
-              backgroundColor: isOnline ? Colors.online : Colors.offline,
+              backgroundColor: isOnline ? Colors.online : Colors.gray400,
             },
           ]}
         />
       )}
 
       {showEditButton && (
-        <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
-          <Ionicons name="camera" size={16} color={Colors.textLight} />
+        <TouchableOpacity style={styles.editButton} onPress={onEditPress} activeOpacity={0.7}>
+          <Ionicons name="camera" size={14} color={Colors.white} />
         </TouchableOpacity>
       )}
     </View>
@@ -149,7 +149,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
         {renderAvatar()}
       </TouchableOpacity>
     );
@@ -163,15 +163,15 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.gray200,
   },
   placeholder: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.gray300,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    color: Colors.textLight,
+    color: Colors.white,
     fontWeight: FontWeight.semiBold,
   },
   onlineIndicator: {
@@ -179,20 +179,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: Colors.white,
   },
   editButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.black,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: Colors.white,
   },
 });
 

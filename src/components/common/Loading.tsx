@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet, Modal, ViewStyle } from 'react-native';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 
 interface LoadingProps {
   visible?: boolean;
@@ -17,7 +16,7 @@ export const Loading: React.FC<LoadingProps> = ({
   text,
   overlay = false,
   size = 'large',
-  color = Colors.primary,
+  color = Colors.black,
   style,
 }) => {
   if (!visible) return null;
@@ -45,16 +44,16 @@ export const Loading: React.FC<LoadingProps> = ({
   return content;
 };
 
-export const FullScreenLoading: React.FC<{ text?: string }> = ({ text = Strings.common.loading }) => (
+export const FullScreenLoading: React.FC<{ text?: string }> = ({ text = 'Dang tai...' }) => (
   <View style={styles.fullScreen}>
-    <ActivityIndicator size="large" color={Colors.primary} />
-    <Text style={styles.text}>{text}</Text>
+    <ActivityIndicator size="large" color={Colors.black} />
+    {text && <Text style={styles.text}>{text}</Text>}
   </View>
 );
 
 export const InlineLoading: React.FC<{ size?: 'small' | 'large'; color?: string }> = ({
   size = 'small',
-  color = Colors.primary,
+  color = Colors.black,
 }) => (
   <View style={styles.inline}>
     <ActivityIndicator size={size} color={color} />
@@ -69,32 +68,32 @@ const styles = StyleSheet.create({
   },
   text: {
     marginTop: Spacing.md,
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    color: Colors.gray500,
   },
   overlay: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   overlayContent: {
-    backgroundColor: Colors.background,
-    padding: Spacing.xxl,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.white,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
-    minWidth: 120,
+    minWidth: 100,
   },
   overlayText: {
     marginTop: Spacing.md,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
+    fontSize: FontSize.sm,
+    color: Colors.black,
   },
   fullScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
   },
   inline: {
     padding: Spacing.md,

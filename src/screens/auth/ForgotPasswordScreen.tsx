@@ -87,7 +87,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <Button
               title="Mở ứng dụng Email"
               onPress={() => {}}
-              variant="gradient"
+              variant="primary"
               fullWidth
               style={styles.openEmailButton}
             />
@@ -154,7 +154,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <Button
               title={Strings.auth.sendCode}
               onPress={handleSendCode}
-              variant="gradient"
+              variant="primary"
               fullWidth
               loading={isLoading}
               style={styles.sendButton}

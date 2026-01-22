@@ -3,18 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
+  TextInput,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import { Button, Input, Divider } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { RegisterData } from '../../types';
 
@@ -23,6 +22,7 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<RegisterData>({
     email: '',
     password: '',
@@ -33,235 +33,188 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     className: '',
     phone: '',
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterData, string>>>({});
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   const { register, isLoading, error } = useAuthStore();
 
   const updateField = (field: keyof RegisterData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData({ ...formData, [field]: value });
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors({ ...errors, [field]: undefined });
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof RegisterData, string>> = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = Strings.errors.requiredField;
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = Strings.errors.requiredField;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = Strings.errors.invalidEmail;
-    }
-
-    if (!formData.password) {
-      newErrors.password = Strings.errors.requiredField;
-    } else if (formData.password.length < 6) {
-      newErrors.password = Strings.errors.invalidPassword;
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = Strings.errors.requiredField;
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = Strings.errors.passwordNotMatch;
-    }
-
-    if (formData.studentId && !/^[BDN]\d{8}$/.test(formData.studentId.toUpperCase())) {
-      newErrors.studentId = Strings.errors.invalidStudentId;
-    }
-
+  const validateStep1 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.fullName.trim()) newErrors.fullName = 'Nhap ten cua ban';
+    if (!formData.email.trim()) newErrors.email = 'Nhap email';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email khong hop le';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async () => {
-    if (!validateForm()) return;
-    if (!agreeTerms) {
-      alert('Vui lòng đồng ý với điều khoản sử dụng');
-      return;
-    }
+  const validateStep2 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.password) newErrors.password = 'Nhap mat khau';
+    else if (formData.password.length < 6) newErrors.password = 'Mat khau it nhat 6 ky tu';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mat khau khong khop';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) setStep(2);
+    else if (step === 2 && validateStep2()) handleRegister();
+  };
+
+  const handleRegister = async () => {
     try {
       await register(formData);
-      navigation.navigate('VerifyEmail', { email: formData.email });
     } catch (err) {
       // Error handled by store
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => step === 1 ? navigation.goBack() : setStep(1)}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={styles.headerContent}>
-              <LinearGradient
-                colors={[Colors.gradientStart, Colors.gradientEnd]}
-                style={styles.logoContainer}
-              >
-                <Text style={styles.logoText}>PTIT</Text>
-              </LinearGradient>
-              <Text style={styles.title}>{Strings.auth.createAccount}</Text>
-              <Text style={styles.subtitle}>
-                Tham gia cộng đồng sinh viên PTIT ngay hôm nay
-              </Text>
-            </View>
-          </View>
+          {/* Title */}
+          <Text style={styles.title}>
+            {step === 1 ? 'Ten cua ban la gi?' : 'Tao mat khau'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {step === 1
+              ? 'Ban co the thay doi ten nay bat cu luc nao.'
+              : 'Mat khau cua ban phai co it nhat 6 ky tu.'}
+          </Text>
 
-          {/* Error Message */}
-          {error && (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={20} color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
+          {/* Step 1: Name & Email */}
+          {step === 1 && (
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, errors.fullName && styles.inputError]}
+                  placeholder="Ten day du"
+                  placeholderTextColor={Colors.textTertiary}
+                  value={formData.fullName}
+                  onChangeText={(text) => updateField('fullName', text)}
+                />
+                {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, errors.email && styles.inputError]}
+                  placeholder="Email"
+                  placeholderTextColor={Colors.textTertiary}
+                  value={formData.email}
+                  onChangeText={(text) => updateField('email', text)}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ma sinh vien (khong bat buoc)"
+                  placeholderTextColor={Colors.textTertiary}
+                  value={formData.studentId}
+                  onChangeText={(text) => updateField('studentId', text.toUpperCase())}
+                  autoCapitalize="characters"
+                />
+              </View>
             </View>
           )}
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label={Strings.auth.fullName}
-              placeholder="Nguyễn Văn A"
-              value={formData.fullName}
-              onChangeText={(value) => updateField('fullName', value)}
-              leftIcon="person-outline"
-              error={errors.fullName}
-              required
-            />
+          {/* Step 2: Password */}
+          {step === 2 && (
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <View style={[styles.passwordContainer, errors.password && styles.inputError]}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Mat khau"
+                    placeholderTextColor={Colors.textTertiary}
+                    value={formData.password}
+                    onChangeText={(text) => updateField('password', text)}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={Colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              </View>
 
-            <Input
-              label={Strings.auth.email}
-              placeholder="example@ptit.edu.vn"
-              value={formData.email}
-              onChangeText={(value) => updateField('email', value)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon="mail-outline"
-              error={errors.email}
-              required
-            />
-
-            <Input
-              label={Strings.auth.studentId}
-              placeholder="B21DCCN001"
-              value={formData.studentId}
-              onChangeText={(value) => updateField('studentId', value.toUpperCase())}
-              autoCapitalize="characters"
-              leftIcon="card-outline"
-              error={errors.studentId}
-              hint="Mã sinh viên bắt đầu bằng B, D hoặc N"
-            />
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>{Strings.auth.faculty}</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={formData.faculty}
-                  onValueChange={(value) => updateField('faculty', value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Chọn khoa" value="" />
-                  {Strings.ptit.faculties.map((faculty) => (
-                    <Picker.Item key={faculty} label={faculty} value={faculty} />
-                  ))}
-                </Picker>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, errors.confirmPassword && styles.inputError]}
+                  placeholder="Xac nhan mat khau"
+                  placeholderTextColor={Colors.textTertiary}
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => updateField('confirmPassword', text)}
+                  secureTextEntry={!showPassword}
+                />
+                {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
               </View>
             </View>
+          )}
 
-            <Input
-              label={Strings.auth.class}
-              placeholder="D21CQCN01-B"
-              value={formData.className}
-              onChangeText={(value) => updateField('className', value.toUpperCase())}
-              autoCapitalize="characters"
-              leftIcon="school-outline"
-            />
+          {error && <Text style={styles.apiError}>{error}</Text>}
 
-            <Input
-              label={Strings.auth.phone}
-              placeholder="0912345678"
-              value={formData.phone}
-              onChangeText={(value) => updateField('phone', value)}
-              keyboardType="phone-pad"
-              leftIcon="call-outline"
-            />
-
-            <Input
-              label={Strings.auth.password}
-              placeholder="••••••••"
-              value={formData.password}
-              onChangeText={(value) => updateField('password', value)}
-              secureTextEntry
-              leftIcon="lock-closed-outline"
-              error={errors.password}
-              required
-            />
-
-            <Input
-              label={Strings.auth.confirmPassword}
-              placeholder="••••••••"
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateField('confirmPassword', value)}
-              secureTextEntry
-              leftIcon="lock-closed-outline"
-              error={errors.confirmPassword}
-              required
-            />
-
-            {/* Terms */}
-            <TouchableOpacity
-              style={styles.termsContainer}
-              onPress={() => setAgreeTerms(!agreeTerms)}
-            >
-              <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
-                {agreeTerms && <Ionicons name="checkmark" size={14} color={Colors.textLight} />}
-              </View>
-              <Text style={styles.termsText}>
-                Tôi đồng ý với{' '}
-                <Text style={styles.termsLink}>Điều khoản sử dụng</Text>
-                {' '}và{' '}
-                <Text style={styles.termsLink}>Chính sách bảo mật</Text>
+          {/* Next/Register Button */}
+          <TouchableOpacity
+            style={styles.nextButton}
+            onPress={handleNext}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Colors.white} size="small" />
+            ) : (
+              <Text style={styles.nextButtonText}>
+                {step === 2 ? 'Dang ky' : 'Tiep tuc'}
               </Text>
-            </TouchableOpacity>
-
-            {/* Register Button */}
-            <Button
-              title={Strings.auth.register}
-              onPress={handleRegister}
-              variant="gradient"
-              fullWidth
-              loading={isLoading}
-              disabled={!agreeTerms}
-              style={styles.registerButton}
-            />
-          </View>
-
-          {/* Login Link */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>{Strings.auth.hasAccount}</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>{Strings.auth.loginNow}</Text>
-            </TouchableOpacity>
-          </View>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Bottom */}
+      <View style={styles.bottomSection}>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.loginText}>Da co tai khoan? <Text style={styles.loginLink}>Dang nhap</Text></Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -271,138 +224,111 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: Spacing.xl,
-    paddingTop: Spacing.md,
-  },
   header: {
-    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
   },
-  headerContent: {
-    alignItems: 'center',
+  content: {
+    flex: 1,
   },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  logoText: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textLight,
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
   },
   title: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   subtitle: {
     fontSize: FontSize.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.errorLight,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.lg,
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: FontSize.sm,
-    marginLeft: Spacing.sm,
-    flex: 1,
-  },
-  form: {
-    marginBottom: Spacing.lg,
-  },
-  inputContainer: {
-    marginBottom: Spacing.lg,
-  },
-  label: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  pickerContainer: {
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.background,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 48,
-  },
-  termsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xl,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: BorderRadius.xs,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    marginRight: Spacing.sm,
-    marginTop: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  termsText: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  termsLink: {
-    color: Colors.primary,
-    fontWeight: FontWeight.medium,
-  },
-  registerButton: {
-    marginTop: Spacing.sm,
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: Spacing.lg,
     marginBottom: Spacing.xxl,
   },
-  loginText: {
+  form: {
+    gap: Spacing.md,
+  },
+  inputContainer: {
+    marginBottom: Spacing.xs,
+  },
+  input: {
+    height: Layout.inputHeight,
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
     fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.gray100,
+  },
+  inputError: {
+    borderColor: Colors.error,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: Layout.inputHeight,
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.gray100,
+  },
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: Spacing.lg,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+  },
+  eyeButton: {
+    paddingHorizontal: Spacing.lg,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  errorText: {
+    fontSize: FontSize.xs,
+    color: Colors.error,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
+  },
+  apiError: {
+    fontSize: FontSize.sm,
+    color: Colors.error,
+    textAlign: 'center',
+    marginTop: Spacing.md,
+  },
+  nextButton: {
+    height: Layout.buttonHeight,
+    backgroundColor: Colors.black,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.xxl,
+  },
+  nextButtonText: {
+    color: Colors.white,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+  },
+  bottomSection: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xl,
+    alignItems: 'center',
+  },
+  loginText: {
     color: Colors.textSecondary,
+    fontSize: FontSize.sm,
   },
   loginLink: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
+    color: Colors.textPrimary,
     fontWeight: FontWeight.semiBold,
-    marginLeft: Spacing.xs,
   },
 });
 

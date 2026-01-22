@@ -7,18 +7,19 @@ import {
   ViewStyle,
   TextStyle,
   TouchableOpacityProps,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, FontSize, FontWeight, Layout, Spacing } from '../../constants/theme';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'gradient';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   disabled?: boolean;
-  icon?: React.ReactNode;
+  icon?: keyof typeof Ionicons.glyphMap;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
   style?: ViewStyle;
@@ -61,10 +62,6 @@ const Button: React.FC<ButtonProps> = ({
         return { ...baseStyle, ...styles.outline };
       case 'ghost':
         return { ...baseStyle, ...styles.ghost };
-      case 'danger':
-        return { ...baseStyle, ...styles.danger };
-      case 'gradient':
-        return { ...baseStyle, ...styles.gradient };
       default:
         return baseStyle;
     }
@@ -82,8 +79,6 @@ const Button: React.FC<ButtonProps> = ({
 
     switch (variant) {
       case 'primary':
-      case 'danger':
-      case 'gradient':
         return { ...baseTextStyle, ...styles.primaryText };
       case 'secondary':
         return { ...baseTextStyle, ...styles.secondaryText };
@@ -92,6 +87,21 @@ const Button: React.FC<ButtonProps> = ({
         return { ...baseTextStyle, ...styles.outlineText };
       default:
         return baseTextStyle;
+    }
+  };
+
+  const getIconColor = (): string => {
+    if (isDisabled) return Colors.gray400;
+    switch (variant) {
+      case 'primary':
+        return Colors.white;
+      case 'secondary':
+        return Colors.black;
+      case 'outline':
+      case 'ghost':
+        return Colors.black;
+      default:
+        return Colors.white;
     }
   };
 
@@ -117,52 +127,56 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const getIconSize = (): number => {
+    switch (size) {
+      case 'small':
+        return 16;
+      case 'large':
+        return 22;
+      default:
+        return 18;
+    }
+  };
+
   const renderContent = () => (
-    <>
+    <View style={styles.contentContainer}>
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.textLight}
+          color={variant === 'outline' || variant === 'ghost' ? Colors.black : Colors.white}
           size="small"
         />
       ) : (
         <>
-          {icon && iconPosition === 'left' && <>{icon}</>}
-          <Text style={[getTextStyle(), textStyle, icon ? (iconPosition === 'left' ? styles.textWithIconLeft : styles.textWithIconRight) : undefined]}>
+          {icon && iconPosition === 'left' && (
+            <Ionicons
+              name={icon}
+              size={getIconSize()}
+              color={getIconColor()}
+              style={styles.iconLeft}
+            />
+          )}
+          <Text style={[getTextStyle(), textStyle]}>
             {title}
           </Text>
-          {icon && iconPosition === 'right' && <>{icon}</>}
+          {icon && iconPosition === 'right' && (
+            <Ionicons
+              name={icon}
+              size={getIconSize()}
+              color={getIconColor()}
+              style={styles.iconRight}
+            />
+          )}
         </>
       )}
-    </>
+    </View>
   );
-
-  if (variant === 'gradient' && !isDisabled) {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={isDisabled}
-        activeOpacity={0.8}
-        style={[fullWidth && styles.fullWidth, style]}
-        {...props}
-      >
-        <LinearGradient
-          colors={[Colors.gradientStart, Colors.gradientEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.base, getSizeStyle(), styles.gradientContainer]}
-        >
-          {renderContent()}
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }
 
   return (
     <TouchableOpacity
       style={[getButtonStyle(), style]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
       {...props}
     >
       {renderContent()}
@@ -175,50 +189,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.sm,
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fullWidth: {
     width: '100%',
   },
   // Sizes
   small: {
-    height: 36,
+    height: 32,
     paddingHorizontal: Spacing.md,
   },
   medium: {
-    height: Layout.buttonHeight,
+    height: 36,
     paddingHorizontal: Spacing.lg,
   },
   large: {
-    height: 56,
+    height: Layout.buttonHeight,
     paddingHorizontal: Spacing.xl,
   },
-  // Variants
+  // Variants - Threads style
   primary: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.black,
   },
   secondary: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.gray100,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
-  danger: {
-    backgroundColor: Colors.error,
-  },
-  gradient: {
-    backgroundColor: 'transparent',
-  },
-  gradientContainer: {
-    overflow: 'hidden',
-  },
   disabled: {
-    backgroundColor: Colors.borderLight,
+    backgroundColor: Colors.gray200,
   },
   // Text
   text: {
@@ -228,28 +238,28 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
   },
   mediumText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
   },
   largeText: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
   },
   primaryText: {
-    color: Colors.textLight,
+    color: Colors.white,
   },
   secondaryText: {
-    color: Colors.textLight,
+    color: Colors.black,
   },
   outlineText: {
-    color: Colors.primary,
+    color: Colors.black,
   },
   disabledText: {
-    color: Colors.textTertiary,
+    color: Colors.gray400,
   },
-  textWithIconLeft: {
-    marginLeft: Spacing.sm,
+  iconLeft: {
+    marginRight: Spacing.xs,
   },
-  textWithIconRight: {
-    marginRight: Spacing.sm,
+  iconRight: {
+    marginLeft: Spacing.xs,
   },
 });
 

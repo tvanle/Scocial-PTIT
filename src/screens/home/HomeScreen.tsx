@@ -1,53 +1,27 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   FlatList,
   RefreshControl,
   StatusBar,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, IconButton } from '../../components/common';
-import { PostCard, CreatePostBox, StoryBar } from '../../components/home';
-import { Colors, Spacing } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, User } from '../../types';
+import { Post } from '../../types';
 
-// Mock data
-const mockStories = [
-  {
-    id: '1',
-    user: { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2' } as User,
-    thumbnail: 'https://picsum.photos/200/350?random=1',
-    hasUnread: true,
-  },
-  {
-    id: '2',
-    user: { id: '3', fullName: 'Lê Thị C', avatar: 'https://i.pravatar.cc/150?img=3' } as User,
-    thumbnail: 'https://picsum.photos/200/350?random=2',
-    hasUnread: true,
-  },
-  {
-    id: '3',
-    user: { id: '4', fullName: 'Phạm Văn D', avatar: 'https://i.pravatar.cc/150?img=4' } as User,
-    thumbnail: 'https://picsum.photos/200/350?random=3',
-    hasUnread: false,
-  },
-  {
-    id: '4',
-    user: { id: '5', fullName: 'Nguyễn Thị E', avatar: 'https://i.pravatar.cc/150?img=5' } as User,
-    thumbnail: 'https://picsum.photos/200/350?random=4',
-    hasUnread: true,
-  },
-];
-
+// Mock posts data
 const mockPosts: Post[] = [
   {
     id: '1',
     author: {
       id: '2',
-      fullName: 'Trần Văn B',
+      fullName: 'Tran Van B',
       avatar: 'https://i.pravatar.cc/150?img=2',
       studentId: 'B21DCCN002',
       isOnline: true,
@@ -56,10 +30,8 @@ const mockPosts: Post[] = [
       updatedAt: '',
       email: '',
     },
-    content: 'Hôm nay trời đẹp quá, đi học thôi nào! 🌤️\n\nChúc mọi người một ngày học tập hiệu quả tại PTIT nhé! #PTITLife #SinhVienPTIT',
-    media: [
-      { id: '1', url: 'https://picsum.photos/800/600?random=1', type: 'image' },
-    ],
+    content: 'Hom nay la ngay tuyet voi de hoc tap va chia se kien thuc voi moi nguoi!',
+    media: [],
     privacy: 'public',
     likesCount: 128,
     commentsCount: 24,
@@ -69,14 +41,12 @@ const mockPosts: Post[] = [
     isShared: false,
     createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
-    location: 'Học viện PTIT',
-    feeling: '😊 vui vẻ',
   },
   {
     id: '2',
     author: {
       id: '3',
-      fullName: 'Lê Thị C',
+      fullName: 'Le Thi C',
       avatar: 'https://i.pravatar.cc/150?img=3',
       studentId: 'B21DCCN003',
       isOnline: false,
@@ -85,17 +55,16 @@ const mockPosts: Post[] = [
       updatedAt: '',
       email: '',
     },
-    content: 'Chia sẻ một số kinh nghiệm học lập trình cho các bạn sinh viên năm nhất:\n\n1. Học đều đặn mỗi ngày\n2. Thực hành nhiều hơn lý thuyết\n3. Tham gia các project thực tế\n4. Học hỏi từ senior\n\nChúc các bạn thành công! 💪',
+    content: 'Chia se kinh nghiem hoc lap trinh:\n\n1. Code moi ngay\n2. Doc docs truoc khi hoi\n3. Debug la ban',
     media: [
-      { id: '2', url: 'https://picsum.photos/800/600?random=2', type: 'image' },
-      { id: '3', url: 'https://picsum.photos/800/600?random=3', type: 'image' },
+      { id: '1', url: 'https://picsum.photos/800/600?random=1', type: 'image' },
     ],
-    privacy: 'friends',
+    privacy: 'public',
     likesCount: 256,
     commentsCount: 48,
     sharesCount: 32,
     isLiked: true,
-    isSaved: true,
+    isSaved: false,
     isShared: false,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
@@ -104,7 +73,7 @@ const mockPosts: Post[] = [
     id: '3',
     author: {
       id: '4',
-      fullName: 'Phạm Văn D',
+      fullName: 'Nguyen Van D',
       avatar: 'https://i.pravatar.cc/150?img=4',
       studentId: 'B21DCCN004',
       isOnline: true,
@@ -113,46 +82,16 @@ const mockPosts: Post[] = [
       updatedAt: '',
       email: '',
     },
-    content: 'Vừa hoàn thành xong project cuối kỳ môn Phát triển ứng dụng di động! 🎉\n\nCảm ơn team đã cùng nhau cố gắng trong suốt 2 tháng qua. Kết quả không phụ lòng những đêm thức trắng code 😂',
-    media: [
-      { id: '4', url: 'https://picsum.photos/800/600?random=4', type: 'image' },
-      { id: '5', url: 'https://picsum.photos/800/600?random=5', type: 'image' },
-      { id: '6', url: 'https://picsum.photos/800/600?random=6', type: 'image' },
-      { id: '7', url: 'https://picsum.photos/800/600?random=7', type: 'image' },
-    ],
+    content: 'PTIT la noi bat dau cua nhung uoc mo',
+    media: [],
     privacy: 'public',
-    likesCount: 512,
-    commentsCount: 86,
-    sharesCount: 28,
+    likesCount: 89,
+    commentsCount: 12,
+    sharesCount: 3,
     isLiked: false,
-    isSaved: false,
+    isSaved: true,
     isShared: false,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    feeling: '🥳 hạnh phúc',
-  },
-  {
-    id: '4',
-    author: {
-      id: '5',
-      fullName: 'Nguyễn Thị E',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      studentId: 'B21DCAT001',
-      isOnline: false,
-      isVerified: false,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Có ai biết quán cafe yên tĩnh gần trường để học bài không ạ? Mình đang cần không gian học tập cho kỳ thi tới 📚',
-    privacy: 'public',
-    likesCount: 45,
-    commentsCount: 32,
-    sharesCount: 2,
-    isLiked: false,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
@@ -161,6 +100,116 @@ interface HomeScreenProps {
   navigation: any;
 }
 
+// Thread Post Item Component
+const ThreadPost: React.FC<{
+  post: Post;
+  onLike: () => void;
+  onComment: () => void;
+  onRepost: () => void;
+  onShare: () => void;
+  onProfile: () => void;
+  onMore: () => void;
+}> = ({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  const timeAgo = getTimeAgo(post.createdAt);
+
+  return (
+    <View style={styles.postContainer}>
+      {/* Left: Avatar + Thread Line */}
+      <View style={styles.postLeft}>
+        <TouchableOpacity onPress={onProfile}>
+          <Image
+            source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
+        {/* Thread line */}
+        <View style={styles.threadLine} />
+      </View>
+
+      {/* Right: Content */}
+      <View style={styles.postRight}>
+        {/* Header */}
+        <View style={styles.postHeader}>
+          <View style={styles.postHeaderLeft}>
+            <TouchableOpacity onPress={onProfile} style={styles.usernameRow}>
+              <Text style={styles.username}>{post.author.fullName}</Text>
+              {post.author.isVerified && (
+                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={styles.verifiedIcon} />
+              )}
+            </TouchableOpacity>
+            <Text style={styles.timeAgo}>{timeAgo}</Text>
+          </View>
+          <TouchableOpacity onPress={onMore} style={styles.moreButton}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Content */}
+        <Text style={styles.postContent}>{post.content}</Text>
+
+        {/* Media */}
+        {post.media && post.media.length > 0 && (
+          <View style={styles.mediaContainer}>
+            <Image
+              source={{ uri: post.media[0].url }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={onLike} style={styles.actionButton}>
+            <Ionicons
+              name={post.isLiked ? 'heart' : 'heart-outline'}
+              size={22}
+              color={post.isLiked ? Colors.like : Colors.textPrimary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onComment} style={styles.actionButton}>
+            <Ionicons name="chatbubble-outline" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onRepost} style={styles.actionButton}>
+            <Ionicons name="repeat-outline" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onShare} style={styles.actionButton}>
+            <Ionicons name="paper-plane-outline" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Stats */}
+        {(post.commentsCount > 0 || post.likesCount > 0) && (
+          <View style={styles.statsRow}>
+            {post.commentsCount > 0 && (
+              <Text style={styles.statsText}>{post.commentsCount} tra loi</Text>
+            )}
+            {post.commentsCount > 0 && post.likesCount > 0 && (
+              <Text style={styles.statsDot}> · </Text>
+            )}
+            {post.likesCount > 0 && (
+              <Text style={styles.statsText}>{post.likesCount} luot thich</Text>
+            )}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
+
+// Helper function
+const getTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'Vua xong';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  return date.toLocaleDateString('vi-VN');
+};
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>(mockPosts);
@@ -168,106 +217,54 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setRefreshing(false);
   }, []);
 
-  const handleCreatePost = () => {
-    navigation.navigate('CreatePost');
+  const handleLike = (postId: string) => {
+    setPosts(posts.map(p =>
+      p.id === postId
+        ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1 }
+        : p
+    ));
   };
-
-  const handlePostPress = (postId: string) => {
-    navigation.navigate('PostDetail', { postId });
-  };
-
-  const handleProfilePress = (userId: string) => {
-    navigation.navigate('UserProfile', { userId });
-  };
-
-  const handleStoryPress = (storyId: string) => {
-    console.log('View story:', storyId);
-  };
-
-  const handleCreateStory = () => {
-    console.log('Create story');
-  };
-
-  const handleMessenger = () => {
-    navigation.navigate('Messages');
-  };
-
-  const renderHeader = () => (
-    <>
-      <StoryBar
-        currentUser={user}
-        stories={mockStories}
-        onCreateStory={handleCreateStory}
-        onStoryPress={handleStoryPress}
-      />
-      <CreatePostBox
-        user={user}
-        onPress={handleCreatePost}
-        onPhotoPress={handleCreatePost}
-        onVideoPress={handleCreatePost}
-        onFeelingPress={handleCreatePost}
-      />
-    </>
-  );
 
   const renderPost = ({ item }: { item: Post }) => (
-    <PostCard
+    <ThreadPost
       post={item}
-      onPress={() => handlePostPress(item.id)}
-      onProfilePress={() => handleProfilePress(item.author.id)}
-      onComment={() => handlePostPress(item.id)}
-      onShare={() => console.log('Share post:', item.id)}
-      onMenuPress={() => console.log('Menu:', item.id)}
+      onLike={() => handleLike(item.id)}
+      onComment={() => navigation.navigate('PostDetail', { postId: item.id })}
+      onRepost={() => console.log('Repost:', item.id)}
+      onShare={() => console.log('Share:', item.id)}
+      onProfile={() => navigation.navigate('UserProfile', { userId: item.author.id })}
+      onMore={() => console.log('More:', item.id)}
     />
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
-      <Header
-        showLogo
-        rightComponent={
-          <View style={styles.headerRight}>
-            <IconButton
-              icon="add-circle-outline"
-              onPress={handleCreatePost}
-              variant="ghost"
-              size={36}
-              iconSize={26}
-            />
-            <IconButton
-              icon="chatbubble-ellipses-outline"
-              onPress={handleMessenger}
-              variant="ghost"
-              size={36}
-              iconSize={26}
-              badge={3}
-            />
-          </View>
-        }
-      />
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerLogo}>@</Text>
+      </View>
 
+      {/* Feed */}
       <FlatList
         data={posts}
         renderItem={renderPost}
         keyExtractor={(item) => item.id}
-        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
+            tintColor={Colors.textPrimary}
           />
         }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        contentContainerStyle={styles.feedContent}
       />
     </SafeAreaView>
   );
@@ -276,15 +273,119 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.background,
   },
-  headerRight: {
+  header: {
+    height: Layout.headerHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
+  },
+  headerLogo: {
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  feedContent: {
+    paddingBottom: 100,
+  },
+  separator: {
+    height: 0.5,
+    backgroundColor: Colors.border,
+  },
+  // Post styles
+  postContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  postLeft: {
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  avatar: {
+    width: Layout.avatarSize.md,
+    height: Layout.avatarSize.md,
+    borderRadius: Layout.avatarSize.md / 2,
+    backgroundColor: Colors.gray200,
+  },
+  threadLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: Colors.gray200,
+    marginTop: Spacing.sm,
+    borderRadius: 1,
+    minHeight: 20,
+  },
+  postRight: {
+    flex: 1,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  postHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    flexWrap: 'wrap',
   },
-  listContent: {
-    paddingBottom: Spacing.xxl,
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  username: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  verifiedIcon: {
+    marginLeft: Spacing.xxs,
+  },
+  timeAgo: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginLeft: Spacing.sm,
+  },
+  moreButton: {
+    padding: Spacing.xs,
+  },
+  postContent: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    lineHeight: 22,
+    marginTop: Spacing.xs,
+  },
+  mediaContainer: {
+    marginTop: Spacing.md,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+  },
+  postImage: {
+    width: '100%',
+    height: 300,
+    backgroundColor: Colors.gray100,
+  },
+  actions: {
+    flexDirection: 'row',
+    marginTop: Spacing.md,
+    gap: Spacing.lg,
+  },
+  actionButton: {
+    padding: Spacing.xs,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: Spacing.sm,
+  },
+  statsText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  statsDot: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
   },
 });
 

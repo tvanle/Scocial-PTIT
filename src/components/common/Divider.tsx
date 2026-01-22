@@ -14,8 +14,8 @@ const Divider: React.FC<DividerProps> = ({
   text,
   style,
   color = Colors.border,
-  thickness = 1,
-  spacing = Spacing.lg,
+  thickness = 0.5,
+  spacing = Spacing.md,
 }) => {
   if (text) {
     return (
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   },
   text: {
     marginHorizontal: Spacing.md,
-    color: Colors.textTertiary,
+    color: Colors.gray400,
     fontSize: FontSize.sm,
   },
   simpleLine: {

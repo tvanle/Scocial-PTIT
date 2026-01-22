@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
@@ -13,8 +13,7 @@ interface HeaderProps {
   rightComponent?: React.ReactNode;
   leftComponent?: React.ReactNode;
   centerComponent?: React.ReactNode;
-  transparent?: boolean;
-  showLogo?: boolean;
+  showBorder?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -26,8 +25,7 @@ const Header: React.FC<HeaderProps> = ({
   rightComponent,
   leftComponent,
   centerComponent,
-  transparent = false,
-  showLogo = false,
+  showBorder = true,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -35,25 +33,24 @@ const Header: React.FC<HeaderProps> = ({
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top + Spacing.sm },
-        transparent && styles.transparent,
+        { paddingTop: insets.top },
+        showBorder && styles.border,
       ]}
     >
-      <StatusBar barStyle={transparent ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <View style={styles.content}>
         {/* Left Section */}
         <View style={styles.leftSection}>
           {showBackButton ? (
-            <TouchableOpacity onPress={onBackPress} style={styles.iconButton}>
-              <Ionicons name="arrow-back" size={24} color={transparent ? Colors.textLight : Colors.textPrimary} />
+            <TouchableOpacity
+              onPress={onBackPress}
+              style={styles.iconButton}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.black} />
             </TouchableOpacity>
           ) : leftComponent ? (
             leftComponent
-          ) : showLogo ? (
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>PTIT</Text>
-              <Text style={styles.logoSubText}>Social</Text>
-            </View>
           ) : (
             <View style={styles.placeholder} />
           )}
@@ -64,10 +61,7 @@ const Header: React.FC<HeaderProps> = ({
           {centerComponent ? (
             centerComponent
           ) : title ? (
-            <Text
-              style={[styles.title, transparent && styles.titleTransparent]}
-              numberOfLines={1}
-            >
+            <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
           ) : null}
@@ -78,12 +72,12 @@ const Header: React.FC<HeaderProps> = ({
           {rightComponent ? (
             rightComponent
           ) : rightIcon ? (
-            <TouchableOpacity onPress={onRightPress} style={styles.iconButton}>
-              <Ionicons
-                name={rightIcon}
-                size={24}
-                color={transparent ? Colors.textLight : Colors.textPrimary}
-              />
+            <TouchableOpacity
+              onPress={onRightPress}
+              style={styles.iconButton}
+              activeOpacity={0.6}
+            >
+              <Ionicons name={rightIcon} size={24} color={Colors.black} />
             </TouchableOpacity>
           ) : (
             <View style={styles.placeholder} />
@@ -96,23 +90,16 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    backgroundColor: Colors.white,
   },
-  transparent: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
+  border: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
+    height: Layout.headerHeight,
     paddingHorizontal: Spacing.lg,
   },
   leftSection: {
@@ -130,35 +117,16 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-  },
-  titleTransparent: {
-    color: Colors.textLight,
+    color: Colors.black,
   },
   placeholder: {
     width: 40,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-  },
-  logoSubText: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.light,
-    color: Colors.textPrimary,
-    marginLeft: 2,
   },
 });
 

@@ -1,74 +1,86 @@
-// PTIT Theme Colors - Official Red Theme
+// PTIT Social Theme - Threads-inspired Minimal Design
+// Ultra minimalist, black & white, strong typography
+
 export const Colors = {
-  // Primary Colors - PTIT Red
+  // Primary - PTIT Red (used sparingly as accent)
   primary: '#C41E3A',
-  primaryDark: '#9B1B30',
-  primaryLight: '#E63950',
-  primarySoft: '#FFE5E9',
+  primaryDark: '#A01830',
+  primaryLight: '#E8334D',
 
-  // Secondary Colors
-  secondary: '#2C3E50',
-  secondaryDark: '#1A252F',
-  secondaryLight: '#34495E',
+  // Core Colors - Threads Style (Black & White dominant)
+  black: '#000000',
+  white: '#FFFFFF',
 
-  // Accent Colors
-  accent: '#E74C3C',
-  accentDark: '#C0392B',
-  accentLight: '#FF6B6B',
+  // Grayscale
+  gray50: '#FAFAFA',
+  gray100: '#F5F5F5',
+  gray200: '#E5E5E5',
+  gray300: '#D4D4D4',
+  gray400: '#A3A3A3',
+  gray500: '#737373',
+  gray600: '#525252',
+  gray700: '#404040',
+  gray800: '#262626',
+  gray900: '#171717',
 
-  // Background Colors
+  // Background
   background: '#FFFFFF',
-  backgroundSecondary: '#F8F9FA',
-  backgroundTertiary: '#E9ECEF',
-  backgroundDark: '#1A1A2E',
+  backgroundSecondary: '#FAFAFA',
+  backgroundDark: '#000000',
 
-  // Text Colors
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  textTertiary: '#ADB5BD',
+  // Text
+  textPrimary: '#000000',
+  textSecondary: '#737373',
+  textTertiary: '#A3A3A3',
   textLight: '#FFFFFF',
-  textDark: '#000000',
+  textLink: '#000000',
 
-  // Status Colors
-  success: '#28A745',
-  successLight: '#D4EDDA',
-  warning: '#FFC107',
-  warningLight: '#FFF3CD',
-  error: '#DC3545',
-  errorLight: '#F8D7DA',
-  info: '#17A2B8',
-  infoLight: '#D1ECF1',
+  // Borders - Very subtle
+  border: '#E5E5E5',
+  borderLight: '#F5F5F5',
+  borderDark: '#D4D4D4',
 
-  // Border Colors
-  border: '#DEE2E6',
-  borderLight: '#E9ECEF',
-  borderDark: '#CED4DA',
+  // Status
+  success: '#00BA7C',
+  error: '#F4212E',
+  warning: '#FFD400',
+  info: '#1D9BF0',
 
-  // Social Colors
-  like: '#E74C3C',
-  love: '#E91E63',
-  comment: '#3498DB',
-  share: '#27AE60',
-
-  // Gradient
-  gradientStart: '#C41E3A',
-  gradientEnd: '#E63950',
+  // Interactions
+  like: '#F4212E',
+  repost: '#00BA7C',
+  comment: '#1D9BF0',
+  share: '#00BA7C',
 
   // Overlay
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
+  overlay: 'rgba(0, 0, 0, 0.4)',
+  overlayLight: 'rgba(0, 0, 0, 0.1)',
 
-  // Card
+  // Verified badge
+  verified: '#0095F6',
+
+  // Online status
+  online: '#00BA7C',
+  offline: '#A3A3A3',
+
+  // Legacy compatibility
   cardBackground: '#FFFFFF',
-  cardShadow: 'rgba(0, 0, 0, 0.1)',
+  inputBackground: '#F5F5F5',
+  primarySoft: '#FEE2E2',
+  secondary: '#000000',
+  gradientStart: '#C41E3A',
+  gradientMiddle: '#E8334D',
+  gradientEnd: '#FF6B6B',
+  errorLight: '#FEE2E2',
+  backgroundTertiary: '#F5F5F5',
 
-  // Online Status
-  online: '#28A745',
-  offline: '#6C757D',
-  away: '#FFC107',
+  // Text aliases
+  text: '#000000',
+  gray: '#737373',
 };
 
 export const Spacing = {
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 12,
@@ -76,167 +88,213 @@ export const Spacing = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  huge: 48,
 };
 
 export const BorderRadius = {
+  none: 0,
   xs: 4,
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  xxl: 24,
+  xl: 24,
+  full: 9999,
   round: 9999,
 };
 
 export const FontSize = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-  xxl: 20,
-  xxxl: 24,
-  title: 28,
-  header: 32,
+  xxs: 10,
+  xs: 11,
+  sm: 13,
+  md: 15,
+  lg: 17,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+  header: 28,
+  huge: 48,
 };
 
 export const FontWeight = {
-  light: '300' as const,
   regular: '400' as const,
   medium: '500' as const,
   semiBold: '600' as const,
   bold: '700' as const,
-  extraBold: '800' as const,
 };
 
 export const Shadow = {
-  small: {
-    shadowColor: Colors.cardShadow,
+  none: {
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  sm: {
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 1,
   },
-  medium: {
-    shadowColor: Colors.cardShadow,
+  md: {
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 4,
-  },
-  large: {
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    elevation: 2,
   },
 };
 
 export const Layout = {
   screenPadding: Spacing.lg,
-  cardPadding: Spacing.lg,
   inputHeight: 48,
   buttonHeight: 48,
-  iconSize: {
-    sm: 16,
-    md: 20,
-    lg: 24,
-    xl: 28,
-    xxl: 32,
-  },
+  buttonHeightSmall: 36,
+  headerHeight: 52,
+  tabBarHeight: 50,
   avatarSize: {
-    xs: 24,
+    xs: 20,
     sm: 32,
     md: 40,
     lg: 48,
-    xl: 56,
+    xl: 64,
     xxl: 80,
-    profile: 120,
+    profile: 100,
+  },
+  buttonHeightLarge: 56,
+  iconSize: {
+    sm: 20,
+    md: 24,
+    lg: 28,
+  },
+  // Thread line
+  threadLineWidth: 2,
+};
+
+// Threads-style typography
+export const Typography = {
+  // Headlines
+  h1: {
+    fontSize: FontSize.xxxl,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
+    color: Colors.textPrimary,
+  },
+  h2: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.3,
+    color: Colors.textPrimary,
+  },
+  h3: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  // Body
+  body: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.regular,
+    lineHeight: 22,
+    color: Colors.textPrimary,
+  },
+  bodySmall: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.regular,
+    lineHeight: 18,
+    color: Colors.textPrimary,
+  },
+  // UI
+  label: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+  },
+  caption: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.regular,
+    color: Colors.textTertiary,
+  },
+  button: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    letterSpacing: 0.2,
+  },
+  // Username
+  username: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  handle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.regular,
+    color: Colors.textSecondary,
   },
 };
 
-// Lowercase aliases for compatibility
+// Common style patterns
+export const CommonStyles = {
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  screenDark: {
+    flex: 1,
+    backgroundColor: Colors.backgroundDark,
+  },
+  row: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  rowBetween: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+  },
+  center: {
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  // Thread connection line (like Threads app)
+  threadLine: {
+    width: Layout.threadLineWidth,
+    backgroundColor: Colors.gray200,
+  },
+};
+
+// Lowercase aliases for compatibility (nested structure for legacy code)
 export const colors = {
-  primary: Colors.primary,
-  primaryDark: Colors.primaryDark,
-  primaryLight: Colors.primaryLight,
-  white: '#FFFFFF',
-  black: '#000000',
+  ...Colors,
   text: {
     primary: Colors.textPrimary,
     secondary: Colors.textSecondary,
     tertiary: Colors.textTertiary,
-    placeholder: Colors.textTertiary,
+    light: Colors.textLight,
+    link: Colors.textLink,
+    placeholder: Colors.gray400,
   },
-  border: Colors.border,
-  background: Colors.background,
   gray: {
-    50: '#F9FAFB',
-    100: '#F3F4F6',
-    200: '#E5E7EB',
-    300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
-    700: '#374151',
-    800: '#1F2937',
-    900: '#111827',
-  },
-  success: Colors.success,
-  warning: Colors.warning,
-  error: Colors.error,
-  info: Colors.info,
-};
-
-export const spacing = {
-  xs: Spacing.xs,
-  sm: Spacing.sm,
-  md: Spacing.md,
-  lg: Spacing.lg,
-  xl: Spacing.xl,
-  xxl: Spacing.xxl,
-};
-
-export const borderRadius = {
-  xs: BorderRadius.xs,
-  sm: BorderRadius.sm,
-  md: BorderRadius.md,
-  lg: BorderRadius.lg,
-  xl: BorderRadius.xl,
-  full: BorderRadius.round,
-};
-
-export const typography = {
-  h1: {
-    fontSize: FontSize.header,
-    fontWeight: FontWeight.bold,
-  },
-  h2: {
-    fontSize: FontSize.title,
-    fontWeight: FontWeight.bold,
-  },
-  h3: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.semiBold,
-  },
-  body: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.regular,
-  },
-  bodyLarge: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.regular,
-  },
-  caption: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.regular,
-  },
-  small: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.regular,
+    50: Colors.gray50,
+    100: Colors.gray100,
+    200: Colors.gray200,
+    300: Colors.gray300,
+    400: Colors.gray400,
+    500: Colors.gray500,
+    600: Colors.gray600,
+    700: Colors.gray700,
+    800: Colors.gray800,
+    900: Colors.gray900,
   },
 };
+export const spacing = Spacing;
+export const borderRadius = BorderRadius;
+export const typography = Typography;
 
 export default {
   Colors,
@@ -246,9 +304,6 @@ export default {
   FontWeight,
   Shadow,
   Layout,
-  // Lowercase exports
-  colors,
-  spacing,
-  borderRadius,
-  typography,
+  Typography,
+  CommonStyles,
 };

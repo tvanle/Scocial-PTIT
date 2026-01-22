@@ -3,17 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
+  StatusBar,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Input, Divider } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { useAuthStore } from '../../store/slices/authSlice';
 
@@ -24,7 +23,7 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const { login, isLoading, error } = useAuthStore();
@@ -33,15 +32,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = Strings.errors.requiredField;
+      newErrors.email = 'Vui long nhap email';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = Strings.errors.invalidEmail;
+      newErrors.email = 'Email khong hop le';
     }
 
     if (!password) {
-      newErrors.password = Strings.errors.requiredField;
-    } else if (password.length < 6) {
-      newErrors.password = Strings.errors.invalidPassword;
+      newErrors.password = 'Vui long nhap mat khau';
     }
 
     setErrors(newErrors);
@@ -52,142 +49,125 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     if (!validateForm()) return;
 
     try {
-      await login({ email, password, rememberMe });
+      await login({ email, password, rememberMe: true });
     } catch (err) {
-      // Error is handled by store
+      // Error handled by store
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // Implement social login
-    console.log(`Login with ${provider}`);
-  };
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <LinearGradient
-              colors={[Colors.gradientStart, Colors.gradientEnd]}
-              style={styles.logoContainer}
-            >
-              <Text style={styles.logoText}>PTIT</Text>
-            </LinearGradient>
-            <Text style={styles.appName}>{Strings.appName}</Text>
-            <Text style={styles.slogan}>{Strings.appSlogan}</Text>
+        {/* Logo */}
+        <View style={styles.logoSection}>
+          <Text style={styles.logoAt}>@</Text>
+        </View>
+
+        {/* Form */}
+        <View style={styles.form}>
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="Email hoac ten nguoi dung"
+              placeholderTextColor={Colors.textTertiary}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({ ...errors, email: undefined });
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
 
-          {/* Welcome Text */}
-          <View style={styles.welcomeContainer}>
-            <Text style={styles.welcomeText}>{Strings.auth.welcomeBack}</Text>
-            <Text style={styles.subtitleText}>
-              Đăng nhập để tiếp tục kết nối với cộng đồng PTIT
-            </Text>
-          </View>
-
-          {/* Error Message */}
-          {error && (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={20} color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <View style={[styles.passwordContainer, errors.password && styles.inputError]}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Mat khau"
+                placeholderTextColor={Colors.textTertiary}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors({ ...errors, password: undefined });
+                }}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeButton}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={Colors.textTertiary}
+                />
+              </TouchableOpacity>
             </View>
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+          </View>
+
+          {/* Error from API */}
+          {error && (
+            <Text style={styles.apiError}>{error}</Text>
           )}
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label={Strings.auth.email}
-              placeholder="example@ptit.edu.vn"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon="mail-outline"
-              error={errors.email}
-            />
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.loginButton, (!email || !password) && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={isLoading || !email || !password}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Colors.white} size="small" />
+            ) : (
+              <Text style={styles.loginButtonText}>Dang nhap</Text>
+            )}
+          </TouchableOpacity>
 
-            <Input
-              label={Strings.auth.password}
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              leftIcon="lock-closed-outline"
-              error={errors.password}
-            />
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotButton}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
+            <Text style={styles.forgotText}>Quen mat khau?</Text>
+          </TouchableOpacity>
+        </View>
 
-            {/* Remember Me & Forgot Password */}
-            <View style={styles.optionsRow}>
-              <TouchableOpacity
-                style={styles.rememberMe}
-                onPress={() => setRememberMe(!rememberMe)}
-              >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Ionicons name="checkmark" size={14} color={Colors.textLight} />}
-                </View>
-                <Text style={styles.rememberMeText}>{Strings.auth.rememberMe}</Text>
-              </TouchableOpacity>
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>hoac</Text>
+          <View style={styles.divider} />
+        </View>
 
-              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={styles.forgotPassword}>{Strings.auth.forgotPassword}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Login Button */}
-            <Button
-              title={Strings.auth.login}
-              onPress={handleLogin}
-              variant="gradient"
-              fullWidth
-              loading={isLoading}
-              style={styles.loginButton}
-            />
-          </View>
-
-          {/* Social Login */}
-          <Divider text={Strings.auth.orLoginWith} />
-
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('google')}
-            >
-              <Ionicons name="logo-google" size={24} color="#DB4437" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('facebook')}
-            >
-              <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('apple')}
-            >
-              <Ionicons name="logo-apple" size={24} color={Colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Register Link */}
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>{Strings.auth.noAccount}</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.registerLink}>{Strings.auth.registerNow}</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+        {/* Social Login */}
+        <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+          <Ionicons name="logo-instagram" size={20} color={Colors.textPrimary} />
+          <Text style={styles.socialButtonText}>Tiep tuc voi Instagram</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
+
+      {/* Bottom Register */}
+      <View style={styles.bottomSection}>
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={() => navigation.navigate('Register')}
+        >
+          <Text style={styles.registerText}>Tao tai khoan moi</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.metaText}>PTIT Social</Text>
+      </View>
     </SafeAreaView>
   );
 };
@@ -197,137 +177,147 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  flex: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: Spacing.xl,
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: Spacing.xxl,
-    marginBottom: Spacing.xl,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
-    marginBottom: Spacing.md,
   },
-  logoText: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textLight,
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.huge,
   },
-  appName: {
-    fontSize: FontSize.title,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-  },
-  slogan: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-  },
-  welcomeContainer: {
-    marginBottom: Spacing.xl,
-  },
-  welcomeText: {
-    fontSize: FontSize.xxl,
+  logoAt: {
+    fontSize: 72,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
-  },
-  subtitleText: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.errorLight,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.lg,
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: FontSize.sm,
-    marginLeft: Spacing.sm,
-    flex: 1,
   },
   form: {
-    marginBottom: Spacing.lg,
+    gap: Spacing.md,
   },
-  optionsRow: {
+  inputContainer: {
+    marginBottom: Spacing.xs,
+  },
+  input: {
+    height: Layout.inputHeight,
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.gray100,
+  },
+  inputError: {
+    borderColor: Colors.error,
+  },
+  passwordContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
-    marginTop: -Spacing.sm,
+    height: Layout.inputHeight,
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.gray100,
   },
-  rememberMe: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: Spacing.lg,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: BorderRadius.xs,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    marginRight: Spacing.sm,
-    alignItems: 'center',
+  eyeButton: {
+    paddingHorizontal: Spacing.lg,
+    height: '100%',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  errorText: {
+    fontSize: FontSize.xs,
+    color: Colors.error,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
   },
-  rememberMeText: {
+  apiError: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  forgotPassword: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: FontWeight.medium,
+    color: Colors.error,
+    textAlign: 'center',
   },
   loginButton: {
+    height: Layout.buttonHeight,
+    backgroundColor: Colors.black,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.sm,
   },
-  socialButtons: {
+  loginButtonDisabled: {
+    backgroundColor: Colors.gray300,
+  },
+  loginButtonText: {
+    color: Colors.white,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+  },
+  forgotButton: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  forgotText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+  },
+  dividerContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.lg,
-    marginVertical: Spacing.lg,
+    alignItems: 'center',
+    marginVertical: Spacing.xxl,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    paddingHorizontal: Spacing.lg,
+    color: Colors.textTertiary,
+    fontSize: FontSize.sm,
   },
   socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  registerContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    justifyContent: 'center',
+    height: Layout.buttonHeight,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  socialButtonText: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
+  },
+  bottomSection: {
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
+  },
+  registerButton: {
+    height: Layout.buttonHeight,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   registerText: {
+    color: Colors.textPrimary,
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
-  registerLink: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
-    fontWeight: FontWeight.semiBold,
-    marginLeft: Spacing.xs,
+  metaText: {
+    textAlign: 'center',
+    color: Colors.textTertiary,
+    fontSize: FontSize.sm,
   },
 });
 

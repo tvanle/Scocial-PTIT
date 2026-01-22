@@ -1,14 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
-import { Colors, BorderRadius, Spacing, Shadow } from '../../constants/theme';
+import { Colors, BorderRadius, Spacing } from '../../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   onPress?: () => void;
   padding?: 'none' | 'small' | 'medium' | 'large';
-  shadow?: 'none' | 'small' | 'medium' | 'large';
-  borderRadius?: 'none' | 'small' | 'medium' | 'large';
+  variant?: 'default' | 'outlined';
 }
 
 const Card: React.FC<CardProps> = ({
@@ -16,8 +15,7 @@ const Card: React.FC<CardProps> = ({
   style,
   onPress,
   padding = 'medium',
-  shadow = 'small',
-  borderRadius = 'medium',
+  variant = 'default',
 }) => {
   const getPadding = (): number => {
     switch (padding) {
@@ -26,55 +24,24 @@ const Card: React.FC<CardProps> = ({
       case 'small':
         return Spacing.sm;
       case 'medium':
+        return Spacing.md;
+      case 'large':
         return Spacing.lg;
-      case 'large':
-        return Spacing.xl;
       default:
-        return Spacing.lg;
-    }
-  };
-
-  const getShadow = (): ViewStyle => {
-    switch (shadow) {
-      case 'none':
-        return {};
-      case 'small':
-        return Shadow.small;
-      case 'medium':
-        return Shadow.medium;
-      case 'large':
-        return Shadow.large;
-      default:
-        return Shadow.small;
-    }
-  };
-
-  const getBorderRadius = (): number => {
-    switch (borderRadius) {
-      case 'none':
-        return 0;
-      case 'small':
-        return BorderRadius.sm;
-      case 'medium':
-        return BorderRadius.md;
-      case 'large':
-        return BorderRadius.lg;
-      default:
-        return BorderRadius.md;
+        return Spacing.md;
     }
   };
 
   const cardStyle: ViewStyle = {
     ...styles.card,
+    ...(variant === 'outlined' ? styles.outlined : {}),
     padding: getPadding(),
-    borderRadius: getBorderRadius(),
-    ...getShadow(),
     ...style,
   };
 
   if (onPress) {
     return (
-      <TouchableOpacity style={cardStyle} onPress={onPress} activeOpacity={0.9}>
+      <TouchableOpacity style={cardStyle} onPress={onPress} activeOpacity={0.7}>
         {children}
       </TouchableOpacity>
     );
@@ -85,7 +52,12 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+  },
+  outlined: {
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
 });
 

@@ -13,7 +13,7 @@ interface IconButtonProps {
   style?: ViewStyle;
   disabled?: boolean;
   badge?: number;
-  variant?: 'default' | 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'default' | 'primary' | 'ghost';
 }
 
 const IconButton: React.FC<IconButtonProps> = ({
@@ -32,28 +32,18 @@ const IconButton: React.FC<IconButtonProps> = ({
     switch (variant) {
       case 'primary':
         return {
-          bg: backgroundColor || Colors.primary,
-          iconColor: color || Colors.textLight,
-        };
-      case 'secondary':
-        return {
-          bg: backgroundColor || Colors.secondary,
-          iconColor: color || Colors.textLight,
-        };
-      case 'outline':
-        return {
-          bg: 'transparent',
-          iconColor: color || Colors.primary,
+          bg: backgroundColor || Colors.black,
+          iconColor: color || Colors.white,
         };
       case 'ghost':
         return {
           bg: 'transparent',
-          iconColor: color || Colors.textSecondary,
+          iconColor: color || Colors.black,
         };
       default:
         return {
-          bg: backgroundColor || Colors.backgroundSecondary,
-          iconColor: color || Colors.textPrimary,
+          bg: backgroundColor || Colors.gray100,
+          iconColor: color || Colors.black,
         };
     }
   };
@@ -70,18 +60,17 @@ const IconButton: React.FC<IconButtonProps> = ({
           borderRadius: size / 2,
           backgroundColor: bg,
         },
-        variant === 'outline' && styles.outline,
         disabled && styles.disabled,
         style,
       ]}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
+      activeOpacity={0.6}
     >
       <Ionicons
         name={icon}
         size={iconSize}
-        color={disabled ? Colors.textTertiary : iconColor}
+        color={disabled ? Colors.gray400 : iconColor}
       />
       {badge !== undefined && badge > 0 && (
         <View style={styles.badge}>
@@ -98,30 +87,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  outline: {
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-  },
   disabled: {
     opacity: 0.5,
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     backgroundColor: Colors.error,
-    borderRadius: BorderRadius.round,
-    minWidth: 18,
-    height: 18,
+    borderRadius: BorderRadius.full,
+    minWidth: 16,
+    height: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xs,
+    paddingHorizontal: Spacing.xxs,
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: Colors.white,
   },
   badgeText: {
-    color: Colors.textLight,
-    fontSize: FontSize.xs,
+    color: Colors.white,
+    fontSize: FontSize.xxs,
     fontWeight: FontWeight.bold,
   },
 });
