@@ -42,3 +42,16 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Kit
+claudekit-engineer/
+.claude/agents/
+.claude/commands/
+.claude/hooks/
+.claude/skills/
+.claude/workflows/
+.claude/statusline.*
+.claude/settings.json
+.claude/metadata.json
+.opencode/
+plans/
