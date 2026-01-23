@@ -29,7 +29,7 @@ export class NotificationController {
 
   async markAsRead(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { notificationId } = req.params;
+      const notificationId = req.params.notificationId as string;
       await notificationService.markAsRead(notificationId, req.user!.userId);
       sendSuccess(res, null);
     } catch (error) {
@@ -48,7 +48,7 @@ export class NotificationController {
 
   async deleteNotification(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { notificationId } = req.params;
+      const notificationId = req.params.notificationId as string;
       await notificationService.deleteNotification(notificationId, req.user!.userId);
       sendSuccess(res, null);
     } catch (error) {

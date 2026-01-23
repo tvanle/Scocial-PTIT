@@ -22,7 +22,6 @@ export const connectMongoDB = async (): Promise<void> => {
 // Redis Client
 export const redis = new Redis(config.redisUrl, {
   maxRetriesPerRequest: 3,
-  retryDelayOnFailover: 100,
 });
 
 redis.on('connect', () => {

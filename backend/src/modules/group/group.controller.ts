@@ -17,7 +17,7 @@ export class GroupController {
 
   async getGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const group = await groupService.getGroup(groupId, req.user?.userId);
       sendSuccess(res, group);
     } catch (error) {
@@ -27,7 +27,7 @@ export class GroupController {
 
   async updateGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const group = await groupService.updateGroup(groupId, req.user!.userId, req.body);
       sendSuccess(res, group, SUCCESS_MESSAGES.GROUP_UPDATED);
     } catch (error) {
@@ -37,7 +37,7 @@ export class GroupController {
 
   async deleteGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       await groupService.deleteGroup(groupId, req.user!.userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.GROUP_DELETED);
     } catch (error) {
@@ -61,7 +61,7 @@ export class GroupController {
 
   async joinGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const result = await groupService.joinGroup(groupId, req.user!.userId);
       sendSuccess(res, result, SUCCESS_MESSAGES.JOIN_REQUEST_SENT);
     } catch (error) {
@@ -71,7 +71,7 @@ export class GroupController {
 
   async leaveGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       await groupService.leaveGroup(groupId, req.user!.userId);
       sendSuccess(res, null);
     } catch (error) {
@@ -81,7 +81,8 @@ export class GroupController {
 
   async approveMember(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId, memberId } = req.params;
+      const groupId = req.params.groupId as string;
+      const memberId = req.params.memberId as string;
       await groupService.approveMember(groupId, req.user!.userId, memberId);
       sendSuccess(res, null, SUCCESS_MESSAGES.MEMBER_APPROVED);
     } catch (error) {
@@ -91,7 +92,8 @@ export class GroupController {
 
   async removeMember(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { groupId, memberId } = req.params;
+      const groupId = req.params.groupId as string;
+      const memberId = req.params.memberId as string;
       await groupService.removeMember(groupId, req.user!.userId, memberId);
       sendSuccess(res, null, SUCCESS_MESSAGES.MEMBER_REMOVED);
     } catch (error) {
@@ -101,7 +103,7 @@ export class GroupController {
 
   async getMembers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const { page, limit, status } = req.query;
       const result = await groupService.getMembers(
         groupId,

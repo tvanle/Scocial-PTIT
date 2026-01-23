@@ -7,7 +7,7 @@ import { sendSuccess } from '../../shared/utils';
 export class UserController {
   async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const currentUserId = req.user?.userId;
       const user = await userService.getProfile(userId, currentUserId);
       sendSuccess(res, user);
@@ -41,7 +41,7 @@ export class UserController {
 
   async followUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       await userService.followUser(req.user!.userId, userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.FOLLOW_SUCCESS);
     } catch (error) {
@@ -51,7 +51,7 @@ export class UserController {
 
   async unfollowUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       await userService.unfollowUser(req.user!.userId, userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.UNFOLLOW_SUCCESS);
     } catch (error) {
@@ -61,7 +61,7 @@ export class UserController {
 
   async getFollowers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const { page, limit } = req.query;
       const result = await userService.getFollowers(
         userId,
@@ -76,7 +76,7 @@ export class UserController {
 
   async getFollowing(req: Request, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const { page, limit } = req.query;
       const result = await userService.getFollowing(
         userId,

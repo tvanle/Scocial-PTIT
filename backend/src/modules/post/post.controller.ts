@@ -16,7 +16,7 @@ export class PostController {
 
   async getPost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       const post = await postService.getPost(postId, req.user?.userId);
       sendSuccess(res, post);
     } catch (error) {
@@ -26,7 +26,7 @@ export class PostController {
 
   async updatePost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       const post = await postService.updatePost(postId, req.user!.userId, req.body);
       sendSuccess(res, post, SUCCESS_MESSAGES.POST_UPDATED);
     } catch (error) {
@@ -36,7 +36,7 @@ export class PostController {
 
   async deletePost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       await postService.deletePost(postId, req.user!.userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.POST_DELETED);
     } catch (error) {
@@ -60,7 +60,7 @@ export class PostController {
 
   async getUserPosts(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const { page, limit } = req.query;
       const result = await postService.getUserPosts(
         userId,
@@ -76,7 +76,7 @@ export class PostController {
 
   async likePost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       await postService.likePost(req.user!.userId, postId);
       sendSuccess(res, null);
     } catch (error) {
@@ -86,7 +86,7 @@ export class PostController {
 
   async unlikePost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       await postService.unlikePost(req.user!.userId, postId);
       sendSuccess(res, null);
     } catch (error) {
@@ -96,7 +96,7 @@ export class PostController {
 
   async createComment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       const comment = await postService.createComment(req.user!.userId, postId, req.body);
       sendSuccess(res, comment, SUCCESS_MESSAGES.COMMENT_CREATED, HTTP_STATUS.CREATED);
     } catch (error) {
@@ -106,7 +106,7 @@ export class PostController {
 
   async getComments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.postId as string;
       const { page, limit } = req.query;
       const result = await postService.getComments(postId, page as string, limit as string);
       sendSuccess(res, result);
@@ -117,7 +117,7 @@ export class PostController {
 
   async deleteComment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { commentId } = req.params;
+      const commentId = req.params.commentId as string;
       await postService.deleteComment(commentId, req.user!.userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.COMMENT_DELETED);
     } catch (error) {

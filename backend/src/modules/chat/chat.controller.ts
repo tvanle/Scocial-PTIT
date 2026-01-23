@@ -7,7 +7,7 @@ import { sendSuccess } from '../../shared/utils';
 export class ChatController {
   async getOrCreateConversation(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const conversation = await chatService.getOrCreateConversation(req.user!.userId, userId);
       sendSuccess(res, conversation);
     } catch (error) {
@@ -31,7 +31,7 @@ export class ChatController {
 
   async getMessages(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { conversationId } = req.params;
+      const conversationId = req.params.conversationId as string;
       const { page, limit } = req.query;
       const result = await chatService.getMessages(
         conversationId,
@@ -47,7 +47,7 @@ export class ChatController {
 
   async sendMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { conversationId } = req.params;
+      const conversationId = req.params.conversationId as string;
       const { content, type, mediaUrl } = req.body;
       const message = await chatService.sendMessage(
         conversationId,
@@ -64,7 +64,7 @@ export class ChatController {
 
   async markAsRead(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { conversationId } = req.params;
+      const conversationId = req.params.conversationId as string;
       await chatService.markAsRead(conversationId, req.user!.userId);
       sendSuccess(res, null);
     } catch (error) {
@@ -74,7 +74,7 @@ export class ChatController {
 
   async deleteMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { messageId } = req.params;
+      const messageId = req.params.messageId as string;
       await chatService.deleteMessage(messageId, req.user!.userId);
       sendSuccess(res, null);
     } catch (error) {

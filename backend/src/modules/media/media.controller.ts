@@ -32,7 +32,7 @@ export class MediaController {
 
   async deleteMedia(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { mediaId } = req.params;
+      const mediaId = req.params.mediaId as string;
       await mediaService.deleteMedia(mediaId, req.user!.userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.DELETE_SUCCESS);
     } catch (error) {
@@ -42,7 +42,7 @@ export class MediaController {
 
   async getMedia(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { mediaId } = req.params;
+      const mediaId = req.params.mediaId as string;
       const media = await mediaService.getMedia(mediaId);
       sendSuccess(res, media);
     } catch (error) {
