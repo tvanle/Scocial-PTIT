@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== AUTH & USER ==============
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  studentId       String?   @unique
+
+  // Profile
+  fullName        String?
+  avatar          String?
+  coverImage      String?
+  bio             String?
+  dateOfBirth     DateTime?
+  gender          Gender?
+  phone           String?
+
+  // Status
+  isVerified      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  lastActiveAt    DateTime?
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  posts           Post[]
+  comments        Comment[]
+  likes           Like[]
+
+  // Follow system
+  followers       Follow[]  @relation("Following")
+  following       Follow[]  @relation("Followers")
+
+  // Group
+  ownedGroups     Group[]   @relation("GroupOwner")
+  groupMembers    GroupMember[]
+
+  // Notifications
+  sentNotifications     Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationReceiver")
+
+  // Refresh tokens
+  refreshTokens   RefreshToken[]
+
+  @@index([email])
+  @@index([studentId])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  token       String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// ============== POST ==============
+
+model Post {
+  id          String      @id @default(uuid())
+  content     String?
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Privacy
+  privacy     PostPrivacy @default(PUBLIC)
+
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  media       Media[]
+  comments    Comment[]
+  likes       Like[]
+
+  // Group post
+  groupId     String?
+  group       Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  content     String
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Reply
+  parentId    String?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+// ============== MEDIA ==============
+
+model Media {
+  id          String    @id @default(uuid())
+  url         String
+  type        MediaType
+  filename    String
+  mimeType    String
+  size        Int
+  width       Int?
+  height      Int?
+  duration    Int?      // For video/audio
+
+  postId      String?
+  post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([postId])
+}
+
+// ============== GROUP ==============
+
+model Group {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  coverImage  String?
+  privacy     GroupPrivacy @default(PUBLIC)
+
+  ownerId     String
+  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  members     GroupMember[]
+  posts       Post[]
+
+  @@index([ownerId])
+}
+
+model GroupMember {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  role      GroupRole       @default(MEMBER)
+  status    MemberStatus    @default(PENDING)
+  joinedAt  DateTime        @default(now())
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+// ============== NOTIFICATION ==============
+
+model Notification {
+  id          String           @id @default(uuid())
+  type        NotificationType
+  content     String?
+  isRead      Boolean          @default(false)
+
+  senderId    String?
+  sender      User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId  String
+  receiver    User             @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Reference
+  referenceId String?          // postId, commentId, groupId, etc.
+
+  createdAt   DateTime         @default(now())
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+// ============== ENUMS ==============
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum PostPrivacy {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum GroupPrivacy {
+  PUBLIC
+  PRIVATE
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MemberStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BANNED
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  GROUP_INVITE
+  GROUP_REQUEST
+  GROUP_APPROVED
+  MENTION
+  SYSTEM
+}
