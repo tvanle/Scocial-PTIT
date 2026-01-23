@@ -142,7 +142,7 @@ const Button: React.FC<ButtonProps> = ({
     <View style={styles.contentContainer}>
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? Colors.black : Colors.white}
+          color={variant === 'primary' ? Colors.white : Colors.black}
           size="small"
         />
       ) : (
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.md,
   },
   contentContainer: {
     flexDirection: 'row',
@@ -201,18 +201,18 @@ const styles = StyleSheet.create({
   },
   // Sizes
   small: {
-    height: 32,
-    paddingHorizontal: Spacing.md,
+    height: Layout.buttonHeightSmall,
+    paddingHorizontal: Spacing.lg,
   },
   medium: {
     height: 36,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
   large: {
     height: Layout.buttonHeight,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.xxl,
   },
-  // Variants - Threads style
+  // Variants - Threads style (black & white)
   primary: {
     backgroundColor: Colors.black,
   },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
   },
   mediumText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
   },
   largeText: {
     fontSize: FontSize.md,
@@ -256,10 +256,10 @@ const styles = StyleSheet.create({
     color: Colors.gray400,
   },
   iconLeft: {
-    marginRight: Spacing.xs,
+    marginRight: Spacing.sm,
   },
   iconRight: {
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.sm,
   },
 });
 

@@ -1,78 +1,82 @@
-// PTIT Social Theme - Threads-inspired Minimal Design
-// Ultra minimalist, black & white, strong typography
+// PTIT Social Theme - Threads-inspired Design
+// Minimalist black & white, modern typography
 
 export const Colors = {
-  // Primary - PTIT Red (used sparingly as accent)
-  primary: '#C41E3A',
-  primaryDark: '#A01830',
-  primaryLight: '#E8334D',
+  // Primary - Black (Threads style)
+  primary: '#000000',
+  primaryDark: '#000000',
+  primaryLight: '#262626',
+  primarySoft: '#F5F5F5',
 
-  // Core Colors - Threads Style (Black & White dominant)
-  black: '#000000',
+  // Accent - Black (Threads style)
+  accent: '#000000',
+  accentLight: '#F5F5F5',
+
+  // Core Colors
   white: '#FFFFFF',
+  black: '#000000',
 
   // Grayscale
   gray50: '#FAFAFA',
   gray100: '#F5F5F5',
-  gray200: '#E5E5E5',
-  gray300: '#D4D4D4',
-  gray400: '#A3A3A3',
+  gray200: '#EFEFEF',
+  gray300: '#DBDBDB',
+  gray400: '#A8A8A8',
   gray500: '#737373',
-  gray600: '#525252',
-  gray700: '#404040',
+  gray600: '#545454',
+  gray700: '#363636',
   gray800: '#262626',
   gray900: '#171717',
 
   // Background
   background: '#FFFFFF',
   backgroundSecondary: '#FAFAFA',
+  backgroundTertiary: '#F5F5F5',
   backgroundDark: '#000000',
 
   // Text
   textPrimary: '#000000',
   textSecondary: '#737373',
-  textTertiary: '#A3A3A3',
+  textTertiary: '#A8A8A8',
   textLight: '#FFFFFF',
   textLink: '#000000',
 
-  // Borders - Very subtle
-  border: '#E5E5E5',
-  borderLight: '#F5F5F5',
-  borderDark: '#D4D4D4',
+  // Borders
+  border: '#DBDBDB',
+  borderLight: '#EFEFEF',
+  borderDark: '#C7C7C7',
 
   // Status
   success: '#00BA7C',
-  error: '#F4212E',
+  error: '#FF3040',
   warning: '#FFD400',
   info: '#1D9BF0',
 
-  // Interactions
-  like: '#F4212E',
+  // Interactions (Threads style)
+  like: '#FF3040',
   repost: '#00BA7C',
-  comment: '#1D9BF0',
-  share: '#00BA7C',
+  comment: '#000000',
+  share: '#000000',
 
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.4)',
-  overlayLight: 'rgba(0, 0, 0, 0.1)',
+  overlayLight: 'rgba(0, 0, 0, 0.05)',
 
-  // Verified badge
+  // Verified badge (blue check like Threads)
   verified: '#0095F6',
 
   // Online status
   online: '#00BA7C',
-  offline: '#A3A3A3',
+  offline: '#A8A8A8',
 
   // Legacy compatibility
   cardBackground: '#FFFFFF',
-  inputBackground: '#F5F5F5',
-  primarySoft: '#FEE2E2',
-  secondary: '#000000',
-  gradientStart: '#C41E3A',
-  gradientMiddle: '#E8334D',
-  gradientEnd: '#FF6B6B',
-  errorLight: '#FEE2E2',
-  backgroundTertiary: '#F5F5F5',
+  inputBackground: '#FAFAFA',
+  secondary: '#737373',
+  gradientStart: '#000000',
+  gradientMiddle: '#262626',
+  gradientEnd: '#404040',
+  errorLight: '#FFEBE9',
 
   // Text aliases
   text: '#000000',
@@ -97,22 +101,23 @@ export const BorderRadius = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 24,
+  xl: 20,
+  xxl: 24,
   full: 9999,
   round: 9999,
 };
 
 export const FontSize = {
   xxs: 10,
-  xs: 11,
-  sm: 13,
+  xs: 12,
+  sm: 14,
   md: 15,
-  lg: 17,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  header: 28,
-  huge: 48,
+  lg: 16,
+  xl: 18,
+  xxl: 22,
+  xxxl: 28,
+  header: 24,
+  huge: 34,
 };
 
 export const FontWeight = {
@@ -133,42 +138,41 @@ export const Shadow = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 1,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
 };
 
 export const Layout = {
   screenPadding: Spacing.lg,
-  inputHeight: 48,
-  buttonHeight: 48,
-  buttonHeightSmall: 36,
-  headerHeight: 52,
-  tabBarHeight: 50,
+  inputHeight: 44,
+  buttonHeight: 44,
+  buttonHeightSmall: 34,
+  headerHeight: 44,
+  tabBarHeight: 49,
   avatarSize: {
-    xs: 20,
+    xs: 24,
     sm: 32,
-    md: 40,
-    lg: 48,
-    xl: 64,
-    xxl: 80,
-    profile: 100,
+    md: 36,
+    lg: 44,
+    xl: 56,
+    xxl: 77,
+    profile: 86,
   },
-  buttonHeightLarge: 56,
+  buttonHeightLarge: 50,
   iconSize: {
     sm: 20,
     md: 24,
-    lg: 28,
+    lg: 26,
   },
-  // Thread line
   threadLineWidth: 2,
 };
 
@@ -176,19 +180,19 @@ export const Layout = {
 export const Typography = {
   // Headlines
   h1: {
-    fontSize: FontSize.xxxl,
+    fontSize: FontSize.huge,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.5,
     color: Colors.textPrimary,
   },
   h2: {
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.xxxl,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.3,
     color: Colors.textPrimary,
   },
   h3: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
   },
@@ -196,7 +200,7 @@ export const Typography = {
   body: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.regular,
-    lineHeight: 22,
+    lineHeight: 20,
     color: Colors.textPrimary,
   },
   bodySmall: {
@@ -219,9 +223,9 @@ export const Typography = {
   button: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    letterSpacing: 0.2,
+    letterSpacing: 0,
   },
-  // Username
+  // Username (Threads style - bold)
   username: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
@@ -258,17 +262,17 @@ export const CommonStyles = {
     justifyContent: 'center' as const,
   },
   divider: {
-    height: 1,
+    height: 0.5,
     backgroundColor: Colors.border,
   },
-  // Thread connection line (like Threads app)
+  // Thread connection line
   threadLine: {
     width: Layout.threadLineWidth,
-    backgroundColor: Colors.gray200,
+    backgroundColor: Colors.gray300,
   },
 };
 
-// Lowercase aliases for compatibility (nested structure for legacy code)
+// Lowercase aliases for compatibility
 export const colors = {
   ...Colors,
   text: {

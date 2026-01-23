@@ -157,7 +157,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={Colors.primary}
+                  color={Colors.verified}
                   style={styles.verifiedIcon}
                 />
               )}
@@ -207,7 +207,7 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
           {post.location && (
             <View style={styles.locationContainer}>
-              <Ionicons name="location" size={14} color={Colors.primary} />
+              <Ionicons name="location" size={14} color={Colors.textSecondary} />
               <Text style={styles.locationText}>{post.location}</Text>
             </View>
           )}
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: FontSize.sm,
-    color: Colors.primary,
+    color: Colors.textSecondary,
     marginLeft: Spacing.xs,
   },
   // Media styles
