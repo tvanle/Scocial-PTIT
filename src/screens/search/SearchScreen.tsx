@@ -62,8 +62,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
     navigation.navigate('GroupDetail', { groupId });
   };
 
+  const [recentList, setRecentList] = useState(recentSearches);
+
   const handleClearRecent = () => {
-    console.log('Clear recent searches');
+    setRecentList([]);
   };
 
   const renderRecentSearches = () => (
@@ -74,7 +76,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
           <Text style={styles.clearText}>{Strings.search.clearHistory}</Text>
         </TouchableOpacity>
       </View>
-      {recentSearches.map(item => (
+      {recentList.map(item => (
         <TouchableOpacity
           key={item.id}
           style={styles.recentItem}
@@ -88,7 +90,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
             />
           </View>
           <Text style={styles.recentText}>{item.text}</Text>
-          <TouchableOpacity style={styles.removeButton}>
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => setRecentList(recentList.filter(r => r.id !== item.id))}
+          >
             <Ionicons name="close" size={18} color={Colors.textTertiary} />
           </TouchableOpacity>
         </TouchableOpacity>
@@ -109,7 +114,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
           {user.studentId} • {user.faculty}
         </Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
+      >
         <Ionicons name="person-add-outline" size={20} color={Colors.primary} />
       </TouchableOpacity>
     </TouchableOpacity>
@@ -130,6 +138,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
       </View>
       <TouchableOpacity
         style={[styles.joinButton, group.isJoined && styles.joinedButton]}
+        onPress={() => handleGroupPress(group.id)}
       >
         <Text style={[styles.joinButtonText, group.isJoined && styles.joinedButtonText]}>
           {group.isJoined ? 'Đã tham gia' : 'Tham gia'}
@@ -162,7 +171,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>{Strings.search.people}</Text>
           {mockUsers.map(renderUserItem)}
-          <TouchableOpacity style={styles.seeAllButton}>
+          <TouchableOpacity style={styles.seeAllButton} onPress={() => setActiveTab('people')}>
             <Text style={styles.seeAllText}>Xem tất cả</Text>
           </TouchableOpacity>
         </Card>
@@ -172,7 +181,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>{Strings.search.groups}</Text>
           {mockGroups.map(renderGroupItem)}
-          <TouchableOpacity style={styles.seeAllButton}>
+          <TouchableOpacity style={styles.seeAllButton} onPress={() => setActiveTab('groups')}>
             <Text style={styles.seeAllText}>Xem tất cả</Text>
           </TouchableOpacity>
         </Card>

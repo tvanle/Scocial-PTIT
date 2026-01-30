@@ -137,7 +137,7 @@ const GroupListScreen: React.FC = () => {
         {!item.isMember && (
           <Button
             title="Tham gia"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('GroupDetail', { groupId: item.id })}
             variant="outline"
             size="small"
             style={styles.joinButton}
@@ -197,7 +197,10 @@ const GroupListScreen: React.FC = () => {
       </View>
 
       {/* Create Group */}
-      <TouchableOpacity style={styles.createGroupButton}>
+      <TouchableOpacity
+        style={styles.createGroupButton}
+        onPress={() => navigation.navigate('CreateGroup')}
+      >
         <View style={styles.createGroupIcon}>
           <Ionicons name="add" size={24} color={colors.primary} />
         </View>
@@ -222,7 +225,10 @@ const GroupListScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Nhóm</Text>
-        <TouchableOpacity style={styles.headerButton}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('Settings' as never)}
+        >
           <Ionicons name="settings-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>

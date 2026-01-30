@@ -257,13 +257,13 @@ const CreatePostScreen: React.FC = () => {
             <TouchableOpacity style={styles.actionButton} onPress={takePhoto}>
               <Ionicons name="camera" size={24} color={colors.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Vi tri', 'Tinh nang check-in vi tri dang phat trien')}>
               <Ionicons name="location" size={24} color={colors.error} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Gan the', 'Tinh nang gan the ban be dang phat trien')}>
               <Ionicons name="person-add" size={24} color={colors.info} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Cam xuc', 'Tinh nang them cam xuc dang phat trien')}>
               <Ionicons name="happy" size={24} color={colors.warning} />
             </TouchableOpacity>
           </View>

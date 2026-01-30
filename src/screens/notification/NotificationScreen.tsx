@@ -199,10 +199,20 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
         {item.type === 'friend_request' && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.acceptButton}>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={() => {
+                setNotifications(prev => prev.filter(n => n.id !== item.id));
+              }}
+            >
               <Text style={styles.acceptButtonText}>Xác nhận</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.rejectButton}>
+            <TouchableOpacity
+              style={styles.rejectButton}
+              onPress={() => {
+                setNotifications(prev => prev.filter(n => n.id !== item.id));
+              }}
+            >
               <Text style={styles.rejectButtonText}>Xóa</Text>
             </TouchableOpacity>
           </View>

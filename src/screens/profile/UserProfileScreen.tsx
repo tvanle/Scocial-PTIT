@@ -8,107 +8,59 @@ import {
   Image,
   RefreshControl,
   StatusBar,
-  Share,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post } from '../../types';
+import { Post, RootStackParamList } from '../../types';
 
-// Mock user posts
-const mockUserPosts: Post[] = [
+type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
+
+// Mock user data
+const mockUserData = {
+  id: '2',
+  fullName: 'Tran Van B',
+  avatar: 'https://i.pravatar.cc/150?img=2',
+  studentId: 'B21DCCN002',
+  bio: 'Sinh vien CNTT PTIT | Yeu lap trinh',
+  isOnline: true,
+  isVerified: true,
+  followersCount: 345,
+  followingCount: 120,
+  postsCount: 28,
+};
+
+const mockPosts: Post[] = [
   {
     id: '1',
-    author: {
-      id: '1',
-      fullName: 'Nguyen Van A',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      studentId: 'B21DCCN001',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Mot ngay moi, mot khoi dau moi! Co gang hoan thanh project truoc deadline.',
+    author: { id: '2', fullName: 'Tran Van B', avatar: 'https://i.pravatar.cc/150?img=2', email: '', createdAt: '', updatedAt: '', isVerified: true },
+    content: 'Hom nay la ngay tuyet voi de hoc tap va chia se!',
     media: [],
     privacy: 'public',
-    likesCount: 89,
-    commentsCount: 12,
-    sharesCount: 3,
+    likesCount: 128,
+    commentsCount: 24,
+    sharesCount: 5,
     isLiked: false,
     isSaved: false,
     isShared: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    author: {
-      id: '1',
-      fullName: 'Nguyen Van A',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      studentId: 'B21DCCN001',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Vua nhan duoc hoc bong khuyen khich hoc tap ky nay!',
-    media: [
-      { id: '1', url: 'https://picsum.photos/800/600?random=10', type: 'image' },
-    ],
-    privacy: 'public',
-    likesCount: 256,
-    commentsCount: 45,
-    sharesCount: 8,
-    isLiked: true,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
 
-interface ProfileScreenProps {
-  navigation: any;
-  route?: any;
-}
+const UserProfileScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const route = useRoute<UserProfileRouteProp>();
+  const { user: currentUser } = useAuthStore();
 
-// Helper
-const getTimeAgo = (dateString: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (seconds < 60) return 'Vua xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  return `${Math.floor(seconds / 86400)}d`;
-};
-
-// Thread Post Component (simplified for profile)
-const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = ({ post, onPress }) => (
-  <TouchableOpacity style={styles.postItem} onPress={onPress} activeOpacity={0.7}>
-    <View style={styles.postContent}>
-      <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-      <Text style={styles.postMeta}>
-        {post.commentsCount} tra loi · {post.likesCount} luot thich
-      </Text>
-    </View>
-    {post.media && post.media.length > 0 && (
-      <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
-    )}
-  </TouchableOpacity>
-);
-
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
-  const { user: currentUser, logout } = useAuthStore();
+  const [isFollowing, setIsFollowing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'threads' | 'replies'>('threads');
 
-  const isOwnProfile = !route?.params?.userId || route?.params?.userId === currentUser?.id;
-  const user = currentUser;
+  const profileUser = mockUserData;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -116,92 +68,79 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
     setRefreshing(false);
   }, []);
 
+  const handleFollow = () => {
+    setIsFollowing(!isFollowing);
+  };
+
+  const handleMessage = () => {
+    navigation.navigate('ChatRoom' as never, { conversationId: profileUser.id } as never);
+  };
+
+  const getTimeAgo = (dateString: string): string => {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return 'Vua xong';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+    return `${Math.floor(seconds / 86400)}d`;
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerIcon}
-          onPress={() => Alert.alert('Ngon ngu', 'Hien tai chi ho tro Tieng Viet')}
-        >
-          <Ionicons name="globe-outline" size={24} color={Colors.black} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
+          <Ionicons name="arrow-back" size={24} color={Colors.black} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="menu-outline" size={26} color={Colors.black} />
+        <TouchableOpacity style={styles.headerIcon}>
+          <Ionicons name="ellipsis-horizontal" size={24} color={Colors.black} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.black}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.black} />
         }
       >
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.profileTop}>
             <View style={styles.profileInfo}>
-              <Text style={styles.fullName}>{user?.fullName || 'User'}</Text>
+              <Text style={styles.fullName}>{profileUser.fullName}</Text>
               <View style={styles.usernameRow}>
-                <Text style={styles.username}>{user?.studentId || 'username'}</Text>
+                <Text style={styles.username}>{profileUser.studentId}</Text>
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>ptit.edu.vn</Text>
                 </View>
               </View>
             </View>
             <Image
-              source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
+              source={{ uri: profileUser.avatar }}
               style={styles.avatar}
             />
           </View>
 
-          {/* Bio */}
-          {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
+          {profileUser.bio && <Text style={styles.bio}>{profileUser.bio}</Text>}
 
-          {/* Followers */}
           <Text style={styles.followers}>
-            {user?.followersCount || 0} nguoi theo doi
+            {profileUser.followersCount} nguoi theo doi
           </Text>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
-            {isOwnProfile ? (
-              <>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => navigation.navigate('EditProfile')}
-                >
-                  <Text style={styles.actionButtonText}>Chinh sua trang ca nhan</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => Share.share({ message: `Xem trang ca nhan cua ${user?.fullName} tren PTIT Social!` })}
-                >
-                  <Text style={styles.actionButtonText}>Chia se trang ca nhan</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.followButton]}
-                  onPress={() => Alert.alert('Theo doi', 'Da gui yeu cau theo doi')}
-                >
-                  <Text style={styles.followButtonText}>Theo doi</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => navigation.navigate('ChatRoom', { conversationId: route?.params?.userId })}
-                >
-                  <Text style={styles.actionButtonText}>Nhan tin</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            <TouchableOpacity
+              style={[styles.actionButton, isFollowing ? styles.followingButton : styles.followButton]}
+              onPress={handleFollow}
+            >
+              <Text style={isFollowing ? styles.followingButtonText : styles.followButtonText}>
+                {isFollowing ? 'Dang theo doi' : 'Theo doi'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleMessage}>
+              <Text style={styles.actionButtonText}>Nhan tin</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -228,12 +167,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         {/* Posts */}
         <View style={styles.postsSection}>
           {activeTab === 'threads' ? (
-            mockUserPosts.map(post => (
-              <ProfilePost
+            mockPosts.map(post => (
+              <TouchableOpacity
                 key={post.id}
-                post={post}
-                onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-              />
+                style={styles.postItem}
+                onPress={() => navigation.navigate('PostDetail' as never, { postId: post.id } as never)}
+              >
+                <View style={styles.postContent}>
+                  <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
+                  <Text style={styles.postMeta}>
+                    {post.commentsCount} tra loi · {post.likesCount} luot thich
+                  </Text>
+                </View>
+                {post.media && post.media.length > 0 && (
+                  <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
+                )}
+              </TouchableOpacity>
             ))
           ) : (
             <View style={styles.emptyState}>
@@ -345,6 +294,15 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semiBold,
     color: Colors.white,
   },
+  followingButton: {
+    backgroundColor: Colors.white,
+    borderColor: Colors.border,
+  },
+  followingButtonText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.black,
+  },
   tabs: {
     flexDirection: 'row',
     marginTop: Spacing.xl,
@@ -408,4 +366,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+export default UserProfileScreen;

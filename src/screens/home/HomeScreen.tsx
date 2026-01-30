@@ -8,6 +8,8 @@ import {
   StatusBar,
   TouchableOpacity,
   Image,
+  Share,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -234,10 +236,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       post={item}
       onLike={() => handleLike(item.id)}
       onComment={() => navigation.navigate('PostDetail', { postId: item.id })}
-      onRepost={() => console.log('Repost:', item.id)}
-      onShare={() => console.log('Share:', item.id)}
+      onRepost={() => Alert.alert('Repost', 'Ban muon dang lai bai viet nay?', [
+        { text: 'Huy', style: 'cancel' },
+        { text: 'Dang lai', onPress: () => Alert.alert('Thanh cong', 'Da dang lai bai viet') },
+      ])}
+      onShare={() => Share.share({ message: `Xem bai viet cua ${item.author.fullName} tren PTIT Social!` })}
       onProfile={() => navigation.navigate('UserProfile', { userId: item.author.id })}
-      onMore={() => console.log('More:', item.id)}
+      onMore={() => Alert.alert('Tuy chon', '', [
+        { text: 'Luu bai viet', onPress: () => Alert.alert('Da luu') },
+        { text: 'An bai viet', onPress: () => setPosts(posts.filter(p => p.id !== item.id)) },
+        { text: 'Bao cao', style: 'destructive', onPress: () => Alert.alert('Da bao cao') },
+        { text: 'Huy', style: 'cancel' },
+      ])}
     />
   );
 

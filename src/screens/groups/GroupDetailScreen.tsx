@@ -9,6 +9,8 @@ import {
   FlatList,
   Dimensions,
   RefreshControl,
+  Alert,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -148,7 +150,11 @@ const GroupDetailScreen: React.FC = () => {
         >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity style={styles.moreButton} onPress={() => Alert.alert('Tuy chon nhom', '', [
+          { text: 'Bao cao nhom', style: 'destructive' },
+          { text: 'Sao chep lien ket', onPress: () => Share.share({ message: `Tham gia nhom "${group.name}" tren PTIT Social!` }) },
+          { text: 'Huy', style: 'cancel' },
+        ])}>
           <Ionicons name="ellipsis-horizontal" size={24} color={colors.white} />
         </TouchableOpacity>
       </View>
@@ -194,10 +200,10 @@ const GroupDetailScreen: React.FC = () => {
             icon={isMember ? 'checkmark' : 'add'}
             style={{ flex: 1 }}
           />
-          <TouchableOpacity style={styles.inviteButton}>
+          <TouchableOpacity style={styles.inviteButton} onPress={() => Alert.alert('Moi ban be', 'Tinh nang moi ban be vao nhom dang phat trien')}>
             <Ionicons name="person-add" size={20} color={colors.text.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.shareButton}>
+          <TouchableOpacity style={styles.shareButton} onPress={() => Share.share({ message: `Tham gia nhom "${group.name}" tren PTIT Social!` })}>
             <Ionicons name="share-social" size={20} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -275,7 +281,7 @@ const GroupDetailScreen: React.FC = () => {
         <Text style={styles.membersTitle}>
           Thành viên · {group.membersCount.toLocaleString()}
         </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Alert.alert('Tim kiem', 'Tinh nang tim kiem thanh vien dang phat trien')}>
           <Ionicons name="search" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
@@ -283,7 +289,7 @@ const GroupDetailScreen: React.FC = () => {
       {members.map((member) => {
         const badge = getRoleBadge(member.role);
         return (
-          <TouchableOpacity key={member.id} style={styles.memberItem}>
+          <TouchableOpacity key={member.id} style={styles.memberItem} onPress={() => (navigation as any).navigate('UserProfile', { userId: member.id })}>
             <Avatar uri={member.avatar} size={48} />
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
@@ -295,14 +301,18 @@ const GroupDetailScreen: React.FC = () => {
                 </View>
               )}
             </View>
-            <TouchableOpacity style={styles.memberAction}>
+            <TouchableOpacity style={styles.memberAction} onPress={() => Alert.alert(member.name, '', [
+              { text: 'Xem trang ca nhan', onPress: () => (navigation as any).navigate('UserProfile', { userId: member.id }) },
+              { text: 'Nhan tin', onPress: () => (navigation as any).navigate('ChatRoom', { partnerId: member.id }) },
+              { text: 'Huy', style: 'cancel' },
+            ])}>
               <Ionicons name="ellipsis-horizontal" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           </TouchableOpacity>
         );
       })}
 
-      <TouchableOpacity style={styles.viewAllButton}>
+      <TouchableOpacity style={styles.viewAllButton} onPress={() => Alert.alert('Thanh vien', 'Tinh nang xem tat ca thanh vien dang phat trien')}>
         <Text style={styles.viewAllText}>Xem tất cả thành viên</Text>
       </TouchableOpacity>
     </View>
@@ -312,12 +322,12 @@ const GroupDetailScreen: React.FC = () => {
     <View style={styles.postsSection}>
       {/* Create Post Box */}
       {isMember && (
-        <TouchableOpacity style={styles.createPostBox}>
+        <TouchableOpacity style={styles.createPostBox} onPress={() => (navigation as any).navigate('CreatePost')}>
           <Avatar uri="https://i.pravatar.cc/150?img=3" size={40} />
           <View style={styles.createPostInput}>
             <Text style={styles.createPostPlaceholder}>Viết bài đăng...</Text>
           </View>
-          <TouchableOpacity style={styles.createPostMedia}>
+          <TouchableOpacity style={styles.createPostMedia} onPress={() => (navigation as any).navigate('CreatePost')}>
             <Ionicons name="images" size={24} color={colors.success} />
           </TouchableOpacity>
         </TouchableOpacity>

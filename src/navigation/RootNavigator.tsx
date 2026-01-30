@@ -9,16 +9,16 @@ import { RootStackParamList } from '../types';
 import { Colors } from '../constants/theme';
 import { FullScreenLoading } from '../components/common';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
+import PostDetailScreen from '../screens/home/PostDetailScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import GroupListScreen from '../screens/groups/GroupListScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import UserProfileScreen from '../screens/profile/UserProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Placeholder screens for now
-const PostDetailScreen = () => null;
-const UserProfileScreen = () => null;
-const EditProfileScreen = () => null;
+// Placeholder screens (low priority)
 const CreateGroupScreen = () => null;
 const ImageViewerScreen = () => null;
 const FriendsScreen = () => null;

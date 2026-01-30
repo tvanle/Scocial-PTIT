@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Avatar, Header, IconButton } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
@@ -140,12 +142,48 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
     }, 500);
   }, [inputText]);
 
-  const handleAttachment = () => {
-    console.log('Open attachment picker');
+  const handleAttachment = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        conversationId: '1',
+        sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
+        media: [{ id: Date.now().toString(), url: result.assets[0].uri, type: 'image' }],
+        type: 'image',
+        status: 'sent',
+        readBy: [],
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [newMessage, ...prev]);
+    }
   };
 
-  const handleCamera = () => {
-    console.log('Open camera');
+  const handleCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+
+    if (!result.canceled && result.assets[0]) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        conversationId: '1',
+        sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
+        media: [{ id: Date.now().toString(), url: result.assets[0].uri, type: 'image' }],
+        type: 'image',
+        status: 'sent',
+        readBy: [],
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [newMessage, ...prev]);
+    }
   };
 
   const formatMessageTime = (dateString: string): string => {
@@ -237,7 +275,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
         showBackButton
         onBackPress={() => navigation.goBack()}
         centerComponent={
-          <TouchableOpacity style={styles.headerCenter} onPress={() => {}}>
+          <TouchableOpacity style={styles.headerCenter} onPress={() => navigation.navigate('UserProfile' as never, { userId: mockPartner.id } as never)}>
             <Avatar uri={mockPartner.avatar} name={mockPartner.fullName} size="sm" showOnlineStatus isOnline />
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>{mockPartner.fullName}</Text>
@@ -251,14 +289,14 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
           <View style={styles.headerRight}>
             <IconButton
               icon="call-outline"
-              onPress={() => {}}
+              onPress={() => Alert.alert('Goi dien', 'Tinh nang goi dien dang phat trien')}
               variant="ghost"
               size={36}
               iconSize={22}
             />
             <IconButton
               icon="videocam-outline"
-              onPress={() => {}}
+              onPress={() => Alert.alert('Goi video', 'Tinh nang goi video dang phat trien')}
               variant="ghost"
               size={36}
               iconSize={22}

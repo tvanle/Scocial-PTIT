@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,7 +87,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
 
             <Button
               title="Mở ứng dụng Email"
-              onPress={() => {}}
+              onPress={() => Linking.openURL('mailto:')}
               variant="primary"
               fullWidth
               style={styles.openEmailButton}
