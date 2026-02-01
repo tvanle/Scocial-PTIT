@@ -200,7 +200,7 @@ const GroupDetailScreen: React.FC = () => {
             icon={isMember ? 'checkmark' : 'add'}
             style={{ flex: 1 }}
           />
-          <TouchableOpacity style={styles.inviteButton} onPress={() => Alert.alert('Moi ban be', 'Tinh nang moi ban be vao nhom dang phat trien')}>
+          <TouchableOpacity style={styles.inviteButton} onPress={() => Alert.alert('Moi nguoi', 'Tinh nang moi nguoi vao nhom dang phat trien')}>
             <Ionicons name="person-add" size={20} color={colors.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.shareButton} onPress={() => Share.share({ message: `Tham gia nhom "${group.name}" tren PTIT Social!` })}>

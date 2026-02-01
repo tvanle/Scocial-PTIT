@@ -21,8 +21,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // Placeholder screens (low priority)
 const CreateGroupScreen = () => null;
 const ImageViewerScreen = () => null;
-const FriendsScreen = () => null;
-const FriendRequestsScreen = () => null;
+const FollowersScreen = () => null;
+const FollowingScreen = () => null;
 
 const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -80,8 +80,8 @@ const RootNavigator: React.FC = () => {
               }}
             />
             <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="FriendRequests" component={FriendRequestsScreen} />
+            <Stack.Screen name="Followers" component={FollowersScreen} />
+            <Stack.Screen name="Following" component={FollowingScreen} />
           </>
         )}
       </Stack.Navigator>

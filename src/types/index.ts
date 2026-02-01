@@ -20,7 +20,6 @@ export interface User {
   isVerified?: boolean;
   createdAt: string;
   updatedAt: string;
-  friendsCount?: number;
   followersCount?: number;
   followingCount?: number;
   postsCount?: number;
@@ -30,13 +29,10 @@ export type RelationshipStatus = 'single' | 'in_relationship' | 'engaged' | 'mar
 export type Gender = 'male' | 'female' | 'other' | 'not_specified';
 
 export interface UserProfile extends User {
-  isFriend?: boolean;
   isFollowing?: boolean;
   isFollower?: boolean;
-  friendRequestSent?: boolean;
-  friendRequestReceived?: boolean;
   isBlocked?: boolean;
-  mutualFriends?: number;
+  mutualFollowers?: number;
 }
 
 // Auth Types
@@ -95,7 +91,7 @@ export interface Post {
   updatedAt: string;
 }
 
-export type PostPrivacy = 'public' | 'friends' | 'private';
+export type PostPrivacy = 'public' | 'followers' | 'private';
 
 export interface CreatePostData {
   content: string;
@@ -196,8 +192,8 @@ export type NotificationType =
   | 'like_post'
   | 'comment_post'
   | 'share_post'
-  | 'friend_request'
-  | 'friend_accepted'
+  | 'follow'
+  | 'follow_back'
   | 'mention'
   | 'tag'
   | 'group_invite'
@@ -240,17 +236,6 @@ export interface CreateGroupData {
   privacy: GroupPrivacy;
   rules?: string[];
 }
-
-// Friend Request Types
-export interface FriendRequest {
-  id: string;
-  sender: User;
-  receiver: User;
-  status: FriendRequestStatus;
-  createdAt: string;
-}
-
-export type FriendRequestStatus = 'pending' | 'accepted' | 'rejected';
 
 // Search Types
 export interface SearchResult {
@@ -310,8 +295,8 @@ export type RootStackParamList = {
   ImageViewer: { images: Media[]; initialIndex: number };
   Settings: undefined;
   Search: undefined;
-  Friends: undefined;
-  FriendRequests: undefined;
+  Followers: { userId: string };
+  Following: { userId: string };
 };
 
 export type AuthStackParamList = {

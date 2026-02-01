@@ -30,12 +30,6 @@ export const ENDPOINTS = {
     UPDATE_PROFILE: '/users/profile',
     GET_USER: (id: string) => `/users/${id}`,
     SEARCH: '/users/search',
-    FRIENDS: '/users/friends',
-    FRIEND_REQUESTS: '/users/friend-requests',
-    SEND_FRIEND_REQUEST: (id: string) => `/users/${id}/friend-request`,
-    ACCEPT_FRIEND_REQUEST: (id: string) => `/users/${id}/friend-request/accept`,
-    REJECT_FRIEND_REQUEST: (id: string) => `/users/${id}/friend-request/reject`,
-    UNFRIEND: (id: string) => `/users/${id}/unfriend`,
     FOLLOW: (id: string) => `/users/${id}/follow`,
     UNFOLLOW: (id: string) => `/users/${id}/unfollow`,
     FOLLOWERS: (id: string) => `/users/${id}/followers`,
@@ -157,9 +151,9 @@ export const WS_EVENTS = {
   POST_LIKED: 'post:liked',
   POST_COMMENTED: 'post:commented',
 
-  // Friends
-  FRIEND_REQUEST: 'friend:request',
-  FRIEND_ACCEPTED: 'friend:accepted',
+  // Follow
+  FOLLOW: 'follow:new',
+  FOLLOW_BACK: 'follow:back',
 };
 
 export default ENDPOINTS;

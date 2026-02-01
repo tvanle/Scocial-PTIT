@@ -239,7 +239,7 @@ enum Gender {
 
 enum PostPrivacy {
   PUBLIC
-  FRIENDS
+  FOLLOWERS
   PRIVATE
 }
 

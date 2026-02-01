@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import Avatar from '../../components/common/Avatar';
 
-type Privacy = 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
+type Privacy = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
 
 interface MediaItem {
   uri: string;
@@ -38,7 +38,7 @@ const CreatePostScreen: React.FC = () => {
 
   const privacyOptions = [
     { value: 'PUBLIC', label: 'Công khai', icon: 'globe-outline' },
-    { value: 'FRIENDS', label: 'Bạn bè', icon: 'people-outline' },
+    { value: 'FOLLOWERS', label: 'Người theo dõi', icon: 'people-outline' },
     { value: 'PRIVATE', label: 'Chỉ mình tôi', icon: 'lock-closed-outline' },
   ];
 
@@ -260,7 +260,7 @@ const CreatePostScreen: React.FC = () => {
             <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Vi tri', 'Tinh nang check-in vi tri dang phat trien')}>
               <Ionicons name="location" size={24} color={colors.error} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Gan the', 'Tinh nang gan the ban be dang phat trien')}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Gan the', 'Tinh nang gan the nguoi khac dang phat trien')}>
               <Ionicons name="person-add" size={24} color={colors.info} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Cam xuc', 'Tinh nang them cam xuc dang phat trien')}>

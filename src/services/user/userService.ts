@@ -1,4 +1,4 @@
-import { User, UserProfile, FriendRequest, PaginatedResponse, PaginationParams } from '../../types';
+import { User, UserProfile, PaginatedResponse, PaginationParams } from '../../types';
 import apiClient from '../api/apiClient';
 import { ENDPOINTS } from '../../constants/api';
 
@@ -23,32 +23,6 @@ class UserService {
       params: { query, ...params },
     });
     return response.data;
-  }
-
-  async getFriends(params?: PaginationParams): Promise<PaginatedResponse<User>> {
-    const response = await apiClient.get(ENDPOINTS.USER.FRIENDS, { params });
-    return response.data;
-  }
-
-  async getFriendRequests(params?: PaginationParams): Promise<PaginatedResponse<FriendRequest>> {
-    const response = await apiClient.get(ENDPOINTS.USER.FRIEND_REQUESTS, { params });
-    return response.data;
-  }
-
-  async sendFriendRequest(userId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.USER.SEND_FRIEND_REQUEST(userId));
-  }
-
-  async acceptFriendRequest(userId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.USER.ACCEPT_FRIEND_REQUEST(userId));
-  }
-
-  async rejectFriendRequest(userId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.USER.REJECT_FRIEND_REQUEST(userId));
-  }
-
-  async unfriend(userId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.USER.UNFRIEND(userId));
   }
 
   async follow(userId: string): Promise<void> {

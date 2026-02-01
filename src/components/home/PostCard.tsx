@@ -49,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({
     switch (post.privacy) {
       case 'public':
         return 'globe-outline';
-      case 'friends':
+      case 'followers':
         return 'people-outline';
       case 'private':
         return 'lock-closed-outline';

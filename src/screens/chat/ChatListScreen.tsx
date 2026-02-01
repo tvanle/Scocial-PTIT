@@ -246,7 +246,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Online Friends */}
+      {/* Online Users */}
       <View style={styles.onlineSection}>
         <Text style={styles.onlineTitle}>Đang hoạt động</Text>
         <FlatList

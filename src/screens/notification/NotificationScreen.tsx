@@ -39,19 +39,19 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '3',
-    type: 'friend_request',
+    type: 'follow',
     actor: { id: '4', fullName: 'Phạm Văn D', avatar: 'https://i.pravatar.cc/150?img=4', email: '', createdAt: '', updatedAt: '' },
-    title: 'Lời mời kết bạn',
-    body: 'đã gửi cho bạn lời mời kết bạn',
+    title: 'Người theo dõi mới',
+    body: 'đã theo dõi bạn',
     isRead: false,
     createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
   },
   {
     id: '4',
-    type: 'friend_accepted',
+    type: 'follow_back',
     actor: { id: '5', fullName: 'Nguyễn Thị E', avatar: 'https://i.pravatar.cc/150?img=5', email: '', createdAt: '', updatedAt: '' },
-    title: 'Chấp nhận kết bạn',
-    body: 'đã chấp nhận lời mời kết bạn của bạn',
+    title: 'Theo dõi lại',
+    body: 'đã theo dõi lại bạn',
     isRead: true,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   },
@@ -117,8 +117,8 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           navigation.navigate('PostDetail', { postId: notification.data.postId });
         }
         break;
-      case 'friend_request':
-      case 'friend_accepted':
+      case 'follow':
+      case 'follow_back':
         navigation.navigate('UserProfile', { userId: notification.actor.id });
         break;
       case 'mention':
@@ -149,8 +149,8 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         return { name: 'chatbubble', color: Colors.comment };
       case 'share_post':
         return { name: 'share-social', color: Colors.share };
-      case 'friend_request':
-      case 'friend_accepted':
+      case 'follow':
+      case 'follow_back':
         return { name: 'person-add', color: Colors.primary };
       case 'mention':
       case 'tag':
@@ -197,25 +197,13 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
         {!item.isRead && <View style={styles.unreadDot} />}
 
-        {item.type === 'friend_request' && (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.acceptButton}
-              onPress={() => {
-                setNotifications(prev => prev.filter(n => n.id !== item.id));
-              }}
-            >
-              <Text style={styles.acceptButtonText}>Xác nhận</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.rejectButton}
-              onPress={() => {
-                setNotifications(prev => prev.filter(n => n.id !== item.id));
-              }}
-            >
-              <Text style={styles.rejectButtonText}>Xóa</Text>
-            </TouchableOpacity>
-          </View>
+        {item.type === 'follow' && (
+          <TouchableOpacity
+            style={styles.acceptButton}
+            onPress={() => navigation.navigate('UserProfile', { userId: item.actor.id })}
+          >
+            <Text style={styles.acceptButtonText}>Theo dõi lại</Text>
+          </TouchableOpacity>
         )}
       </TouchableOpacity>
     );

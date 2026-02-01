@@ -8,7 +8,7 @@ interface NotificationSettings {
   likes: boolean;
   comments: boolean;
   mentions: boolean;
-  friendRequests: boolean;
+  follows: boolean;
   groupInvites: boolean;
   messages: boolean;
 }

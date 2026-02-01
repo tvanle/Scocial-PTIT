@@ -23,7 +23,6 @@ const mockUser: User = {
   isVerified: true,
   createdAt: '2023-09-01T00:00:00Z',
   updatedAt: new Date().toISOString(),
-  friendsCount: 256,
   followersCount: 128,
   followingCount: 89,
   postsCount: 42,

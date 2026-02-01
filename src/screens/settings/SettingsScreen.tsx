@@ -208,7 +208,7 @@ const SettingsScreen: React.FC = () => {
               icon="eye-off-outline"
               iconColor={colors.error}
               title="Tai khoan rieng tu"
-              subtitle="Chi ban be moi xem duoc bai viet"
+              subtitle="Chi nguoi theo doi moi xem duoc bai viet"
               rightElement={
                 <Switch
                   value={privateAccount}
