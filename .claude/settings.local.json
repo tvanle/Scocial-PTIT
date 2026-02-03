@@ -12,7 +12,20 @@
       "Bash(npm run db:generate:*)",
       "Bash(npm uninstall:*)",
       "Bash(node -e:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(export USER1_ID=\"d604fdb6-91a4-4cdd-890d-6f49c444d29c\")",
+      "Bash(export USER1_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNjA0ZmRiNi05MWE0LTRjZGQtODkwZC02ZjQ5YzQ0NGQyOWMiLCJlbWFpbCI6InVzZXIxQHB0aXQuZWR1LnZuIiwiaWF0IjoxNzcwMTA0NzU0LCJleHAiOjE3NzA3MDk1NTR9.CfwX-iq_1kAMJPriVYeIKzDjV8Aq3hxtLg-_EPi4gPU\")",
+      "Bash(export USER2_ID=\"1dddd456-7a55-4432-b852-147352497ce5\")",
+      "Bash(export:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(docker-compose exec:*)"
     ]
   }
 }

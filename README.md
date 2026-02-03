@@ -11,7 +11,6 @@
 - **Thông báo**: Push notifications
 - **Tìm kiếm**: Tìm bạn bè, nhóm, bài viết
 - **Nhóm**: Tạo và quản lý các nhóm sinh viên
-- **Stories**: Đăng stories (coming soon)
 
 ## 🏗️ Kiến trúc
 
