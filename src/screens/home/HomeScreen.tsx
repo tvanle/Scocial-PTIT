@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,96 +10,20 @@ import {
   Image,
   Share,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post } from '../../types';
+import { Post, RootStackParamList } from '../../types';
+import { postService } from '../../services/post/postService';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// Mock posts data
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    author: {
-      id: '2',
-      fullName: 'Tran Van B',
-      avatar: 'https://i.pravatar.cc/150?img=2',
-      studentId: 'B21DCCN002',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Hom nay la ngay tuyet voi de hoc tap va chia se kien thuc voi moi nguoi!',
-    media: [],
-    privacy: 'public',
-    likesCount: 128,
-    commentsCount: 24,
-    sharesCount: 5,
-    isLiked: false,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    author: {
-      id: '3',
-      fullName: 'Le Thi C',
-      avatar: 'https://i.pravatar.cc/150?img=3',
-      studentId: 'B21DCCN003',
-      isOnline: false,
-      isVerified: false,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Chia se kinh nghiem hoc lap trinh:\n\n1. Code moi ngay\n2. Doc docs truoc khi hoi\n3. Debug la ban',
-    media: [
-      { id: '1', url: 'https://picsum.photos/800/600?random=1', type: 'image' },
-    ],
-    privacy: 'public',
-    likesCount: 256,
-    commentsCount: 48,
-    sharesCount: 32,
-    isLiked: true,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    author: {
-      id: '4',
-      fullName: 'Nguyen Van D',
-      avatar: 'https://i.pravatar.cc/150?img=4',
-      studentId: 'B21DCCN004',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'PTIT la noi bat dau cua nhung uoc mo',
-    media: [],
-    privacy: 'public',
-    likesCount: 89,
-    commentsCount: 12,
-    sharesCount: 3,
-    isLiked: false,
-    isSaved: true,
-    isShared: false,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface HomeScreenProps {
-  navigation: any;
+  navigation: HomeScreenNavigationProp;
 }
 
 // Thread Post Item Component
@@ -214,21 +138,59 @@ const getTimeAgo = (dateString: string): string => {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await postService.getFeed({ page: 1, limit: 20 });
+      setPosts(response.data);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+      Alert.alert('Loi', 'Khong the tai bai viet. Vui long thu lai.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fetchPosts();
     setRefreshing(false);
   }, []);
 
-  const handleLike = (postId: string) => {
+  const handleLike = async (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    // Optimistic update
     setPosts(posts.map(p =>
       p.id === postId
         ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1 }
         : p
     ));
+
+    try {
+      if (post.isLiked) {
+        await postService.unlikePost(postId);
+      } else {
+        await postService.likePost(postId);
+      }
+    } catch (error) {
+      console.error('Failed to like/unlike post:', error);
+      // Revert on error
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount + 1 : p.likesCount - 1 }
+          : p
+      ));
+      Alert.alert('Loi', 'Khong the thuc hien. Vui long thu lai.');
+    }
   };
 
   const renderPost = ({ item }: { item: Post }) => (
@@ -250,6 +212,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       ])}
     />
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+        <View style={styles.header}>
+          <Text style={styles.headerLogo}>@</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -275,6 +251,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={styles.feedContent}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -395,6 +376,21 @@ const styles = StyleSheet.create({
   },
   statsDot: {
     fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyText: {
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
   },
 });

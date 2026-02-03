@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,114 +17,37 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../const
 import { Strings } from '../../constants/strings';
 import { Conversation } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
-
-// Mock data
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    type: 'private',
-    participants: [
-      { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2', email: '', createdAt: '', updatedAt: '' },
-    ],
-    lastMessage: {
-      id: '1',
-      conversationId: '1',
-      sender: { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2', email: '', createdAt: '', updatedAt: '' },
-      content: 'Bạn có rảnh không? Mình muốn hỏi về bài tập lập trình.',
-      type: 'text',
-      status: 'delivered',
-      readBy: [],
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    },
-    unreadCount: 2,
-    isOnline: true,
-    isMuted: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    type: 'private',
-    participants: [
-      { id: '3', fullName: 'Lê Thị C', avatar: 'https://i.pravatar.cc/150?img=3', email: '', createdAt: '', updatedAt: '' },
-    ],
-    lastMessage: {
-      id: '2',
-      conversationId: '2',
-      sender: { id: '1', fullName: 'You', avatar: '', email: '', createdAt: '', updatedAt: '' },
-      content: 'Ok, mai gặp nhé!',
-      type: 'text',
-      status: 'read',
-      readBy: ['3'],
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    unreadCount: 0,
-    isOnline: false,
-    isMuted: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    type: 'group',
-    name: 'Nhóm D21CQCN01-B',
-    avatar: 'https://i.pravatar.cc/150?img=50',
-    participants: [
-      { id: '2', fullName: 'Trần Văn B', avatar: '', email: '', createdAt: '', updatedAt: '' },
-      { id: '3', fullName: 'Lê Thị C', avatar: '', email: '', createdAt: '', updatedAt: '' },
-      { id: '4', fullName: 'Phạm Văn D', avatar: '', email: '', createdAt: '', updatedAt: '' },
-    ],
-    lastMessage: {
-      id: '3',
-      conversationId: '3',
-      sender: { id: '4', fullName: 'Phạm Văn D', avatar: '', email: '', createdAt: '', updatedAt: '' },
-      content: 'Ai đã làm bài tập chương 5 chưa?',
-      type: 'text',
-      status: 'delivered',
-      readBy: [],
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    },
-    unreadCount: 5,
-    isMuted: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    type: 'private',
-    participants: [
-      { id: '5', fullName: 'Nguyễn Thị E', avatar: 'https://i.pravatar.cc/150?img=5', email: '', createdAt: '', updatedAt: '' },
-    ],
-    lastMessage: {
-      id: '4',
-      conversationId: '4',
-      sender: { id: '5', fullName: 'Nguyễn Thị E', avatar: '', email: '', createdAt: '', updatedAt: '' },
-      content: '📷 Đã gửi một ảnh',
-      type: 'image',
-      status: 'delivered',
-      readBy: [],
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-    unreadCount: 0,
-    isOnline: true,
-    isMuted: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { chatService } from '../../services/chat/chatService';
 
 interface ChatListScreenProps {
   navigation: any;
 }
 
 const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
-  const [conversations, setConversations] = useState(mockConversations);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchConversations = async () => {
+    try {
+      const response = await chatService.getConversations({ page: 1, limit: 50 });
+      setConversations(response.data);
+    } catch (error) {
+      console.error('Failed to fetch conversations:', error);
+      Alert.alert('Lỗi', 'Không thể tải danh sách trò chuyện. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await fetchConversations();
     setRefreshing(false);
   }, []);
 
@@ -209,6 +134,30 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       </TouchableOpacity>
     );
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Header
+          title={Strings.nav.messages}
+          rightComponent={
+            <View style={styles.headerRight}>
+              <IconButton
+                icon="create-outline"
+                onPress={handleNewChat}
+                variant="ghost"
+                size={36}
+                iconSize={24}
+              />
+            </View>
+          }
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -440,6 +389,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textTertiary,
     marginTop: Spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

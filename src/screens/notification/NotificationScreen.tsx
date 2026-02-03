@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,99 +16,53 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../const
 import { Strings } from '../../constants/strings';
 import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
-
-// Mock notifications
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'like_post',
-    actor: { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2', email: '', createdAt: '', updatedAt: '' },
-    title: 'Thích bài viết',
-    body: 'đã thích bài viết của bạn',
-    data: { postId: '1' },
-    isRead: false,
-    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    type: 'comment_post',
-    actor: { id: '3', fullName: 'Lê Thị C', avatar: 'https://i.pravatar.cc/150?img=3', email: '', createdAt: '', updatedAt: '' },
-    title: 'Bình luận mới',
-    body: 'đã bình luận bài viết của bạn: "Bài viết rất hay!"',
-    data: { postId: '1', commentId: '1' },
-    isRead: false,
-    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    type: 'follow',
-    actor: { id: '4', fullName: 'Phạm Văn D', avatar: 'https://i.pravatar.cc/150?img=4', email: '', createdAt: '', updatedAt: '' },
-    title: 'Người theo dõi mới',
-    body: 'đã theo dõi bạn',
-    isRead: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
-    type: 'follow_back',
-    actor: { id: '5', fullName: 'Nguyễn Thị E', avatar: 'https://i.pravatar.cc/150?img=5', email: '', createdAt: '', updatedAt: '' },
-    title: 'Theo dõi lại',
-    body: 'đã theo dõi lại bạn',
-    isRead: true,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '5',
-    type: 'mention',
-    actor: { id: '6', fullName: 'Hoàng Văn F', avatar: 'https://i.pravatar.cc/150?img=6', email: '', createdAt: '', updatedAt: '' },
-    title: 'Đã nhắc đến bạn',
-    body: 'đã nhắc đến bạn trong một bình luận',
-    data: { postId: '2', commentId: '3' },
-    isRead: true,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '6',
-    type: 'group_invite',
-    actor: { id: '7', fullName: 'Vũ Thị G', avatar: 'https://i.pravatar.cc/150?img=7', email: '', createdAt: '', updatedAt: '' },
-    title: 'Lời mời vào nhóm',
-    body: 'đã mời bạn tham gia nhóm "CLB Lập trình PTIT"',
-    data: { groupId: '1' },
-    isRead: true,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '7',
-    type: 'share_post',
-    actor: { id: '8', fullName: 'Đặng Văn H', avatar: 'https://i.pravatar.cc/150?img=8', email: '', createdAt: '', updatedAt: '' },
-    title: 'Chia sẻ bài viết',
-    body: 'đã chia sẻ bài viết của bạn',
-    data: { postId: '3' },
-    isRead: true,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import { notificationService } from '../../services/notification/notificationService';
 
 interface NotificationScreenProps {
   navigation: any;
 }
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationService.getNotifications({ page: 1, limit: 50 });
+      setNotifications(response.data);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông báo. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await fetchNotifications();
     setRefreshing(false);
   }, []);
 
-  const handleNotificationPress = (notification: Notification) => {
+  const handleNotificationPress = async (notification: Notification) => {
     // Mark as read
-    setNotifications(prev =>
-      prev.map(n => (n.id === notification.id ? { ...n, isRead: true } : n))
-    );
+    if (!notification.isRead) {
+      setNotifications(prev =>
+        prev.map(n => (n.id === notification.id ? { ...n, isRead: true } : n))
+      );
+
+      try {
+        await notificationService.markAsRead(notification.id);
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
 
     // Navigate based on type
     switch (notification.type) {
@@ -137,8 +93,17 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     }
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+
+    try {
+      await notificationService.markAllAsRead();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
+      // Revert on error
+      fetchNotifications();
+    }
   };
 
   const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
@@ -230,6 +195,19 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       </TouchableOpacity>
     </View>
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Header
+          title={Strings.notifications.title}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -384,6 +362,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textTertiary,
     marginTop: Spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,68 +9,20 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  FlatList,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Comment, RootStackParamList } from '../../types';
+import { postService } from '../../services/post/postService';
 
+type PostDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostDetailRouteProp = RouteProp<RootStackParamList, 'PostDetail'>;
-
-// Mock data
-const mockPost: Post = {
-  id: '1',
-  author: {
-    id: '2',
-    fullName: 'Tran Van B',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    studentId: 'B21DCCN002',
-    isOnline: true,
-    isVerified: true,
-    createdAt: '',
-    updatedAt: '',
-    email: '',
-  },
-  content: 'Hom nay la ngay tuyet voi de hoc tap va chia se kien thuc voi moi nguoi! Cung nhau co gang nhe cac ban.',
-  media: [],
-  privacy: 'public',
-  likesCount: 128,
-  commentsCount: 24,
-  sharesCount: 5,
-  isLiked: false,
-  isSaved: false,
-  isShared: false,
-  createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-  updatedAt: new Date().toISOString(),
-};
-
-const mockComments: Comment[] = [
-  {
-    id: '1',
-    postId: '1',
-    author: { id: '3', fullName: 'Le Thi C', avatar: 'https://i.pravatar.cc/150?img=3', email: '', createdAt: '', updatedAt: '' },
-    content: 'Bai viet rat hay! Cam on ban da chia se.',
-    repliesCount: 1,
-    likesCount: 5,
-    isLiked: false,
-    createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-    updatedAt: '',
-  },
-  {
-    id: '2',
-    postId: '1',
-    author: { id: '4', fullName: 'Nguyen Van D', avatar: 'https://i.pravatar.cc/150?img=4', email: '', createdAt: '', updatedAt: '' },
-    content: 'Dong y! Moi ngay deu la co hoi moi.',
-    repliesCount: 0,
-    likesCount: 2,
-    isLiked: false,
-    createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    updatedAt: '',
-  },
-];
 
 const getTimeAgo = (dateString: string): string => {
   const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -81,55 +33,104 @@ const getTimeAgo = (dateString: string): string => {
 };
 
 const PostDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<PostDetailNavigationProp>();
   const route = useRoute<PostDetailRouteProp>();
+  const { postId } = route.params;
   const { user } = useAuthStore();
   const inputRef = useRef<TextInput>(null);
 
-  const [post, setPost] = useState(mockPost);
-  const [comments, setComments] = useState(mockComments);
+  const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
-  const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [likesCount, setLikesCount] = useState(post.likesCount);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+  const fetchData = async () => {
+    try {
+      const [postData, commentsData] = await Promise.all([
+        postService.getPost(postId),
+        postService.getComments(postId, { page: 1, limit: 50 }),
+      ]);
+      setPost(postData);
+      setComments(commentsData.data);
+    } catch (error) {
+      console.error('Failed to fetch post data:', error);
+      Alert.alert('Lỗi', 'Không thể tải bài viết. Vui lòng thử lại.');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [postId]);
+
+  const handleLike = async () => {
+    if (!post) return;
+
+    // Optimistic update
+    const wasLiked = post.isLiked;
+    setPost({
+      ...post,
+      isLiked: !wasLiked,
+      likesCount: wasLiked ? post.likesCount - 1 : post.likesCount + 1,
+    });
+
+    try {
+      if (wasLiked) {
+        await postService.unlikePost(postId);
+      } else {
+        await postService.likePost(postId);
+      }
+    } catch (error) {
+      console.error('Failed to like/unlike post:', error);
+      // Revert on error
+      setPost({
+        ...post,
+        isLiked: wasLiked,
+        likesCount: wasLiked ? post.likesCount + 1 : post.likesCount - 1,
+      });
+      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
+    }
   };
 
   const handleCommentLike = (commentId: string) => {
-    setComments(comments.map(c =>
-      c.id === commentId
-        ? { ...c, isLiked: !c.isLiked, likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1 }
-        : c
-    ));
+    // Comment likes not implemented in API yet
+    Alert.alert('Thông báo', 'Tính năng đang phát triển');
   };
 
-  const handleSendComment = () => {
-    if (!commentText.trim()) return;
+  const handleSendComment = async () => {
+    if (!commentText.trim() || !post) return;
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      postId: post.id,
-      author: {
-        id: user?.id || '1',
-        fullName: user?.fullName || 'Me',
-        avatar: user?.avatar,
-        email: '',
-        createdAt: '',
-        updatedAt: '',
-      },
-      content: commentText.trim(),
-      repliesCount: 0,
-      likesCount: 0,
-      isLiked: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: '',
-    };
-
-    setComments([...comments, newComment]);
-    setCommentText('');
+    try {
+      const newComment = await postService.addComment(postId, {
+        content: commentText.trim(),
+      });
+      setComments([...comments, newComment]);
+      setCommentText('');
+      setPost({ ...post, commentsCount: post.commentsCount + 1 });
+    } catch (error) {
+      console.error('Failed to send comment:', error);
+      Alert.alert('Lỗi', 'Không thể gửi bình luận. Vui lòng thử lại.');
+    }
   };
+
+  if (loading || !post) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.black} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Thread</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -152,7 +153,7 @@ const PostDetailScreen: React.FC = () => {
             <View style={styles.postHeader}>
               <TouchableOpacity
                 style={styles.authorRow}
-                onPress={() => navigation.navigate('UserProfile' as never, { userId: post.author.id } as never)}
+                onPress={() => navigation.navigate('UserProfile', { userId: post.author.id })}
               >
                 <Image
                   source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
@@ -181,17 +182,17 @@ const PostDetailScreen: React.FC = () => {
 
             {/* Stats */}
             <View style={styles.statsRow}>
-              <Text style={styles.statsText}>{likesCount} luot thich</Text>
-              <Text style={styles.statsText}>{comments.length} binh luan</Text>
+              <Text style={styles.statsText}>{post.likesCount} luot thich</Text>
+              <Text style={styles.statsText}>{post.commentsCount} binh luan</Text>
             </View>
 
             {/* Actions */}
             <View style={styles.actionsRow}>
               <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
                 <Ionicons
-                  name={isLiked ? 'heart' : 'heart-outline'}
+                  name={post.isLiked ? 'heart' : 'heart-outline'}
                   size={24}
-                  color={isLiked ? Colors.like : Colors.textPrimary}
+                  color={post.isLiked ? Colors.like : Colors.textPrimary}
                 />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.actionButton}>
@@ -444,6 +445,11 @@ const styles = StyleSheet.create({
   sendButton: {
     padding: Spacing.sm,
     marginLeft: Spacing.xs,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

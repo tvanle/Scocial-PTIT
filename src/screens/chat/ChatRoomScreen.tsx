@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,120 +10,67 @@ import {
   Platform,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar, Header, IconButton } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { Message, User } from '../../types';
+import { Message, User, Conversation, RootStackParamList } from '../../types';
 import { useAuthStore } from '../../store/slices/authSlice';
+import { chatService } from '../../services/chat/chatService';
 
-// Mock chat partner
-const mockPartner: User = {
-  id: '2',
-  fullName: 'Trần Văn B',
-  avatar: 'https://i.pravatar.cc/150?img=2',
-  email: '',
-  isOnline: true,
-  createdAt: '',
-  updatedAt: '',
-};
+type ChatRoomScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChatRoom'>;
+type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 
-// Mock messages
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    conversationId: '1',
-    sender: mockPartner,
-    content: 'Chào bạn! Mình là B, học cùng lớp CNTT nhé!',
-    type: 'text',
-    status: 'read',
-    readBy: ['1'],
-    createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    conversationId: '1',
-    sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
-    content: 'Chào bạn! Mình nhớ rồi, cùng nhóm project hôm trước đúng không?',
-    type: 'text',
-    status: 'read',
-    readBy: ['2'],
-    createdAt: new Date(Date.now() - 55 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    conversationId: '1',
-    sender: mockPartner,
-    content: 'Đúng rồi! Bạn có rảnh tối nay không? Mình muốn hỏi về phần database của project.',
-    type: 'text',
-    status: 'read',
-    readBy: ['1'],
-    createdAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
-    conversationId: '1',
-    sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
-    content: 'Được chứ! Khoảng 8h tối nhé, mình rảnh.',
-    type: 'text',
-    status: 'read',
-    readBy: ['2'],
-    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '5',
-    conversationId: '1',
-    sender: mockPartner,
-    content: 'Ok, cảm ơn bạn nhiều! 🙏',
-    type: 'text',
-    status: 'read',
-    readBy: ['1'],
-    createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '6',
-    conversationId: '1',
-    sender: mockPartner,
-    content: 'À mà bạn xem qua đoạn code này giúp mình với',
-    type: 'text',
-    status: 'delivered',
-    readBy: [],
-    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '7',
-    conversationId: '1',
-    sender: mockPartner,
-    media: [{ id: '1', url: 'https://picsum.photos/400/300?random=100', type: 'image' }],
-    type: 'image',
-    status: 'delivered',
-    readBy: [],
-    createdAt: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-  },
-];
-
-interface ChatRoomScreenProps {
-  navigation: any;
-  route: any;
-}
-
-const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) => {
+const ChatRoomScreen: React.FC = () => {
+  const navigation = useNavigation<ChatRoomScreenNavigationProp>();
+  const route = useRoute<ChatRoomScreenRouteProp>();
+  const { conversationId } = route.params;
   const { user } = useAuthStore();
-  const [messages, setMessages] = useState(mockMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const handleSend = useCallback(() => {
+  const fetchData = async () => {
+    try {
+      const [convData, messagesData] = await Promise.all([
+        chatService.getConversation(conversationId),
+        chatService.getMessages(conversationId, { page: 1, limit: 50 }),
+      ]);
+      setConversation(convData);
+      setMessages(messagesData.data.reverse());
+
+      // Mark as read
+      await chatService.markAsRead(conversationId);
+    } catch (error) {
+      console.error('Failed to fetch chat data:', error);
+      Alert.alert('Lỗi', 'Không thể tải cuộc trò chuyện. Vui lòng thử lại.');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [conversationId]);
+
+  const handleSend = useCallback(async () => {
     if (!inputText.trim()) return;
 
+    const tempId = Date.now().toString();
     const newMessage: Message = {
-      id: Date.now().toString(),
-      conversationId: '1',
-      sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
+      id: tempId,
+      conversationId,
+      sender: user!,
       content: inputText.trim(),
       type: 'text',
       status: 'sending',
@@ -131,59 +78,31 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
       createdAt: new Date().toISOString(),
     };
 
-    setMessages(prev => [newMessage, ...prev]);
+    setMessages(prev => [...prev, newMessage]);
     setInputText('');
 
-    // Simulate message sent
-    setTimeout(() => {
+    try {
+      const sentMessage = await chatService.sendMessage(conversationId, {
+        content: inputText.trim(),
+        type: 'text',
+      });
+
       setMessages(prev =>
-        prev.map(m => (m.id === newMessage.id ? { ...m, status: 'sent' } : m))
+        prev.map(m => (m.id === tempId ? sentMessage : m))
       );
-    }, 500);
-  }, [inputText]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+    }
+  }, [inputText, conversationId, user]);
 
   const handleAttachment = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        conversationId: '1',
-        sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
-        media: [{ id: Date.now().toString(), url: result.assets[0].uri, type: 'image' }],
-        type: 'image',
-        status: 'sent',
-        readBy: [],
-        createdAt: new Date().toISOString(),
-      };
-      setMessages(prev => [newMessage, ...prev]);
-    }
+    Alert.alert('Đính kèm', 'Tính năng đính kèm file đang phát triển');
   };
 
   const handleCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) return;
-
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-
-    if (!result.canceled && result.assets[0]) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        conversationId: '1',
-        sender: { id: '1', fullName: 'Me', email: '', createdAt: '', updatedAt: '' },
-        media: [{ id: Date.now().toString(), url: result.assets[0].uri, type: 'image' }],
-        type: 'image',
-        status: 'sent',
-        readBy: [],
-        createdAt: new Date().toISOString(),
-      };
-      setMessages(prev => [newMessage, ...prev]);
-    }
+    Alert.alert('Camera', 'Tính năng camera đang phát triển');
   };
 
   const formatMessageTime = (dateString: string): string => {
@@ -192,7 +111,12 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
   };
 
   const isOwnMessage = (message: Message): boolean => {
-    return message.sender.id === '1' || message.sender.id === user?.id;
+    return message.sender.id === user?.id;
+  };
+
+  const getOtherParticipant = (): User | null => {
+    if (!conversation || conversation.type !== 'private') return null;
+    return conversation.participants.find(p => p.id !== user?.id) || null;
   };
 
   const shouldShowAvatar = (message: Message, index: number): boolean => {
@@ -214,6 +138,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
     const isOwn = isOwnMessage(item);
     const showAvatar = shouldShowAvatar(item, index);
     const showTime = shouldShowTime(item, index);
+    const sender = isOwn ? user : item.sender;
 
     return (
       <View>
@@ -224,7 +149,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
           {!isOwn && (
             <View style={styles.avatarContainer}>
               {showAvatar ? (
-                <Avatar uri={mockPartner.avatar} name={mockPartner.fullName} size="sm" />
+                <Avatar uri={sender?.avatar} name={sender?.fullName || ''} size="sm" />
               ) : (
                 <View style={styles.avatarPlaceholder} />
               )}
@@ -269,19 +194,57 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
     );
   };
 
+  if (loading || !conversation) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Header
+          showBackButton
+          onBackPress={() => navigation.goBack()}
+          title="Đang tải..."
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const otherParticipant = getOtherParticipant();
+  const chatName = conversation.type === 'group'
+    ? conversation.name || 'Nhóm chat'
+    : otherParticipant?.fullName || 'Unknown';
+  const chatAvatar = conversation.type === 'group'
+    ? conversation.avatar
+    : otherParticipant?.avatar;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Header
         showBackButton
         onBackPress={() => navigation.goBack()}
         centerComponent={
-          <TouchableOpacity style={styles.headerCenter} onPress={() => navigation.navigate('UserProfile' as never, { userId: mockPartner.id } as never)}>
-            <Avatar uri={mockPartner.avatar} name={mockPartner.fullName} size="sm" showOnlineStatus isOnline />
+          <TouchableOpacity
+            style={styles.headerCenter}
+            onPress={() => {
+              if (conversation.type === 'private' && otherParticipant) {
+                navigation.navigate('UserProfile', { userId: otherParticipant.id });
+              }
+            }}
+          >
+            <Avatar
+              uri={chatAvatar}
+              name={chatName}
+              size="sm"
+              showOnlineStatus={conversation.type === 'private'}
+              isOnline={conversation.type === 'private' ? otherParticipant?.isOnline : false}
+            />
             <View style={styles.headerInfo}>
-              <Text style={styles.headerName}>{mockPartner.fullName}</Text>
-              <Text style={styles.headerStatus}>
-                {mockPartner.isOnline ? Strings.chat.online : Strings.chat.offline}
-              </Text>
+              <Text style={styles.headerName}>{chatName}</Text>
+              {conversation.type === 'private' && (
+                <Text style={styles.headerStatus}>
+                  {otherParticipant?.isOnline ? Strings.chat.online : Strings.chat.offline}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
         }
@@ -289,14 +252,14 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
           <View style={styles.headerRight}>
             <IconButton
               icon="call-outline"
-              onPress={() => Alert.alert('Goi dien', 'Tinh nang goi dien dang phat trien')}
+              onPress={() => Alert.alert('Gọi điện', 'Tính năng gọi điện đang phát triển')}
               variant="ghost"
               size={36}
               iconSize={22}
             />
             <IconButton
               icon="videocam-outline"
-              onPress={() => Alert.alert('Goi video', 'Tinh nang goi video dang phat trien')}
+              onPress={() => Alert.alert('Gọi video', 'Tính năng gọi video đang phát triển')}
               variant="ghost"
               size={36}
               iconSize={22}
@@ -315,14 +278,14 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) =>
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          inverted
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.messageList}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         />
 
-        {isTyping && (
+        {isTyping && otherParticipant && (
           <View style={styles.typingIndicator}>
-            <Avatar uri={mockPartner.avatar} name={mockPartner.fullName} size="xs" />
+            <Avatar uri={otherParticipant.avatar} name={otherParticipant.fullName} size="xs" />
             <Text style={styles.typingText}>đang nhập...</Text>
           </View>
         )}
@@ -507,6 +470,11 @@ const styles = StyleSheet.create({
   },
   micButton: {
     padding: Spacing.sm,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

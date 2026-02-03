@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,71 +9,94 @@ import {
   RefreshControl,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, RootStackParamList } from '../../types';
+import { Post, RootStackParamList, UserProfile } from '../../types';
+import { userService } from '../../services/user/userService';
+import { postService } from '../../services/post/postService';
 
+type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
 
-// Mock user data
-const mockUserData = {
-  id: '2',
-  fullName: 'Tran Van B',
-  avatar: 'https://i.pravatar.cc/150?img=2',
-  studentId: 'B21DCCN002',
-  bio: 'Sinh vien CNTT PTIT | Yeu lap trinh',
-  isOnline: true,
-  isVerified: true,
-  followersCount: 345,
-  followingCount: 120,
-  postsCount: 28,
-};
-
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    author: { id: '2', fullName: 'Tran Van B', avatar: 'https://i.pravatar.cc/150?img=2', email: '', createdAt: '', updatedAt: '', isVerified: true },
-    content: 'Hom nay la ngay tuyet voi de hoc tap va chia se!',
-    media: [],
-    privacy: 'public',
-    likesCount: 128,
-    commentsCount: 24,
-    sharesCount: 5,
-    isLiked: false,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 const UserProfileScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<UserProfileNavigationProp>();
   const route = useRoute<UserProfileRouteProp>();
+  const { userId } = route.params;
   const { user: currentUser } = useAuthStore();
 
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'threads' | 'replies'>('threads');
 
-  const profileUser = mockUserData;
+  const fetchData = async () => {
+    try {
+      const [userData, postsData] = await Promise.all([
+        userService.getUser(userId),
+        postService.getUserPosts(userId, { page: 1, limit: 20 }),
+      ]);
+      setProfileUser(userData);
+      setPosts(postsData.data);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [userId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fetchData();
     setRefreshing(false);
-  }, []);
+  }, [userId]);
 
-  const handleFollow = () => {
-    setIsFollowing(!isFollowing);
+  const handleFollow = async () => {
+    if (!profileUser) return;
+
+    const wasFollowing = profileUser.isFollowing;
+    const currentFollowersCount = profileUser.followersCount || 0;
+
+    // Optimistic update
+    setProfileUser({
+      ...profileUser,
+      isFollowing: !wasFollowing,
+      followersCount: wasFollowing ? currentFollowersCount - 1 : currentFollowersCount + 1,
+    });
+
+    try {
+      if (wasFollowing) {
+        await userService.unfollow(userId);
+      } else {
+        await userService.follow(userId);
+      }
+    } catch (error) {
+      console.error('Failed to follow/unfollow:', error);
+      // Revert on error
+      setProfileUser({
+        ...profileUser,
+        isFollowing: wasFollowing,
+        followersCount: currentFollowersCount,
+      });
+      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
+    }
   };
 
   const handleMessage = () => {
-    navigation.navigate('ChatRoom' as never, { conversationId: profileUser.id } as never);
+    if (!profileUser) return;
+    navigation.navigate('ChatRoom', { conversationId: userId });
   };
 
   const getTimeAgo = (dateString: string): string => {
@@ -83,6 +106,25 @@ const UserProfileScreen: React.FC = () => {
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
     return `${Math.floor(seconds / 86400)}d`;
   };
+
+  if (loading || !profileUser) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
+            <Ionicons name="arrow-back" size={24} color={Colors.black} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIcon}>
+            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.black} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -125,17 +167,17 @@ const UserProfileScreen: React.FC = () => {
           {profileUser.bio && <Text style={styles.bio}>{profileUser.bio}</Text>}
 
           <Text style={styles.followers}>
-            {profileUser.followersCount} nguoi theo doi
+            {profileUser.followersCount || 0} nguoi theo doi
           </Text>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.actionButton, isFollowing ? styles.followingButton : styles.followButton]}
+              style={[styles.actionButton, profileUser.isFollowing ? styles.followingButton : styles.followButton]}
               onPress={handleFollow}
             >
-              <Text style={isFollowing ? styles.followingButtonText : styles.followButtonText}>
-                {isFollowing ? 'Dang theo doi' : 'Theo doi'}
+              <Text style={profileUser.isFollowing ? styles.followingButtonText : styles.followButtonText}>
+                {profileUser.isFollowing ? 'Dang theo doi' : 'Theo doi'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleMessage}>
@@ -167,23 +209,29 @@ const UserProfileScreen: React.FC = () => {
         {/* Posts */}
         <View style={styles.postsSection}>
           {activeTab === 'threads' ? (
-            mockPosts.map(post => (
-              <TouchableOpacity
-                key={post.id}
-                style={styles.postItem}
-                onPress={() => navigation.navigate('PostDetail' as never, { postId: post.id } as never)}
-              >
-                <View style={styles.postContent}>
-                  <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-                  <Text style={styles.postMeta}>
-                    {post.commentsCount} tra loi · {post.likesCount} luot thich
-                  </Text>
-                </View>
-                {post.media && post.media.length > 0 && (
-                  <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
-                )}
-              </TouchableOpacity>
-            ))
+            posts.length > 0 ? (
+              posts.map(post => (
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.postItem}
+                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                >
+                  <View style={styles.postContent}>
+                    <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
+                    <Text style={styles.postMeta}>
+                      {post.commentsCount} tra loi · {post.likesCount} luot thich
+                    </Text>
+                  </View>
+                  {post.media && post.media.length > 0 && (
+                    <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+              </View>
+            )
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>Chua co tra loi nao</Text>
@@ -363,6 +411,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.md,
     color: Colors.gray400,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
