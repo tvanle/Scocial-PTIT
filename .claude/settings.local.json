@@ -10,7 +10,9 @@
       "Bash(npm install)",
       "Bash(docker-compose up:*)",
       "Bash(npm run db:generate:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

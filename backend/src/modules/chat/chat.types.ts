@@ -1,5 +1,5 @@
-// Type exports from Prisma
-export type {
+// Import and re-export Prisma types
+import type {
   Conversation,
   ConversationParticipant,
   Message,
@@ -7,6 +7,15 @@ export type {
   ConversationType,
   MessageType,
 } from '@prisma/client';
+
+export type {
+  Conversation,
+  ConversationParticipant,
+  Message,
+  MessageReadStatus,
+  ConversationType,
+  MessageType,
+};
 
 export interface ConversationWithParticipants extends Conversation {
   participants: (ConversationParticipant & {
