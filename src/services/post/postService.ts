@@ -4,22 +4,8 @@ import { ENDPOINTS } from '../../constants/api';
 
 class PostService {
   async getFeed(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
-    // const response = await apiClient.get(ENDPOINTS.POST.FEED, { params });
-    // return response.data;
-
-    // Mock implementation
-    await this.simulateDelay();
-    return {
-      data: [],
-      meta: {
-        total: 0,
-        page: params?.page || 1,
-        limit: params?.limit || 20,
-        totalPages: 0,
-        hasNext: false,
-        hasPrev: false,
-      },
-    };
+    const response = await apiClient.get(ENDPOINTS.POST.FEED, { params });
+    return response.data;
   }
 
   async getPost(postId: string): Promise<Post> {
@@ -93,10 +79,6 @@ class PostService {
   async getTrendingPosts(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.TRENDING, { params });
     return response.data;
-  }
-
-  private simulateDelay(ms: number = 500): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
