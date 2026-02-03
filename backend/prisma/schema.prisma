@@ -53,6 +53,11 @@ model User {
   // Refresh tokens
   refreshTokens   RefreshToken[]
 
+  // Chat relations
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]                 @relation("MessageSender")
+  messageReadStatuses      MessageReadStatus[]       @relation("MessageReadBy")
+
   @@index([email])
   @@index([studentId])
 }
@@ -278,4 +283,84 @@ enum NotificationType {
   GROUP_APPROVED
   MENTION
   SYSTEM
+}
+
+// ============== CHAT ==============
+
+model Conversation {
+  id            String            @id @default(uuid())
+  type          ConversationType  @default(PRIVATE)
+  name          String?
+  avatar        String?
+
+  // Denormalized lastMessage for performance
+  lastMessageContent   String?
+  lastMessageSenderId  String?
+  lastMessageCreatedAt DateTime?
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  participants  ConversationParticipant[]
+  messages      Message[]
+
+  @@index([updatedAt(sort: Desc)])
+}
+
+model ConversationParticipant {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt        DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  content         String
+  type            MessageType  @default(TEXT)
+  mediaUrl        String?
+  isRead          Boolean      @default(false)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  readBy          MessageReadStatus[]
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([senderId])
+}
+
+model MessageReadStatus {
+  id         String   @id @default(uuid())
+  messageId  String
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("MessageReadBy", fields: [userId], references: [id], onDelete: Cascade)
+  readAt     DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([messageId])
+}
+
+enum ConversationType {
+  PRIVATE
+  GROUP
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
 }

@@ -8,7 +8,6 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_social?schema=public
-      - MONGODB_URI=mongodb://mongo:27017/ptit_social
       - REDIS_URL=redis://redis:6379
     ports:
       - "3000:3000"
@@ -16,7 +15,6 @@ services:
       - uploads:/app/uploads
     depends_on:
       - postgres
-      - mongo
       - redis
     networks:
       - ptit-network
@@ -32,16 +30,6 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    networks:
-      - ptit-network
-
-  # MongoDB
-  mongo:
-    image: mongo:7
-    volumes:
-      - mongo-data:/data/db
-    ports:
-      - "27017:27017"
     networks:
       - ptit-network
 
@@ -61,6 +49,5 @@ networks:
 
 volumes:
   postgres-data:
-  mongo-data:
   redis-data:
   uploads:

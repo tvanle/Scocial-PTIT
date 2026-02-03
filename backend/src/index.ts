@@ -7,7 +7,7 @@ import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 
 import { config } from './config';
-import { prisma, connectMongoDB, disconnectDatabases } from './config/database';
+import { prisma, disconnectDatabases } from './config/database';
 import { errorHandler, notFoundHandler } from './middleware';
 
 // Import routes
@@ -97,8 +97,6 @@ const startServer = async () => {
     // Connect to databases
     await prisma.$connect();
     console.log('✅ PostgreSQL connected');
-
-    await connectMongoDB();
 
     // Create uploads directory
     const fs = await import('fs/promises');

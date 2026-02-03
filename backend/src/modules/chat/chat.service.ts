@@ -1,8 +1,8 @@
-import { Message, Conversation } from './chat.model';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constants';
 import { parsePagination, paginate } from '../../shared/utils';
+import { MessageType } from './chat.types';
 
 export class ChatService {
   // Get or create private conversation
@@ -16,55 +16,113 @@ export class ChatService {
       throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    // Find existing conversation
-    let conversation = await Conversation.findOne({
-      type: 'private',
-      participants: { $all: [userId, otherUserId], $size: 2 },
+    // Find existing conversation with exactly 2 participants
+    const existingConversations = await prisma.conversation.findMany({
+      where: {
+        type: 'PRIVATE',
+        participants: {
+          some: { userId: { in: [userId, otherUserId] } },
+        },
+      },
+      include: {
+        participants: true,
+      },
     });
 
-    if (!conversation) {
-      conversation = await Conversation.create({
-        type: 'private',
-        participants: [userId, otherUserId],
+    // Filter for exactly 2 participants matching our users
+    const conversation = existingConversations.find(
+      (conv) =>
+        conv.participants.length === 2 &&
+        conv.participants.every((p) => [userId, otherUserId].includes(p.userId))
+    );
+
+    if (conversation) {
+      // Return existing with user data enrichment
+      const conversationWithUsers = await prisma.conversation.findUnique({
+        where: { id: conversation.id },
+        include: {
+          participants: {
+            where: { userId: { not: userId } },
+            include: {
+              user: {
+                select: { id: true, fullName: true, avatar: true },
+              },
+            },
+          },
+        },
       });
+      return conversationWithUsers;
     }
 
-    return conversation;
+    // Create new conversation with transaction
+    const newConv = await prisma.$transaction(async (tx) => {
+      const conv = await tx.conversation.create({
+        data: { type: 'PRIVATE' },
+      });
+
+      await tx.conversationParticipant.createMany({
+        data: [
+          { conversationId: conv.id, userId: userId },
+          { conversationId: conv.id, userId: otherUserId },
+        ],
+      });
+
+      // Fetch with user data
+      return tx.conversation.findUnique({
+        where: { id: conv.id },
+        include: {
+          participants: {
+            where: { userId: { not: userId } },
+            include: {
+              user: {
+                select: { id: true, fullName: true, avatar: true },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return newConv;
   }
 
   // Get user conversations
   async getConversations(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
-    const conversations = await Conversation.find({
-      participants: userId,
-    })
-      .sort({ updatedAt: -1 })
-      .skip(skip)
-      .limit(l);
-
-    const total = await Conversation.countDocuments({
-      participants: userId,
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: { userId: userId },
+        },
+      },
+      include: {
+        participants: {
+          where: { userId: { not: userId } },
+          include: {
+            user: {
+              select: { id: true, fullName: true, avatar: true },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip: skip,
+      take: l,
     });
 
-    // Get user info for participants
-    const participantIds = [...new Set(conversations.flatMap((c) => c.participants))];
-    const users = await prisma.user.findMany({
-      where: { id: { in: participantIds } },
-      select: {
-        id: true,
-        fullName: true,
-        avatar: true,
+    const total = await prisma.conversation.count({
+      where: {
+        participants: {
+          some: { userId: userId },
+        },
       },
     });
 
-    const userMap = new Map(users.map((u) => [u.id, u]));
-
+    // Map to include participantUsers for backward compatibility
     const conversationsWithUsers = conversations.map((conv) => ({
-      ...conv.toObject(),
-      participantUsers: conv.participants
-        .filter((id) => id !== userId)
-        .map((id) => userMap.get(id)),
+      ...conv,
+      participantUsers: conv.participants.map((p) => p.user),
     }));
 
     return paginate(conversationsWithUsers, total, p, l);
@@ -75,17 +133,32 @@ export class ChatService {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
     // Verify user is participant
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation || !conversation.participants.includes(userId)) {
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          where: { userId: userId },
+        },
+      },
+    });
+
+    if (!conversation || conversation.participants.length === 0) {
       throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
     }
 
-    const messages = await Message.find({ conversationId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(l);
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+      skip: skip,
+      take: l,
+      include: {
+        readBy: true,
+      },
+    });
 
-    const total = await Message.countDocuments({ conversationId });
+    const total = await prisma.message.count({
+      where: { conversationId },
+    });
 
     return paginate(messages.reverse(), total, p, l);
   }
@@ -95,54 +168,107 @@ export class ChatService {
     conversationId: string,
     senderId: string,
     content: string,
-    type: 'text' | 'image' | 'video' | 'file' = 'text',
+    type: MessageType = 'TEXT',
     mediaUrl?: string
   ) {
     // Verify user is participant
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation || !conversation.participants.includes(senderId)) {
-      throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
-    }
-
-    const message = await Message.create({
-      conversationId,
-      senderId,
-      content,
-      type,
-      mediaUrl,
-      readBy: [senderId],
-    });
-
-    // Update conversation's last message
-    await Conversation.findByIdAndUpdate(conversationId, {
-      lastMessage: {
-        content,
-        senderId,
-        createdAt: new Date(),
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          where: { userId: senderId },
+        },
       },
     });
 
-    return message;
+    if (!conversation || conversation.participants.length === 0) {
+      throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Use transaction to create message and update conversation
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create message
+      const message = await tx.message.create({
+        data: {
+          conversationId,
+          senderId,
+          content,
+          type,
+          mediaUrl,
+        },
+        include: {
+          readBy: true,
+        },
+      });
+
+      // 2. Mark as read by sender
+      await tx.messageReadStatus.create({
+        data: {
+          messageId: message.id,
+          userId: senderId,
+        },
+      });
+
+      // 3. Update conversation's lastMessage
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageContent: content,
+          lastMessageSenderId: senderId,
+          lastMessageCreatedAt: message.createdAt,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Fetch message with updated readBy
+      return tx.message.findUnique({
+        where: { id: message.id },
+        include: {
+          readBy: true,
+        },
+      });
+    });
+
+    return result;
   }
 
   // Mark messages as read
   async markAsRead(conversationId: string, userId: string) {
-    await Message.updateMany(
-      {
+    // Find unread messages
+    const unreadMessages = await prisma.message.findMany({
+      where: {
         conversationId,
-        senderId: { $ne: userId },
-        readBy: { $ne: userId },
+        senderId: { not: userId },
+        readBy: { none: { userId: userId } },
       },
-      {
-        $addToSet: { readBy: userId },
-        isRead: true,
-      }
-    );
+      select: { id: true },
+    });
+
+    if (unreadMessages.length === 0) {
+      return;
+    }
+
+    // Bulk create read statuses (skipDuplicates handles idempotency)
+    await prisma.messageReadStatus.createMany({
+      data: unreadMessages.map((msg) => ({
+        messageId: msg.id,
+        userId: userId,
+      })),
+      skipDuplicates: true,
+    });
+
+    // Update isRead flag
+    await prisma.message.updateMany({
+      where: { id: { in: unreadMessages.map((m) => m.id) } },
+      data: { isRead: true },
+    });
   }
 
   // Delete message
   async deleteMessage(messageId: string, userId: string) {
-    const message = await Message.findById(messageId);
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+    });
 
     if (!message) {
       throw new AppError('Message not found', HTTP_STATUS.NOT_FOUND);
@@ -152,14 +278,21 @@ export class ChatService {
       throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
     }
 
-    await Message.findByIdAndDelete(messageId);
+    await prisma.message.delete({
+      where: { id: messageId },
+    });
   }
 
   // Get unread count
   async getUnreadCount(userId: string) {
-    const count = await Message.countDocuments({
-      readBy: { $ne: userId },
-      senderId: { $ne: userId },
+    const count = await prisma.message.count({
+      where: {
+        senderId: { not: userId },
+        readBy: { none: { userId: userId } },
+        conversation: {
+          participants: { some: { userId: userId } },
+        },
+      },
     });
 
     return { unreadCount: count };

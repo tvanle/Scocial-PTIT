@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm run migrate:dev:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(node_modules.binprisma migrate dev --name add_chat_models)",
+      "Bash(\"./node_modules/.bin/prisma\" migrate dev --name add_chat_models)",
+      "Bash(ls:*)",
+      "Bash(npm install)",
+      "Bash(docker-compose up:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}

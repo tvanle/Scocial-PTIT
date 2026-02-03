@@ -11,7 +11,6 @@ export const config = {
 
   // Database
   databaseUrl: process.env.DATABASE_URL!,
-  mongodbUri: process.env.MONGODB_URI!,
 
   // Redis
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
