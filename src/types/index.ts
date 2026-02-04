@@ -253,21 +253,27 @@ export interface PaginationParams {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  meta: {
+  pagination: {
     total: number;
     page: number;
     limit: number;
     totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
-    nextCursor?: string;
   };
 }
 
-// API Response Types
+// API Response Types (matches backend sendSuccess format)
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
+  message?: string;
+}
+
+// API response wrapper for paginated data
+export interface ApiPaginatedResponse<T> {
+  success: boolean;
+  data: PaginatedResponse<T>;
   message?: string;
 }
 

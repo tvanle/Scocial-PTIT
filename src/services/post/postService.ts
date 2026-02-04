@@ -5,22 +5,26 @@ import { ENDPOINTS } from '../../constants/api';
 class PostService {
   async getFeed(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.FEED, { params });
-    return response.data;
+    // Backend: { success, data: { data: [], pagination: {} } }
+    return response.data.data;
   }
 
   async getPost(postId: string): Promise<Post> {
     const response = await apiClient.get(ENDPOINTS.POST.GET(postId));
-    return response.data;
+    // Backend: { success, data: Post }
+    return response.data.data;
   }
 
   async createPost(data: CreatePostData): Promise<Post> {
     const response = await apiClient.post(ENDPOINTS.POST.CREATE, data);
-    return response.data;
+    // Backend: { success, data: Post }
+    return response.data.data;
   }
 
   async updatePost(postId: string, data: Partial<CreatePostData>): Promise<Post> {
     const response = await apiClient.put(ENDPOINTS.POST.UPDATE(postId), data);
-    return response.data;
+    // Backend: { success, data: Post }
+    return response.data.data;
   }
 
   async deletePost(postId: string): Promise<void> {
@@ -37,12 +41,12 @@ class PostService {
 
   async getComments(postId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
     const response = await apiClient.get(ENDPOINTS.POST.COMMENTS(postId), { params });
-    return response.data;
+    return response.data.data;
   }
 
   async addComment(postId: string, data: CreateCommentData): Promise<Comment> {
     const response = await apiClient.post(ENDPOINTS.POST.ADD_COMMENT(postId), data);
-    return response.data;
+    return response.data.data;
   }
 
   async deleteComment(postId: string, commentId: string): Promise<void> {
@@ -51,7 +55,7 @@ class PostService {
 
   async sharePost(postId: string, content?: string): Promise<Post> {
     const response = await apiClient.post(ENDPOINTS.POST.SHARE(postId), { content });
-    return response.data;
+    return response.data.data;
   }
 
   async savePost(postId: string): Promise<void> {
@@ -64,7 +68,7 @@ class PostService {
 
   async getSavedPosts(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.SAVED, { params });
-    return response.data;
+    return response.data.data;
   }
 
   async reportPost(postId: string, reason: string): Promise<void> {
@@ -73,12 +77,14 @@ class PostService {
 
   async getUserPosts(userId: string, params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.USER_POSTS(userId), { params });
-    return response.data;
+    // Backend returns: { success, data: { data: [], pagination: {} } }
+    // We return the inner data object which matches PaginatedResponse<Post>
+    return response.data.data;
   }
 
   async getTrendingPosts(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.TRENDING, { params });
-    return response.data;
+    return response.data.data;
   }
 }
 

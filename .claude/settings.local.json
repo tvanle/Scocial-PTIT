@@ -34,7 +34,8 @@
       "Bash(npm run db:push:*)",
       "Bash(test:*)",
       "Bash(npm start)",
-      "Bash(npm start --prefix /Users/tvanlee/Documents/Moblie-Coding/Project/Scocial-PTIT)"
+      "Bash(npm start --prefix /Users/tvanlee/Documents/Moblie-Coding/Project/Scocial-PTIT)",
+      "Bash(python3:*)"
     ]
   }
 }

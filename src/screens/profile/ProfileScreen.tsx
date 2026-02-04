@@ -61,15 +61,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
   // Fetch user posts
   const fetchUserPosts = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
       const response = await postService.getUserPosts(userId, { page: 1, limit: 20 });
-      setPosts(response.data || []);
+      const postsData = response?.data || [];
+      setPosts(postsData);
     } catch (error) {
-      console.error('Error fetching user posts:', error);
-      Alert.alert('Lỗi', 'Không thể tải bài viết');
+      Alert.alert('Lỗi', 'Không thể tải bài viết. Vui lòng thử lại.');
+      setPosts([]);
     } finally {
       setLoading(false);
     }
