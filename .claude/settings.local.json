@@ -25,7 +25,16 @@
       "Bash(export USER2_ID=\"1dddd456-7a55-4432-b852-147352497ce5\")",
       "Bash(export:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(docker-compose exec:*)"
+      "Bash(docker-compose exec:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(test:*)",
+      "Bash(npm start)",
+      "Bash(npm start --prefix /Users/tvanlee/Documents/Moblie-Coding/Project/Scocial-PTIT)"
     ]
   }
 }

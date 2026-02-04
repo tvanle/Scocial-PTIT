@@ -34,24 +34,24 @@ docker-compose down    # Stop all services
 
 ### Monorepo Structure
 - `/src/` - React Native mobile app
-- `/backend/gateway/` - API Gateway (port 3000)
-- `/backend/services/` - Microservices
+- `/backend/` - Monolithic backend API server (port 3000)
 
-### Microservices (each in `backend/services/`)
-| Service | Port | Database | Purpose |
-|---------|------|----------|---------|
-| auth-service | 3001 | PostgreSQL | Authentication, JWT tokens |
-| user-service | 3002 | PostgreSQL | User profiles |
-| post-service | 3003 | PostgreSQL | Posts, comments, likes |
-| chat-service | 3004 | MongoDB | Real-time messaging |
-| notification-service | 3005 | MongoDB | Push notifications |
-| media-service | 3006 | S3/Local | File uploads |
-| group-service | 3007 | PostgreSQL | Group management |
+### Backend Modules
+All modules are integrated into a single Express application:
 
-### API Gateway Routing
-All requests go through gateway at `/api/v1/{service}`:
-- Public: `/api/v1/auth/*`
-- Protected (JWT required): `/api/v1/users/*`, `/api/v1/posts/*`, `/api/v1/chat/*`, `/api/v1/notifications/*`, `/api/v1/media/*`, `/api/v1/groups/*`
+| Module | Route | Purpose |
+|--------|-------|---------|
+| Auth | `/api/v1/auth` | Authentication, JWT tokens, register/login |
+| Users | `/api/v1/users` | User profiles, follow system |
+| Posts | `/api/v1/posts` | Posts, comments, likes, feed |
+| Chat | `/api/v1/chat` | Real-time messaging, conversations |
+| Notifications | `/api/v1/notifications` | User notifications |
+| Media | `/api/v1/media` | File uploads (images, videos) |
+| Groups | `/api/v1/groups` | Group management, membership |
+
+### API Routes
+- **Public routes**: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/users/search`
+- **Protected routes** (JWT required): All other endpoints require Bearer token authentication
 
 ### Mobile App Architecture
 - **State**: Zustand (primary), Redux Toolkit (legacy)
@@ -61,23 +61,55 @@ All requests go through gateway at `/api/v1/{service}`:
 
 ### Key Tech Stack
 - **Mobile**: TypeScript, Expo 54, React Native
-- **Backend**: TypeScript, Express, Prisma (PostgreSQL), Mongoose (MongoDB)
-- **Infrastructure**: Docker Compose, Redis caching, Firebase (push notifications)
+- **Backend**: TypeScript, Express, Prisma ORM
+- **Database**: PostgreSQL (single database for all modules)
+- **Cache**: Redis
+- **Infrastructure**: Docker Compose, Socket.io (real-time), Firebase (push notifications)
+- **Storage**: Local filesystem or AWS S3 (configurable)
 
 ## Database Schema
 
-PostgreSQL services use Prisma. Schema files at:
-- `backend/services/auth-service/prisma/schema.prisma`
-- `backend/services/user-service/prisma/schema.prisma`
-- `backend/services/post-service/prisma/schema.prisma`
-- `backend/services/group-service/prisma/schema.prisma`
+**Single PostgreSQL database** with Prisma ORM. Schema file at: `backend/prisma/schema.prisma`
 
-MongoDB services (chat, notification) use Mongoose with models in their respective `src/models/` directories.
+### Main Models:
+- **User** - User accounts, profiles, authentication
+- **RefreshToken** - JWT refresh tokens
+- **Follow** - User follow relationships
+- **Post** - User posts with privacy settings
+- **Comment** - Post comments (supports nested replies)
+- **Like** - Post likes
+- **Media** - Uploaded files (images, videos)
+- **Group** - User groups with privacy settings
+- **GroupMember** - Group memberships with roles
+- **Conversation** - Chat conversations (private/group)
+- **ConversationParticipant** - Conversation members
+- **Message** - Chat messages with read status
+- **MessageReadStatus** - Message read tracking
+- **Notification** - User notifications
+
+### Database Connection:
+```
+postgresql://postgres:postgres@localhost:5432/ptit_social
+```
 
 ## Development Notes
 
 - TypeScript strict mode is enabled across the entire project
-- JWT tokens are validated at the gateway level before proxying to services
-- Rate limiting: 1000 requests/15 minutes per IP at gateway
+- JWT authentication via Bearer tokens (validated by middleware)
+- Rate limiting: 1000 requests/15 minutes per IP
 - File storage supports both local (`uploads/`) and AWS S3 (controlled by `USE_S3` env var)
+- Real-time chat via Socket.io on the same port as HTTP server
+- All database operations use Prisma ORM with PostgreSQL
+- Redis for caching and session management
 - Theme color: PTIT Red `#C41E3A`
+
+## Real-time Features (Socket.io)
+
+Socket.io runs on the same server (port 3000) for real-time chat:
+
+**Events:**
+- `join` - User joins their room
+- `sendMessage` - Send a message to conversation participants
+- `newMessage` - Receive new messages
+- `typing` - Typing indicators
+- `userTyping` - Receive typing status
