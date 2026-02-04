@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,68 +10,14 @@ import {
   StatusBar,
   Share,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post } from '../../types';
-
-// Mock user posts
-const mockUserPosts: Post[] = [
-  {
-    id: '1',
-    author: {
-      id: '1',
-      fullName: 'Nguyen Van A',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      studentId: 'B21DCCN001',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Mot ngay moi, mot khoi dau moi! Co gang hoan thanh project truoc deadline.',
-    media: [],
-    privacy: 'public',
-    likesCount: 89,
-    commentsCount: 12,
-    sharesCount: 3,
-    isLiked: false,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    author: {
-      id: '1',
-      fullName: 'Nguyen Van A',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      studentId: 'B21DCCN001',
-      isOnline: true,
-      isVerified: true,
-      createdAt: '',
-      updatedAt: '',
-      email: '',
-    },
-    content: 'Vua nhan duoc hoc bong khuyen khich hoc tap ky nay!',
-    media: [
-      { id: '1', url: 'https://picsum.photos/800/600?random=10', type: 'image' },
-    ],
-    privacy: 'public',
-    likesCount: 256,
-    commentsCount: 45,
-    sharesCount: 8,
-    isLiked: true,
-    isSaved: false,
-    isShared: false,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { postService } from '../../services/post/postService';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -106,15 +52,38 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const { user: currentUser, logout } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'threads' | 'replies'>('threads');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const isOwnProfile = !route?.params?.userId || route?.params?.userId === currentUser?.id;
   const user = currentUser;
+  const userId = route?.params?.userId || currentUser?.id;
+
+  // Fetch user posts
+  const fetchUserPosts = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      setLoading(true);
+      const response = await postService.getUserPosts(userId, { page: 1, limit: 20 });
+      setPosts(response.data || []);
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+      Alert.alert('Lỗi', 'Không thể tải bài viết');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchUserPosts();
+  }, [fetchUserPosts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fetchUserPosts();
     setRefreshing(false);
-  }, []);
+  }, [fetchUserPosts]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -227,16 +196,28 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
         {/* Posts */}
         <View style={styles.postsSection}>
-          {activeTab === 'threads' ? (
-            mockUserPosts.map(post => (
-              <ProfilePost
-                key={post.id}
-                post={post}
-                onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-              />
-            ))
+          {loading ? (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="large" color={Colors.black} />
+            </View>
+          ) : activeTab === 'threads' ? (
+            posts.length > 0 ? (
+              posts.map(post => (
+                <ProfilePost
+                  key={post.id}
+                  post={post}
+                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-text-outline" size={48} color={Colors.gray300} />
+                <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+              </View>
+            )
           ) : (
             <View style={styles.emptyState}>
+              <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
               <Text style={styles.emptyText}>Chua co tra loi nao</Text>
             </View>
           )}
@@ -398,6 +379,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     backgroundColor: Colors.gray100,
   },
+  loadingState: {
+    padding: Spacing.huge,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyState: {
     padding: Spacing.huge,
     alignItems: 'center',
@@ -405,6 +391,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.md,
     color: Colors.gray400,
+    marginTop: Spacing.md,
   },
 });
 
