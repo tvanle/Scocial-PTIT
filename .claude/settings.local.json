@@ -35,7 +35,8 @@
       "Bash(test:*)",
       "Bash(npm start)",
       "Bash(npm start --prefix /Users/tvanlee/Documents/Moblie-Coding/Project/Scocial-PTIT)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1Yzk1NTY0Ni1lNTEzLTRjNWItYmFkNi0yNmUyOTE2YzI4ZmIiLCJlbWFpbCI6InRlc3RAcHRpdC5lZHUudm4iLCJpYXQiOjE3NzAxNzYwOTcsImV4cCI6MTc3MDc4MDg5N30.rd1iKvVLGjzCoNlA6pCqNwdgv01cj2_8o7slVYW_Jo0\")"
     ]
   }
 }
