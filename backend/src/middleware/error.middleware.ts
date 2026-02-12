@@ -22,12 +22,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  // Log error in development
-  if (config.isDev) {
-    console.error('Error:', err);
-  }
-
-  // Zod validation error
+  // Zod validation error (check before logging to avoid inspect crash)
   if (err instanceof ZodError) {
     const errors = err.errors.map((e) => ({
       field: e.path.join('.'),
@@ -40,6 +35,11 @@ export const errorHandler = (
       details: errors,
     });
     return;
+  }
+
+  // Log error in development (after Zod check)
+  if (config.isDev) {
+    console.error('Error:', err.message);
   }
 
   // App error (our custom errors)
