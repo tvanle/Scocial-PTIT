@@ -45,6 +45,22 @@ export const ERROR_MESSAGES = {
   FILE_TOO_LARGE: 'File quá lớn',
   FILE_TYPE_NOT_ALLOWED: 'Loại file không được hỗ trợ',
 
+  // Dating
+  DATING_PROFILE_NOT_FOUND: 'Không tìm thấy hồ sơ hẹn hò',
+  DATING_PROFILE_EXISTS: 'Bạn đã có hồ sơ hẹn hò',
+  AGE_TOO_YOUNG: 'Bạn phải từ 18 tuổi trở lên',
+  BIO_TOO_SHORT: 'Mô tả phải có ít nhất 10 ký tự',
+  MAX_PHOTOS_EXCEEDED: 'Tối đa 6 ảnh',
+  MIN_PHOTOS_REQUIRED: 'Cần ít nhất 1 ảnh',
+  MAX_PROMPTS_EXCEEDED: 'Tối đa 3 câu hỏi',
+  PHOTO_NOT_FOUND: 'Không tìm thấy ảnh',
+  DUPLICATE_PHOTO_ORDER: 'Thứ tự ảnh đã được sử dụng',
+  INVALID_AGE_RANGE: 'Độ tuổi tối thiểu phải nhỏ hơn hoặc bằng độ tuổi tối đa',
+  CANNOT_SWIPE_SELF: 'Không thể swipe chính mình',
+  ALREADY_SWIPED: 'Bạn đã swipe người này rồi',
+  MATCH_NOT_FOUND: 'Không tìm thấy kết nối',
+  BLOCKED_USER: 'Không thể tương tác với người dùng này',
+
   // General
   VALIDATION_ERROR: 'Dữ liệu không hợp lệ',
   INTERNAL_ERROR: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
@@ -81,6 +97,17 @@ export const SUCCESS_MESSAGES = {
   // Media
   UPLOAD_SUCCESS: 'Tải file thành công',
   DELETE_SUCCESS: 'Xóa file thành công',
+
+  // Dating
+  DATING_PROFILE_CREATED: 'Tạo hồ sơ hẹn hò thành công',
+  DATING_PROFILE_UPDATED: 'Cập nhật hồ sơ hẹn hò thành công',
+  PHOTO_ADDED: 'Thêm ảnh thành công',
+  PHOTO_DELETED: 'Xóa ảnh thành công',
+  PROMPTS_UPDATED: 'Cập nhật câu hỏi thành công',
+  LIFESTYLE_UPDATED: 'Cập nhật lối sống thành công',
+  PREFERENCES_UPDATED: 'Cập nhật sở thích thành công',
+  SWIPE_SUCCESS: 'Swipe thành công',
+  MATCH_CREATED: 'Bạn có một kết nối mới!',
 } as const;
 
 export const PAGINATION = {

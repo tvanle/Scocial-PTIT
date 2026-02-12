@@ -58,6 +58,17 @@ model User {
   sentMessages             Message[]                 @relation("MessageSender")
   messageReadStatuses      MessageReadStatus[]       @relation("MessageReadBy")
 
+  // Dating
+  datingProfile            DatingProfile?
+  swipesSent               DatingSwipe[]  @relation("SwipeFrom")
+  swipesReceived           DatingSwipe[]  @relation("SwipeTo")
+  matchesAsA               DatingMatch[]  @relation("MatchUserA")
+  matchesAsB               DatingMatch[]  @relation("MatchUserB")
+
+  // Block
+  blockedUsers             UserBlock[]    @relation("BlockedBy")
+  blockedByUsers           UserBlock[]    @relation("BlockedUser")
+
   @@index([email])
   @@index([studentId])
 }
@@ -283,6 +294,7 @@ enum NotificationType {
   GROUP_APPROVED
   MENTION
   SYSTEM
+  MATCH_CREATED
 }
 
 // ============== CHAT ==============
@@ -363,4 +375,140 @@ enum MessageType {
   IMAGE
   VIDEO
   FILE
+}
+
+// ============== DATING ==============
+
+model DatingProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bio         String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  photos      DatingProfilePhoto[]
+  prompts     DatingProfilePrompt[]
+  lifestyle   DatingProfileLifestyle?
+  preferences DatingPreferences?
+  
+  @@index([userId])
+}
+
+model DatingProfilePhoto {
+  id          String         @id @default(uuid())
+  profileId    String
+  profile     DatingProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  url         String
+  order       Int             // 0-5 for ordering photos
+  
+  createdAt   DateTime        @default(now())
+  
+  @@index([profileId])
+  @@index([profileId, order])
+}
+
+model DatingProfilePrompt {
+  id          String         @id @default(uuid())
+  profileId   String
+  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  question    String
+  answer      String
+  
+  order       Int            // 0-2 for ordering prompts
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@index([profileId])
+  @@index([profileId, order])
+}
+
+model DatingProfileLifestyle {
+  id          String         @id @default(uuid())
+  profileId   String         @unique
+  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  education   String?
+  job         String?
+  smoking     String?        // NEVER, SOMETIMES, REGULARLY
+  drinking    String?        // NEVER, SOMETIMES, REGULARLY
+  exercise    String?        // NEVER, SOMETIMES, REGULARLY
+  height      Int?           // in cm
+  religion    String?
+  
+  updatedAt   DateTime       @updatedAt
+  
+  @@index([profileId])
+}
+
+model DatingPreferences {
+  id          String         @id @default(uuid())
+  profileId   String         @unique
+  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  ageMin      Int            @default(18)
+  ageMax      Int            @default(99)
+  maxDistance Int?           // in km, null = no limit
+  gender      Gender?        // Preferred gender
+  
+  updatedAt   DateTime       @updatedAt
+  
+  @@index([profileId])
+}
+
+model DatingSwipe {
+  id          String      @id @default(uuid())
+  fromUserId  String
+  fromUser    User        @relation("SwipeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId    String
+  toUser      User        @relation("SwipeTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  action      SwipeAction
+
+  createdAt   DateTime    @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([fromUserId, toUserId, action])
+}
+
+model DatingMatch {
+  id          String   @id @default(uuid())
+  userAId     String
+  userA       User     @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId     String
+  userB       User     @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+enum SwipeAction {
+  LIKE
+  PASS
+}
+
+// ============== BLOCK ==============
+
+model UserBlock {
+  id            String   @id @default(uuid())
+  blockerId     String
+  blocker       User     @relation("BlockedBy", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedUserId String
+  blockedUser   User     @relation("BlockedUser", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([blockerId, blockedUserId])
+  @@index([blockerId])
+  @@index([blockedUserId])
 }
