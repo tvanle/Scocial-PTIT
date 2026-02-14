@@ -18,7 +18,7 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://localhost:3000/api/v1",
+			"value": "http://localhost:3001/api/v1",
 			"type": "string"
 		},
 		{
@@ -47,11 +47,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:3000/health",
+							"raw": "http://localhost:3001/health",
 							"protocol": "http",
-							"host": ["localhost"],
-							"port": "3000",
-							"path": ["health"]
+							"host": [
+								"localhost"
+							],
+							"port": "3001",
+							"path": [
+								"health"
+							]
 						},
 						"description": "Check if the server is running"
 					}
@@ -96,8 +100,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/register",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "register"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
 						},
 						"description": "Register a new user account"
 					}
@@ -137,8 +146,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "login"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
 						},
 						"description": "Login to get access token"
 					}
@@ -150,8 +164,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/auth/me",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "me"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
 						},
 						"description": "Get current authenticated user details"
 					}
@@ -189,8 +208,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/refresh-token",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "refresh-token"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
 						},
 						"description": "Refresh access token using refresh token"
 					}
@@ -205,8 +229,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/auth/logout",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "logout"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
 						},
 						"description": "Logout current session"
 					}
@@ -218,8 +247,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/auth/logout-all",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "logout-all"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout-all"
+							]
 						},
 						"description": "Logout from all sessions"
 					}
@@ -240,8 +274,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/change-password",
-							"host": ["{{baseUrl}}"],
-							"path": ["auth", "change-password"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"change-password"
+							]
 						},
 						"description": "Change user password"
 					}
@@ -261,8 +300,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/search?q=nguyen&limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", "search"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"search"
+							],
 							"query": [
 								{
 									"key": "q",
@@ -294,8 +338,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "userId",
@@ -323,8 +372,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/users/profile",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", "profile"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
 						},
 						"description": "Update current user's profile"
 					}
@@ -336,8 +390,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/follow",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", ":userId", "follow"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId",
+								"follow"
+							],
 							"variable": [
 								{
 									"key": "userId",
@@ -356,8 +416,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/follow",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", ":userId", "follow"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId",
+								"follow"
+							],
 							"variable": [
 								{
 									"key": "userId",
@@ -379,8 +445,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/followers?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", ":userId", "followers"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId",
+								"followers"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -412,8 +484,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/following?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["users", ":userId", "following"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId",
+								"following"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -447,8 +525,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/feed?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", "feed"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								"feed"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -475,8 +558,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/user/:userId?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", "user", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								"user",
+								":userId"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -514,8 +603,12 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/posts",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts"
+							]
 						},
 						"description": "Create a new post"
 					}
@@ -530,8 +623,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -559,8 +657,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -579,8 +682,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -599,8 +707,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId/like",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId", "like"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId",
+								"like"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -619,8 +733,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId/like",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId", "like"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId",
+								"like"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -642,8 +762,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId/comments?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId", "comments"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId",
+								"comments"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -681,8 +807,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/posts/:postId/comments",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", ":postId", "comments"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								":postId",
+								"comments"
+							],
 							"variable": [
 								{
 									"key": "postId",
@@ -701,8 +833,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/posts/comments/:commentId",
-							"host": ["{{baseUrl}}"],
-							"path": ["posts", "comments", ":commentId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"posts",
+								"comments",
+								":commentId"
+							],
 							"variable": [
 								{
 									"key": "commentId",
@@ -737,8 +875,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/media/upload",
-							"host": ["{{baseUrl}}"],
-							"path": ["media", "upload"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"media",
+								"upload"
+							]
 						},
 						"description": "Upload a single media file (image/video)"
 					}
@@ -761,8 +904,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/media/upload/multiple",
-							"host": ["{{baseUrl}}"],
-							"path": ["media", "upload", "multiple"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"media",
+								"upload",
+								"multiple"
+							]
 						},
 						"description": "Upload multiple media files"
 					}
@@ -777,8 +926,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/media/:mediaId",
-							"host": ["{{baseUrl}}"],
-							"path": ["media", ":mediaId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"media",
+								":mediaId"
+							],
 							"variable": [
 								{
 									"key": "mediaId",
@@ -797,8 +951,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/media/:mediaId",
-							"host": ["{{baseUrl}}"],
-							"path": ["media", ":mediaId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"media",
+								":mediaId"
+							],
 							"variable": [
 								{
 									"key": "mediaId",
@@ -825,8 +984,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -857,8 +1020,12 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/groups",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups"
+							]
 						},
 						"description": "Create a new group"
 					}
@@ -873,8 +1040,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -902,8 +1074,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -922,8 +1099,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -942,8 +1124,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId/join",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId", "join"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"join"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -962,8 +1150,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId/leave",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId", "leave"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"leave"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -985,8 +1179,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId/members?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId", "members"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"members"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -1015,8 +1215,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId/members/:memberId/approve",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId", "members", ":memberId", "approve"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"members",
+								":memberId",
+								"approve"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -1040,8 +1248,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/groups/:groupId/members/:memberId",
-							"host": ["{{baseUrl}}"],
-							"path": ["groups", ":groupId", "members", ":memberId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"members",
+								":memberId"
+							],
 							"variable": [
 								{
 									"key": "groupId",
@@ -1070,8 +1285,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/conversations?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "conversations"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -1093,8 +1313,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/conversations/user/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "conversations", "user", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations",
+								"user",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "userId",
@@ -1113,8 +1340,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/conversations/:conversationId/messages?limit=50&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "conversations", ":conversationId", "messages"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations",
+								":conversationId",
+								"messages"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -1152,8 +1386,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/chat/conversations/:conversationId/messages",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "conversations", ":conversationId", "messages"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations",
+								":conversationId",
+								"messages"
+							],
 							"variable": [
 								{
 									"key": "conversationId",
@@ -1172,8 +1413,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/conversations/:conversationId/read",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "conversations", ":conversationId", "read"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations",
+								":conversationId",
+								"read"
+							],
 							"variable": [
 								{
 									"key": "conversationId",
@@ -1192,8 +1440,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/messages/:messageId",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "messages", ":messageId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								":messageId"
+							],
 							"variable": [
 								{
 									"key": "messageId",
@@ -1212,8 +1466,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/chat/unread-count",
-							"host": ["{{baseUrl}}"],
-							"path": ["chat", "unread-count"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"unread-count"
+							]
 						},
 						"description": "Get total unread messages count"
 					}
@@ -1230,8 +1489,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications?limit=20&offset=0",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -1253,8 +1516,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications/unread-count",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications", "unread-count"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								"unread-count"
+							]
 						},
 						"description": "Get unread notifications count"
 					}
@@ -1266,8 +1534,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications/:notificationId/read",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications", ":notificationId", "read"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								":notificationId",
+								"read"
+							],
 							"variable": [
 								{
 									"key": "notificationId",
@@ -1286,8 +1560,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications/mark-all-read",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications", "mark-all-read"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								"mark-all-read"
+							]
 						},
 						"description": "Mark all notifications as read"
 					}
@@ -1299,8 +1578,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications/:notificationId",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications", ":notificationId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								":notificationId"
+							],
 							"variable": [
 								{
 									"key": "notificationId",
@@ -1319,8 +1603,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications"
+							]
 						},
 						"description": "Delete all notifications"
 					}

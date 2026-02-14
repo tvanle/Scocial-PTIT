@@ -34,7 +34,7 @@ docker-compose down    # Stop all services
 
 ### Monorepo Structure
 - `/src/` - React Native mobile app
-- `/backend/` - Monolithic backend API server (port 3000)
+- `/backend/` - Monolithic backend API server (port 3001)
 
 ### Backend Modules
 All modules are integrated into a single Express application:
@@ -105,7 +105,7 @@ postgresql://postgres:postgres@localhost:5432/ptit_social
 
 ## Real-time Features (Socket.io)
 
-Socket.io runs on the same server (port 3000) for real-time chat:
+Socket.io runs on the same server (port 3001) for real-time chat:
 
 **Events:**
 - `join` - User joins their room
