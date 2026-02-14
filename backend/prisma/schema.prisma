@@ -26,8 +26,13 @@ model User {
 
   // Status
   isVerified      Boolean   @default(false)
+  isEmailVerified Boolean   @default(false)
   isActive        Boolean   @default(true)
   lastActiveAt    DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?
 
   // Timestamps
   createdAt       DateTime  @default(now())
@@ -42,13 +47,15 @@ model User {
   followers       Follow[]  @relation("Following")
   following       Follow[]  @relation("Followers")
 
-
   // Notifications
   sentNotifications     Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
 
   // Refresh tokens
   refreshTokens   RefreshToken[]
+
+  // Verification codes
+  verificationCodes VerificationCode[]
 
   // Chat relations
   conversationParticipants ConversationParticipant[]
@@ -57,6 +64,20 @@ model User {
 
   @@index([email])
   @@index([studentId])
+}
+
+model VerificationCode {
+  id          String             @id @default(uuid())
+  code        String
+  type        VerificationCodeType
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  isUsed      Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+
+  @@index([userId, type])
+  @@index([code, type])
 }
 
 model RefreshToken {
@@ -297,4 +318,10 @@ enum MessageType {
   IMAGE
   VIDEO
   FILE
+}
+
+enum VerificationCodeType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  TWO_FACTOR
 }

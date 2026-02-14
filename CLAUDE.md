@@ -41,7 +41,7 @@ All modules are integrated into a single Express application:
 
 | Module | Route | Purpose |
 |--------|-------|---------|
-| Auth | `/api/v1/auth` | Authentication, JWT tokens, register/login |
+| Auth | `/api/v1/auth` | Authentication, JWT, register/login, email verification, forgot password, 2FA |
 | Users | `/api/v1/users` | User profiles, follow system |
 | Posts | `/api/v1/posts` | Posts, comments, likes, feed |
 | Chat | `/api/v1/chat` | Real-time messaging, conversations |
@@ -72,6 +72,7 @@ All modules are integrated into a single Express application:
 
 ### Main Models:
 - **User** - User accounts, profiles, authentication
+- **VerificationCode** - Email verification and password reset OTP codes
 - **RefreshToken** - JWT refresh tokens
 - **Follow** - User follow relationships
 - **Post** - User posts with privacy settings
@@ -93,11 +94,15 @@ postgresql://postgres:postgres@localhost:5434/ptit_social
 
 - TypeScript strict mode is enabled across the entire project
 - JWT authentication via Bearer tokens (validated by middleware)
+- Email verification via OTP (6-digit code, expires in 15 minutes)
+- Password reset via email OTP
+- Two-Factor Authentication (2FA) using TOTP (Google Authenticator compatible)
 - Rate limiting: 1000 requests/15 minutes per IP
 - File storage supports both local (`uploads/`) and AWS S3 (controlled by `USE_S3` env var)
 - Real-time chat via Socket.io on the same port as HTTP server
 - All database operations use Prisma ORM with PostgreSQL
 - Redis for caching and session management
+- Email sending via SMTP (Nodemailer) - configure SMTP_* env vars
 - Theme color: PTIT Red `#C41E3A`
 
 ## Real-time Features (Socket.io)

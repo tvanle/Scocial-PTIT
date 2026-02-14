@@ -12,11 +12,10 @@ export class PostService {
         content: data.content,
         privacy: data.privacy,
         authorId,
-        groupId: data.groupId,
         media: mediaIds
           ? {
-              connect: mediaIds.map((id) => ({ id })),
-            }
+            connect: mediaIds.map((id) => ({ id })),
+          }
           : undefined,
       },
       include: {
