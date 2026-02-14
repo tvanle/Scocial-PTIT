@@ -34,11 +34,7 @@ export const ERROR_MESSAGES = {
   ALREADY_LIKED: 'Đã like bài viết này',
   NOT_LIKED: 'Chưa like bài viết này',
 
-  // Group
-  GROUP_NOT_FOUND: 'Không tìm thấy nhóm',
-  ALREADY_MEMBER: 'Đã là thành viên nhóm',
-  NOT_MEMBER: 'Không phải thành viên nhóm',
-  CANNOT_REMOVE_OWNER: 'Không thể xóa chủ nhóm',
+
 
   // Media
   FILE_NOT_FOUND: 'Không tìm thấy file',
@@ -70,13 +66,7 @@ export const SUCCESS_MESSAGES = {
   COMMENT_CREATED: 'Bình luận thành công',
   COMMENT_DELETED: 'Xóa bình luận thành công',
 
-  // Group
-  GROUP_CREATED: 'Tạo nhóm thành công',
-  GROUP_UPDATED: 'Cập nhật nhóm thành công',
-  GROUP_DELETED: 'Xóa nhóm thành công',
-  JOIN_REQUEST_SENT: 'Đã gửi yêu cầu tham gia',
-  MEMBER_APPROVED: 'Đã duyệt thành viên',
-  MEMBER_REMOVED: 'Đã xóa thành viên',
+
 
   // Media
   UPLOAD_SUCCESS: 'Tải file thành công',

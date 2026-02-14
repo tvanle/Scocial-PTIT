@@ -47,7 +47,6 @@ All modules are integrated into a single Express application:
 | Chat | `/api/v1/chat` | Real-time messaging, conversations |
 | Notifications | `/api/v1/notifications` | User notifications |
 | Media | `/api/v1/media` | File uploads (images, videos) |
-| Groups | `/api/v1/groups` | Group management, membership |
 
 ### API Routes
 - **Public routes**: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/users/search`
@@ -79,8 +78,6 @@ All modules are integrated into a single Express application:
 - **Comment** - Post comments (supports nested replies)
 - **Like** - Post likes
 - **Media** - Uploaded files (images, videos)
-- **Group** - User groups with privacy settings
-- **GroupMember** - Group memberships with roles
 - **Conversation** - Chat conversations (private/group)
 - **ConversationParticipant** - Conversation members
 - **Message** - Chat messages with read status
@@ -89,7 +86,7 @@ All modules are integrated into a single Express application:
 
 ### Database Connection:
 ```
-postgresql://postgres:postgres@localhost:5432/ptit_social
+postgresql://postgres:postgres@localhost:5434/ptit_social
 ```
 
 ## Development Notes

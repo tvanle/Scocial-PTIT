@@ -42,9 +42,6 @@ model User {
   followers       Follow[]  @relation("Following")
   following       Follow[]  @relation("Followers")
 
-  // Group
-  ownedGroups     Group[]   @relation("GroupOwner")
-  groupMembers    GroupMember[]
 
   // Notifications
   sentNotifications     Notification[] @relation("NotificationSender")
@@ -108,12 +105,7 @@ model Post {
   comments    Comment[]
   likes       Like[]
 
-  // Group post
-  groupId     String?
-  group       Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
   @@index([authorId])
-  @@index([groupId])
   @@index([createdAt])
 }
 
@@ -172,43 +164,6 @@ model Media {
   @@index([postId])
 }
 
-// ============== GROUP ==============
-
-model Group {
-  id          String      @id @default(uuid())
-  name        String
-  description String?
-  avatar      String?
-  coverImage  String?
-  privacy     GroupPrivacy @default(PUBLIC)
-
-  ownerId     String
-  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relations
-  members     GroupMember[]
-  posts       Post[]
-
-  @@index([ownerId])
-}
-
-model GroupMember {
-  id        String          @id @default(uuid())
-  userId    String
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  groupId   String
-  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  role      GroupRole       @default(MEMBER)
-  status    MemberStatus    @default(PENDING)
-  joinedAt  DateTime        @default(now())
-
-  @@unique([userId, groupId])
-  @@index([groupId])
-  @@index([userId])
-}
 
 // ============== NOTIFICATION ==============
 
@@ -255,32 +210,11 @@ enum MediaType {
   DOCUMENT
 }
 
-enum GroupPrivacy {
-  PUBLIC
-  PRIVATE
-}
-
-enum GroupRole {
-  OWNER
-  ADMIN
-  MODERATOR
-  MEMBER
-}
-
-enum MemberStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  BANNED
-}
 
 enum NotificationType {
   LIKE
   COMMENT
   FOLLOW
-  GROUP_INVITE
-  GROUP_REQUEST
-  GROUP_APPROVED
   MENTION
   SYSTEM
 }

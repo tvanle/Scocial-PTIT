@@ -15,7 +15,7 @@ import { authRoutes } from './modules/auth';
 import { userRoutes } from './modules/user';
 import { postRoutes } from './modules/post';
 import { mediaRoutes } from './modules/media';
-import { groupRoutes } from './modules/group';
+
 import { notificationRoutes } from './modules/notification';
 import { chatRoutes } from './modules/chat';
 
@@ -58,7 +58,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/media', mediaRoutes);
-app.use('/api/v1/groups', groupRoutes);
+
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 
