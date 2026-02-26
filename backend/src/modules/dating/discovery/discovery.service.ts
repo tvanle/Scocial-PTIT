@@ -26,27 +26,17 @@ const CANDIDATE_CARD_SELECT = {
   },
 } as const;
 
-// Fisher-Yates shuffle
-function shuffle<T>(array: T[]): T[] {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
 export class DiscoveryService {
   async getCandidates(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
-    // Ensure current user has a dating profile + get gender preference
+    // Ensure current user has a dating profile + get preferences
     const myProfile = await prisma.datingProfile.findUnique({
       where: { userId },
       select: {
         id: true,
         preferences: {
-          select: { gender: true },
+          select: { gender: true, ageMin: true, ageMax: true },
         },
       },
     });
@@ -72,12 +62,35 @@ export class DiscoveryService {
       photos: { some: {} },
     };
 
+    // Build user filter (gender + age)
+    const userFilter: Prisma.UserWhereInput = {};
+
     // Apply gender preference filter
     const preferredGender = myProfile.preferences?.gender;
     if (preferredGender) {
-      where.user = {
-        gender: preferredGender,
-      };
+      userFilter.gender = preferredGender;
+    }
+
+    // Apply age preference filter
+    const ageMin = myProfile.preferences?.ageMin;
+    const ageMax = myProfile.preferences?.ageMax;
+    if (ageMin || ageMax) {
+      const now = new Date();
+      userFilter.dateOfBirth = {};
+      if (ageMax) {
+        // ageMax years old → born on or after this date
+        const minBirthDate = new Date(now.getFullYear() - ageMax - 1, now.getMonth(), now.getDate());
+        userFilter.dateOfBirth.gte = minBirthDate;
+      }
+      if (ageMin) {
+        // ageMin years old → born on or before this date
+        const maxBirthDate = new Date(now.getFullYear() - ageMin, now.getMonth(), now.getDate());
+        userFilter.dateOfBirth.lte = maxBirthDate;
+      }
+    }
+
+    if (Object.keys(userFilter).length > 0) {
+      where.user = userFilter;
     }
 
     const [candidates, total] = await Promise.all([
@@ -86,14 +99,12 @@ export class DiscoveryService {
         select: CANDIDATE_CARD_SELECT,
         skip,
         take: l,
+        orderBy: { createdAt: 'desc' },
       }),
       prisma.datingProfile.count({ where }),
     ]);
 
-    // Randomize order
-    const shuffled = shuffle(candidates);
-
-    return paginate(shuffled, total, p, l);
+    return paginate(candidates, total, p, l);
   }
 }
 

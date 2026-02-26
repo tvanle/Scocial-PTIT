@@ -15,7 +15,6 @@ import { authRoutes } from './modules/auth';
 import { userRoutes } from './modules/user';
 import { postRoutes } from './modules/post';
 import { mediaRoutes } from './modules/media';
-
 import { notificationRoutes } from './modules/notification';
 import { chatRoutes } from './modules/chat';
 import { datingRoutes } from './modules/dating';
@@ -59,7 +58,6 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/media', mediaRoutes);
-
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/dating', datingRoutes);

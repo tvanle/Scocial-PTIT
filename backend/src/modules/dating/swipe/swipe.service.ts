@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../../config/database';
 import { AppError } from '../../../middleware';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../../../shared/constants';
+import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../../shared/constants';
 
 // Transaction client type
 type PrismaTx = Omit<
@@ -179,14 +179,14 @@ export class SwipeService {
           senderId: targetUserId,
           receiverId: userId,
           referenceId: matchId,
-          content: 'Bạn có một kết nối mới!',
+          content: SUCCESS_MESSAGES.MATCH_CREATED,
         },
         {
           type: 'MATCH_CREATED',
           senderId: userId,
           receiverId: targetUserId,
           referenceId: matchId,
-          content: 'Bạn có một kết nối mới!',
+          content: SUCCESS_MESSAGES.MATCH_CREATED,
         },
       ],
     });

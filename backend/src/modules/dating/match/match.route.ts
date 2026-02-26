@@ -10,13 +10,13 @@ router.use(authenticate);
 router.get(
   '/',
   validateQuery(matchQuerySchema),
-  matchController.getMatches.bind(matchController),
+  matchController.getMatches,
 );
 
 router.get(
   '/:id',
   validateParams(matchParamsSchema),
-  matchController.getMatchDetail.bind(matchController),
+  matchController.getMatchDetail,
 );
 
 export default router;
