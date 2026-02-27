@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, FontSize, FontWeight, Layout, Spacing } from '../../constants/theme';
+import { Colors, BorderRadius, FontSize, FontWeight, Layout, Spacing, Shadow } from '../../constants/theme';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -96,10 +96,10 @@ const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return Colors.white;
       case 'secondary':
-        return Colors.black;
+        return Colors.textPrimary;
       case 'outline':
       case 'ghost':
-        return Colors.black;
+        return Colors.primary;
       default:
         return Colors.white;
     }
@@ -142,7 +142,7 @@ const Button: React.FC<ButtonProps> = ({
     <View style={styles.contentContainer}>
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? Colors.white : Colors.black}
+          color={variant === 'primary' ? Colors.white : Colors.primary}
           size="small"
         />
       ) : (
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
   },
   contentContainer: {
     flexDirection: 'row',
@@ -199,29 +199,28 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: '100%',
   },
-  // Sizes
   small: {
     height: Layout.buttonHeightSmall,
     paddingHorizontal: Spacing.lg,
   },
   medium: {
-    height: 36,
+    height: 44,
     paddingHorizontal: Spacing.xl,
   },
   large: {
     height: Layout.buttonHeight,
     paddingHorizontal: Spacing.xxl,
   },
-  // Variants - Threads style (black & white)
   primary: {
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.primary,
+    ...Shadow.red,
   },
   secondary: {
     backgroundColor: Colors.gray100,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
   },
   ghost: {
@@ -229,10 +228,11 @@ const styles = StyleSheet.create({
   },
   disabled: {
     backgroundColor: Colors.gray200,
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  // Text
   text: {
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
   },
   smallText: {
     fontSize: FontSize.sm,
@@ -241,16 +241,16 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
   },
   largeText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
   },
   primaryText: {
     color: Colors.white,
   },
   secondaryText: {
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   outlineText: {
-    color: Colors.black,
+    color: Colors.primary,
   },
   disabledText: {
     color: Colors.gray400,

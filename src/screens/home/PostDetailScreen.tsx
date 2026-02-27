@@ -120,7 +120,7 @@ const PostDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={Colors.black} />
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thread</Text>
           <View style={{ width: 32 }} />
@@ -137,7 +137,7 @@ const PostDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.black} />
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Thread</Text>
         <View style={{ width: 32 }} />
@@ -258,7 +258,7 @@ const PostDetailScreen: React.FC = () => {
           </View>
           {commentText.trim().length > 0 && (
             <TouchableOpacity onPress={handleSendComment} style={styles.sendButton}>
-              <Ionicons name="send" size={20} color={Colors.black} />
+              <Ionicons name="send" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
           )}
         </View>
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   content: {
     flex: 1,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   timeText: {
     fontSize: FontSize.sm,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   postContent: {
     fontSize: FontSize.lg,
-    color: Colors.black,
+    color: Colors.textPrimary,
     lineHeight: 24,
     marginTop: Spacing.md,
   },
@@ -390,11 +390,11 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   commentText: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     marginTop: 2,
     lineHeight: 20,
   },
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     maxHeight: 60,
   },
   sendButton: {

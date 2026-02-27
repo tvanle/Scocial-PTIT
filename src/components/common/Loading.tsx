@@ -16,7 +16,7 @@ export const Loading: React.FC<LoadingProps> = ({
   text,
   overlay = false,
   size = 'large',
-  color = Colors.black,
+  color = Colors.primary,
   style,
 }) => {
   if (!visible) return null;
@@ -46,14 +46,14 @@ export const Loading: React.FC<LoadingProps> = ({
 
 export const FullScreenLoading: React.FC<{ text?: string }> = ({ text = 'Dang tai...' }) => (
   <View style={styles.fullScreen}>
-    <ActivityIndicator size="large" color={Colors.black} />
+    <ActivityIndicator size="large" color={Colors.primary} />
     {text && <Text style={styles.text}>{text}</Text>}
   </View>
 );
 
 export const InlineLoading: React.FC<{ size?: 'small' | 'large'; color?: string }> = ({
   size = 'small',
-  color = Colors.black,
+  color = Colors.primary,
 }) => (
   <View style={styles.inline}>
     <ActivityIndicator size={size} color={color} />
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   overlayText: {
     marginTop: Spacing.md,
     fontSize: FontSize.sm,
-    color: Colors.black,
+    color: Colors.primary,
   },
   fullScreen: {
     flex: 1,

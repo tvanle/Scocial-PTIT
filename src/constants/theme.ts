@@ -1,86 +1,86 @@
-// PTIT Social Theme - Threads-inspired Design
-// Minimalist black & white, modern typography
+// PTIT Social Theme - PTIT Red Brand Design
+// Modern, clean UI with PTIT Red accent color
 
 export const Colors = {
-  // Primary - Black (Threads style)
-  primary: '#000000',
-  primaryDark: '#000000',
-  primaryLight: '#262626',
-  primarySoft: '#F5F5F5',
+  // Primary - PTIT Red
+  primary: '#B3261E',
+  primaryDark: '#8C1D18',
+  primaryLight: 'rgba(179, 38, 30, 0.08)',
+  primarySoft: 'rgba(179, 38, 30, 0.05)',
 
-  // Accent - Black (Threads style)
-  accent: '#000000',
-  accentLight: '#F5F5F5',
+  // Accent
+  accent: '#B3261E',
+  accentLight: 'rgba(179, 38, 30, 0.08)',
 
   // Core Colors
   white: '#FFFFFF',
   black: '#000000',
 
   // Grayscale
-  gray50: '#FAFAFA',
-  gray100: '#F5F5F5',
-  gray200: '#EFEFEF',
-  gray300: '#DBDBDB',
-  gray400: '#A8A8A8',
-  gray500: '#737373',
-  gray600: '#545454',
-  gray700: '#363636',
-  gray800: '#262626',
-  gray900: '#171717',
+  gray50: '#F9FAFB',
+  gray100: '#F3F4F6',
+  gray200: '#E5E7EB',
+  gray300: '#D1D5DB',
+  gray400: '#9CA3AF',
+  gray500: '#6B7280',
+  gray600: '#4B5563',
+  gray700: '#374151',
+  gray800: '#1F2937',
+  gray900: '#111827',
 
   // Background
   background: '#FFFFFF',
-  backgroundSecondary: '#FAFAFA',
-  backgroundTertiary: '#F5F5F5',
-  backgroundDark: '#000000',
+  backgroundSecondary: '#F9FAFB',
+  backgroundTertiary: '#F3F4F6',
+  backgroundDark: '#111827',
 
   // Text
-  textPrimary: '#000000',
-  textSecondary: '#737373',
-  textTertiary: '#A8A8A8',
+  textPrimary: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
   textLight: '#FFFFFF',
-  textLink: '#000000',
+  textLink: '#B3261E',
 
   // Borders
-  border: '#DBDBDB',
-  borderLight: '#EFEFEF',
-  borderDark: '#C7C7C7',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  borderDark: '#D1D5DB',
 
   // Status
-  success: '#00BA7C',
-  error: '#FF3040',
-  warning: '#FFD400',
-  info: '#1D9BF0',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  info: '#3B82F6',
 
-  // Interactions (Threads style)
-  like: '#FF3040',
-  repost: '#00BA7C',
-  comment: '#000000',
-  share: '#000000',
+  // Interactions
+  like: '#B3261E',
+  repost: '#10B981',
+  comment: '#111827',
+  share: '#111827',
 
   // Overlay
-  overlay: 'rgba(0, 0, 0, 0.4)',
-  overlayLight: 'rgba(0, 0, 0, 0.05)',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  overlayLight: 'rgba(0, 0, 0, 0.04)',
 
-  // Verified badge (blue check like Threads)
-  verified: '#0095F6',
+  // Verified badge
+  verified: '#3B82F6',
 
   // Online status
-  online: '#00BA7C',
-  offline: '#A8A8A8',
+  online: '#10B981',
+  offline: '#9CA3AF',
 
   // Legacy compatibility
   cardBackground: '#FFFFFF',
-  inputBackground: '#FAFAFA',
-  secondary: '#737373',
-  gradientStart: '#000000',
-  gradientMiddle: '#262626',
-  gradientEnd: '#404040',
-  errorLight: '#FFEBE9',
+  inputBackground: '#F3F4F6',
+  secondary: '#6B7280',
+  gradientStart: '#B3261E',
+  gradientMiddle: '#D32F2F',
+  gradientEnd: '#E53935',
+  errorLight: '#FEE2E2',
 
   // Text aliases
-  text: '#000000',
-  gray: '#737373',
+  text: '#111827',
+  gray: '#6B7280',
 };
 
 export const Spacing = {
@@ -125,6 +125,7 @@ export const FontWeight = {
   medium: '500' as const,
   semiBold: '600' as const,
   bold: '700' as const,
+  extraBold: '800' as const,
 };
 
 export const Shadow = {
@@ -138,50 +139,63 @@ export const Shadow = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  red: {
+    shadowColor: '#B3261E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
 };
 
 export const Layout = {
   screenPadding: Spacing.lg,
-  inputHeight: 44,
-  buttonHeight: 44,
-  buttonHeightSmall: 34,
-  headerHeight: 44,
-  tabBarHeight: 49,
+  inputHeight: 52,
+  buttonHeight: 52,
+  buttonHeightSmall: 36,
+  headerHeight: 56,
+  tabBarHeight: 60,
   avatarSize: {
     xs: 24,
     sm: 32,
-    md: 36,
-    lg: 44,
+    md: 40,
+    lg: 48,
     xl: 56,
-    xxl: 77,
+    xxl: 80,
     profile: 86,
   },
-  buttonHeightLarge: 50,
+  buttonHeightLarge: 56,
   iconSize: {
     sm: 20,
     md: 24,
-    lg: 26,
+    lg: 28,
   },
   threadLineWidth: 2,
 };
 
-// Threads-style typography
+// Typography
 export const Typography = {
-  // Headlines
   h1: {
     fontSize: FontSize.huge,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.extraBold,
     letterSpacing: -0.5,
     color: Colors.textPrimary,
   },
@@ -193,23 +207,21 @@ export const Typography = {
   },
   h3: {
     fontSize: FontSize.xxl,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
-  // Body
   body: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.regular,
-    lineHeight: 20,
+    lineHeight: 22,
     color: Colors.textPrimary,
   },
   bodySmall: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.regular,
-    lineHeight: 18,
+    lineHeight: 20,
     color: Colors.textPrimary,
   },
-  // UI
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
@@ -221,14 +233,13 @@ export const Typography = {
     color: Colors.textTertiary,
   },
   button: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
     letterSpacing: 0,
   },
-  // Username (Threads style - bold)
   username: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
   handle: {
@@ -262,13 +273,12 @@ export const CommonStyles = {
     justifyContent: 'center' as const,
   },
   divider: {
-    height: 0.5,
+    height: 1,
     backgroundColor: Colors.border,
   },
-  // Thread connection line
   threadLine: {
     width: Layout.threadLineWidth,
-    backgroundColor: Colors.gray300,
+    backgroundColor: Colors.gray200,
   },
 };
 

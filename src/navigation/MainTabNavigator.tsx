@@ -7,7 +7,7 @@ import { HomeScreen } from '../screens/home';
 import { ProfileScreen } from '../screens/profile';
 import { NotificationScreen } from '../screens/notification';
 import { SearchScreen } from '../screens/search';
-import { Colors, Spacing, Layout } from '../constants/theme';
+import { Colors, Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
 import { MainTabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -15,12 +15,12 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 // Placeholder screens
 const CreatePostScreen = () => null;
 
-// Threads-style minimal Tab Bar
-const ThreadsTabBar = ({ state, navigation }: any) => {
+// PTIT-style Tab Bar with floating red FAB
+const PTITTabBar = ({ state, navigation }: any) => {
   const insets = useSafeAreaInsets();
 
   const tabs = [
-    { name: 'Home', icon: 'home', iconFocused: 'home' },
+    { name: 'Home', icon: 'home-outline', iconFocused: 'home' },
     { name: 'Search', icon: 'search-outline', iconFocused: 'search' },
     { name: 'CreatePost', icon: 'add', iconFocused: 'add' },
     { name: 'Notifications', icon: 'heart-outline', iconFocused: 'heart' },
@@ -28,34 +28,52 @@ const ThreadsTabBar = ({ state, navigation }: any) => {
   ];
 
   return (
-    <View style={[styles.tabBar, { paddingBottom: insets.bottom || Spacing.sm }]}>
-      {tabs.map((tab, index) => {
-        const isFocused = state.index === index;
-        const isCreate = tab.name === 'CreatePost';
+    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom || Spacing.sm }]}>
+      <View style={styles.tabBar}>
+        {tabs.map((tab, index) => {
+          const isFocused = state.index === index;
+          const isCreate = tab.name === 'CreatePost';
 
-        const onPress = () => {
-          if (tab.name === 'CreatePost') {
-            navigation.navigate('CreatePostModal', {});
-          } else if (!isFocused) {
-            navigation.navigate(tab.name);
+          const onPress = () => {
+            if (tab.name === 'CreatePost') {
+              navigation.navigate('CreatePostModal', {});
+            } else if (!isFocused) {
+              navigation.navigate(tab.name);
+            }
+          };
+
+          if (isCreate) {
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                onPress={onPress}
+                style={styles.fabContainer}
+                activeOpacity={0.8}
+              >
+                <View style={styles.fabButton}>
+                  <Ionicons name="add" size={28} color={Colors.white} />
+                </View>
+              </TouchableOpacity>
+            );
           }
-        };
 
-        return (
-          <TouchableOpacity
-            key={tab.name}
-            onPress={onPress}
-            style={styles.tabItem}
-            activeOpacity={0.6}
-          >
-            <Ionicons
-              name={(isFocused ? tab.iconFocused : tab.icon) as keyof typeof Ionicons.glyphMap}
-              size={isCreate ? 28 : 26}
-              color={isFocused ? Colors.black : Colors.gray400}
-            />
-          </TouchableOpacity>
-        );
-      })}
+          return (
+            <TouchableOpacity
+              key={tab.name}
+              onPress={onPress}
+              style={styles.tabItem}
+              activeOpacity={0.6}
+            >
+              <Ionicons
+                name={(isFocused ? tab.iconFocused : tab.icon) as keyof typeof Ionicons.glyphMap}
+                size={24}
+                color={isFocused ? Colors.primary : Colors.gray400}
+              />
+              {isFocused && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
@@ -63,7 +81,7 @@ const ThreadsTabBar = ({ state, navigation }: any) => {
 const MainTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
-      tabBar={(props) => <ThreadsTabBar {...props} />}
+      tabBar={(props) => <PTITTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -76,18 +94,42 @@ const MainTabNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  tabBarContainer: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.sm,
+    alignItems: 'center',
+    height: Layout.tabBarHeight,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     height: Layout.tabBarHeight,
+  },
+  activeIndicator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    marginTop: 4,
+  },
+  fabContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabButton: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadow.red,
   },
 });
 

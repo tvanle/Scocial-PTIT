@@ -11,14 +11,18 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, RootStackParamList } from '../../types';
+import { Post, Media, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,8 +30,86 @@ interface HomeScreenProps {
   navigation: HomeScreenNavigationProp;
 }
 
-// Thread Post Item Component
-const ThreadPost: React.FC<{
+// Image layout component
+const PostImages: React.FC<{ media: Media[] }> = ({ media }) => {
+  if (!media || media.length === 0) return null;
+
+  if (media.length === 1) {
+    return (
+      <View style={imgStyles.singleContainer}>
+        <Image source={{ uri: media[0].url }} style={imgStyles.singleImage} resizeMode="cover" />
+      </View>
+    );
+  }
+
+  if (media.length === 2) {
+    return (
+      <View style={imgStyles.doubleContainer}>
+        <Image source={{ uri: media[0].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+      </View>
+    );
+  }
+
+  // 3+ images: vertical split layout (1 large left, 2 stacked right)
+  return (
+    <View style={imgStyles.tripleContainer}>
+      <Image source={{ uri: media[0].url }} style={imgStyles.tripleLeft} resizeMode="cover" />
+      <View style={imgStyles.tripleRight}>
+        <Image source={{ uri: media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+        <Image source={{ uri: media[2]?.url || media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+      </View>
+    </View>
+  );
+};
+
+const imgStyles = StyleSheet.create({
+  singleContainer: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+  },
+  singleImage: {
+    width: '100%',
+    height: 280,
+    backgroundColor: Colors.gray100,
+  },
+  doubleContainer: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+  },
+  doubleImage: {
+    flex: 1,
+    height: 220,
+    backgroundColor: Colors.gray100,
+  },
+  tripleContainer: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+    height: 300,
+  },
+  tripleLeft: {
+    flex: 1,
+    backgroundColor: Colors.gray100,
+  },
+  tripleRight: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  tripleRightImage: {
+    flex: 1,
+    backgroundColor: Colors.gray100,
+  },
+});
+
+// Post Card Component
+const PostCard: React.FC<{
   post: Post;
   onLike: () => void;
   onComment: () => void;
@@ -39,85 +121,76 @@ const ThreadPost: React.FC<{
   const timeAgo = getTimeAgo(post.createdAt);
 
   return (
-    <View style={styles.postContainer}>
-      {/* Left: Avatar + Thread Line */}
-      <View style={styles.postLeft}>
-        <TouchableOpacity onPress={onProfile}>
+    <View style={styles.postCard}>
+      {/* User Header */}
+      <View style={styles.postHeader}>
+        <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
           <Image
             source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
             style={styles.avatar}
           />
-        </TouchableOpacity>
-        {/* Thread line */}
-        <View style={styles.threadLine} />
-      </View>
-
-      {/* Right: Content */}
-      <View style={styles.postRight}>
-        {/* Header */}
-        <View style={styles.postHeader}>
-          <View style={styles.postHeaderLeft}>
-            <TouchableOpacity onPress={onProfile} style={styles.usernameRow}>
+          <View style={styles.postHeaderInfo}>
+            <View style={styles.usernameRow}>
               <Text style={styles.username}>{post.author.fullName}</Text>
               {post.author.isVerified && (
-                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={styles.verifiedIcon} />
+                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
               )}
-            </TouchableOpacity>
+            </View>
             <Text style={styles.timeAgo}>{timeAgo}</Text>
           </View>
-          <TouchableOpacity onPress={onMore} style={styles.moreButton}>
-            <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onMore} style={styles.moreButton}>
+          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Content */}
-        <Text style={styles.postContent}>{post.content}</Text>
+      {/* Content */}
+      <Text style={styles.postContent}>{post.content}</Text>
 
-        {/* Media */}
-        {post.media && post.media.length > 0 && (
-          <View style={styles.mediaContainer}>
-            <Image
-              source={{ uri: post.media[0].url }}
-              style={styles.postImage}
-              resizeMode="cover"
-            />
-          </View>
-        )}
+      {/* Media */}
+      {post.media && post.media.length > 0 && (
+        <PostImages media={post.media} />
+      )}
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity onPress={onLike} style={styles.actionButton}>
+      {/* Interaction Bar */}
+      <View style={styles.interactionBar}>
+        <View style={styles.interactionLeft}>
+          <TouchableOpacity onPress={onLike} style={styles.interactionButton}>
             <Ionicons
               name={post.isLiked ? 'heart' : 'heart-outline'}
               size={22}
-              color={post.isLiked ? Colors.like : Colors.textPrimary}
+              color={post.isLiked ? Colors.like : Colors.textSecondary}
             />
+            {post.likesCount > 0 && (
+              <Text style={[styles.interactionCount, post.isLiked && { color: Colors.like }]}>
+                {post.likesCount}
+              </Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={onComment} style={styles.actionButton}>
-            <Ionicons name="chatbubble-outline" size={20} color={Colors.textPrimary} />
+
+          <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
+            <Ionicons name="chatbubble-outline" size={20} color={Colors.textSecondary} />
+            {post.commentsCount > 0 && (
+              <Text style={styles.interactionCount}>{post.commentsCount}</Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={onRepost} style={styles.actionButton}>
-            <Ionicons name="repeat-outline" size={22} color={Colors.textPrimary} />
+
+          <TouchableOpacity onPress={onRepost} style={styles.interactionButton}>
+            <Ionicons name="repeat-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onShare} style={styles.actionButton}>
-            <Ionicons name="paper-plane-outline" size={20} color={Colors.textPrimary} />
+
+          <TouchableOpacity onPress={onShare} style={styles.interactionButton}>
+            <Ionicons name="paper-plane-outline" size={20} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {/* Stats */}
-        {(post.commentsCount > 0 || post.likesCount > 0) && (
-          <View style={styles.statsRow}>
-            {post.commentsCount > 0 && (
-              <Text style={styles.statsText}>{post.commentsCount} tra loi</Text>
-            )}
-            {post.commentsCount > 0 && post.likesCount > 0 && (
-              <Text style={styles.statsDot}> · </Text>
-            )}
-            {post.likesCount > 0 && (
-              <Text style={styles.statsText}>{post.likesCount} luot thich</Text>
-            )}
-          </View>
-        )}
+        <TouchableOpacity>
+          <Ionicons
+            name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
+            size={20}
+            color={post.isSaved ? Colors.primary : Colors.textSecondary}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -129,10 +202,10 @@ const getTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (seconds < 60) return 'Vua xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  if (seconds < 60) return 'Vừa xong';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} phút`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày`;
   return date.toLocaleDateString('vi-VN');
 };
 
@@ -148,7 +221,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       setPosts(response.data);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
-      Alert.alert('Loi', 'Khong the tai bai viet. Vui long thu lai.');
     } finally {
       setLoading(false);
     }
@@ -168,7 +240,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    // Optimistic update
     setPosts(posts.map(p =>
       p.id === postId
         ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1 }
@@ -182,33 +253,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         await postService.likePost(postId);
       }
     } catch (error) {
-      console.error('Failed to like/unlike post:', error);
-      // Revert on error
       setPosts(posts.map(p =>
         p.id === postId
           ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount + 1 : p.likesCount - 1 }
           : p
       ));
-      Alert.alert('Loi', 'Khong the thuc hien. Vui long thu lai.');
     }
   };
 
   const renderPost = ({ item }: { item: Post }) => (
-    <ThreadPost
+    <PostCard
       post={item}
       onLike={() => handleLike(item.id)}
       onComment={() => navigation.navigate('PostDetail', { postId: item.id })}
-      onRepost={() => Alert.alert('Repost', 'Ban muon dang lai bai viet nay?', [
-        { text: 'Huy', style: 'cancel' },
-        { text: 'Dang lai', onPress: () => Alert.alert('Thanh cong', 'Da dang lai bai viet') },
+      onRepost={() => Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng lại', onPress: () => {} },
       ])}
-      onShare={() => Share.share({ message: `Xem bai viet cua ${item.author.fullName} tren PTIT Social!` })}
+      onShare={() => Share.share({ message: `Xem bài viết của ${item.author.fullName} trên PTIT Social!` })}
       onProfile={() => navigation.navigate('UserProfile', { userId: item.author.id })}
-      onMore={() => Alert.alert('Tuy chon', '', [
-        { text: 'Luu bai viet', onPress: () => Alert.alert('Da luu') },
-        { text: 'An bai viet', onPress: () => setPosts(posts.filter(p => p.id !== item.id)) },
-        { text: 'Bao cao', style: 'destructive', onPress: () => Alert.alert('Da bao cao') },
-        { text: 'Huy', style: 'cancel' },
+      onMore={() => Alert.alert('Tùy chọn', '', [
+        { text: 'Lưu bài viết', onPress: () => {} },
+        { text: 'Ẩn bài viết', onPress: () => setPosts(posts.filter(p => p.id !== item.id)) },
+        { text: 'Báo cáo', style: 'destructive', onPress: () => {} },
+        { text: 'Hủy', style: 'cancel' },
       ])}
     />
   );
@@ -218,7 +286,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
         <View style={styles.header}>
-          <Text style={styles.headerLogo}>@</Text>
+          <View style={styles.headerLeft}>
+            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+          </View>
+          <Text style={styles.headerTitle}>PTIT Social</Text>
+          <View style={styles.headerRight}>
+            <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -233,7 +307,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerLogo}>@</Text>
+        <TouchableOpacity style={styles.headerLeft}>
+          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>PTIT Social</Text>
+        <TouchableOpacity
+          style={styles.headerRight}
+          onPress={() => navigation.navigate('Messages')}
+        >
+          <Ionicons name="chatbubbles-outline" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       {/* Feed */}
@@ -246,14 +329,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.textPrimary}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
           />
         }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={styles.feedContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+            <Ionicons name="newspaper-outline" size={64} color={Colors.gray300} />
+            <Text style={styles.emptyTitle}>Chưa có bài viết nào</Text>
+            <Text style={styles.emptyText}>Hãy theo dõi bạn bè để xem bài viết</Text>
           </View>
         }
       />
@@ -264,36 +349,57 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.gray50,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     height: Layout.headerHeight,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  headerLeft: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
   },
-  headerLogo: {
-    fontSize: 32,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+  headerTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.primary,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   feedContent: {
+    paddingVertical: Spacing.sm,
     paddingBottom: 100,
   },
-  separator: {
-    height: 0.5,
-    backgroundColor: Colors.border,
+  // Post Card
+  postCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    ...Shadow.sm,
   },
-  // Post styles
-  postContainer: {
+  postHeader: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  postLeft: {
     alignItems: 'center',
-    marginRight: Spacing.md,
+    justifyContent: 'space-between',
+  },
+  postHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   avatar: {
     width: Layout.avatarSize.md,
@@ -301,26 +407,9 @@ const styles = StyleSheet.create({
     borderRadius: Layout.avatarSize.md / 2,
     backgroundColor: Colors.gray200,
   },
-  threadLine: {
+  postHeaderInfo: {
+    marginLeft: Spacing.md,
     flex: 1,
-    width: 2,
-    backgroundColor: Colors.gray200,
-    marginTop: Spacing.sm,
-    borderRadius: 1,
-    minHeight: 20,
-  },
-  postRight: {
-    flex: 1,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  postHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
   },
   usernameRow: {
     flexDirection: 'row',
@@ -328,55 +417,46 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
-  verifiedIcon: {
-    marginLeft: Spacing.xxs,
-  },
   timeAgo: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginLeft: Spacing.sm,
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    marginTop: 2,
   },
   moreButton: {
-    padding: Spacing.xs,
+    padding: Spacing.sm,
   },
   postContent: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     lineHeight: 22,
-    marginTop: Spacing.xs,
-  },
-  mediaContainer: {
     marginTop: Spacing.md,
-    borderRadius: BorderRadius.md,
-    overflow: 'hidden',
   },
-  postImage: {
-    width: '100%',
-    height: 300,
-    backgroundColor: Colors.gray100,
-  },
-  actions: {
+  interactionBar: {
     flexDirection: 'row',
-    marginTop: Spacing.md,
-    gap: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
   },
-  actionButton: {
-    padding: Spacing.xs,
-  },
-  statsRow: {
+  interactionLeft: {
     flexDirection: 'row',
-    marginTop: Spacing.sm,
+    alignItems: 'center',
+    gap: Spacing.xl,
   },
-  statsText: {
+  interactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  interactionCount: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-  },
-  statsDot: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
   loadingContainer: {
     flex: 1,
@@ -389,9 +469,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 100,
   },
+  emptyTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.lg,
+  },
   emptyText: {
     fontSize: FontSize.md,
     color: Colors.textSecondary,
+    marginTop: Spacing.sm,
   },
 });
 

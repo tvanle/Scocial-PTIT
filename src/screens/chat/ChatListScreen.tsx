@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar, Header, IconButton } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { Avatar } from '../../components/common';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Conversation } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
@@ -35,7 +35,6 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       setConversations(response.data);
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
-      Alert.alert('Lỗi', 'Không thể tải danh sách trò chuyện. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -53,10 +52,6 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
 
   const handleConversationPress = (conversation: Conversation) => {
     navigation.navigate('ChatRoom', { conversationId: conversation.id });
-  };
-
-  const handleNewChat = () => {
-    navigation.navigate('NewChat');
   };
 
   const getConversationName = (conversation: Conversation): string => {
@@ -104,7 +99,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
                 {name}
               </Text>
               {item.isMuted && (
-                <Ionicons name="volume-mute" size={14} color={Colors.textTertiary} style={styles.muteIcon} />
+                <Ionicons name="volume-mute" size={14} color={Colors.textTertiary} style={{ marginLeft: 4 }} />
               )}
             </View>
             <Text style={[styles.time, hasUnread && styles.timeUnread]}>
@@ -117,9 +112,6 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
               style={[styles.lastMessage, hasUnread && styles.lastMessageUnread]}
               numberOfLines={1}
             >
-              {item.type === 'group' && item.lastMessage?.sender.id !== '1' && (
-                <Text style={styles.senderName}>{item.lastMessage?.sender.fullName}: </Text>
-              )}
               {item.lastMessage?.content || 'Bắt đầu cuộc trò chuyện'}
             </Text>
             {hasUnread && (
@@ -138,20 +130,15 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <Header
-          title={Strings.nav.messages}
-          rightComponent={
-            <View style={styles.headerRight}>
-              <IconButton
-                icon="create-outline"
-                onPress={handleNewChat}
-                variant="ghost"
-                size={36}
-                iconSize={24}
-              />
-            </View>
-          }
-        />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Tin nhắn</Text>
+          <TouchableOpacity style={styles.newChatButton}>
+            <Ionicons name="create-outline" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -161,70 +148,67 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header
-        title={Strings.nav.messages}
-        rightComponent={
-          <View style={styles.headerRight}>
-            <IconButton
-              icon="create-outline"
-              onPress={handleNewChat}
-              variant="ghost"
-              size={36}
-              iconSize={24}
-            />
-          </View>
-        }
-      />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Tin nhắn</Text>
+        <TouchableOpacity style={styles.newChatButton}>
+          <Ionicons name="create-outline" size={24} color={Colors.primary} />
+        </TouchableOpacity>
+      </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={Colors.textTertiary} />
+          <Ionicons name="search" size={18} color={Colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder={Strings.search.placeholder}
+            placeholder="Tìm kiếm cuộc trò chuyện"
             placeholderTextColor={Colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+              <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* Online Users */}
-      <View style={styles.onlineSection}>
-        <Text style={styles.onlineTitle}>Đang hoạt động</Text>
-        <FlatList
-          horizontal
-          data={conversations.filter(c => c.type === 'private' && c.isOnline)}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.onlineItem}
-              onPress={() => handleConversationPress(item)}
-            >
-              <Avatar
-                uri={item.participants[0]?.avatar}
-                name={item.participants[0]?.fullName || ''}
-                size="md"
-                showOnlineStatus
-                isOnline
-              />
-              <Text style={styles.onlineName} numberOfLines={1}>
-                {item.participants[0]?.fullName?.split(' ').pop()}
-              </Text>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => `online-${item.id}`}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.onlineList}
-        />
-      </View>
+      {conversations.filter(c => c.type === 'private' && c.isOnline).length > 0 && (
+        <View style={styles.onlineSection}>
+          <FlatList
+            horizontal
+            data={conversations.filter(c => c.type === 'private' && c.isOnline)}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.onlineItem}
+                onPress={() => handleConversationPress(item)}
+              >
+                <Avatar
+                  uri={item.participants[0]?.avatar}
+                  name={item.participants[0]?.fullName || ''}
+                  size="md"
+                  showOnlineStatus
+                  isOnline
+                />
+                <Text style={styles.onlineName} numberOfLines={1}>
+                  {item.participants[0]?.fullName?.split(' ').pop()}
+                </Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => `online-${item.id}`}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.onlineList}
+          />
+        </View>
+      )}
 
-      {/* Conversations List */}
+      {/* Conversations */}
       <FlatList
         data={filteredConversations}
         renderItem={renderConversation}
@@ -241,8 +225,9 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={64} color={Colors.textTertiary} />
-            <Text style={styles.emptyText}>Chưa có cuộc trò chuyện nào</Text>
+            <Ionicons name="chatbubbles-outline" size={64} color={Colors.gray300} />
+            <Text style={styles.emptyTitle}>Chưa có tin nhắn</Text>
+            <Text style={styles.emptyText}>Bắt đầu trò chuyện với bạn bè</Text>
           </View>
         }
       />
@@ -253,27 +238,50 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
   },
-  headerRight: {
+  header: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: Layout.headerHeight,
+    paddingHorizontal: Spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.textPrimary,
+  },
+  newChatButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    paddingBottom: Spacing.sm,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.backgroundSecondary,
-    borderRadius: BorderRadius.round,
-    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.lg,
     height: 40,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   searchInput: {
     flex: 1,
     marginLeft: Spacing.sm,
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.textPrimary,
   },
   onlineSection: {
@@ -281,30 +289,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
-  onlineTitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-  },
   onlineList: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
   },
   onlineItem: {
     alignItems: 'center',
-    width: 60,
+    width: 56,
   },
   onlineName: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.xxs,
     color: Colors.textPrimary,
     marginTop: Spacing.xs,
-    width: 60,
+    width: 56,
     textAlign: 'center',
   },
   listContent: {
     paddingVertical: Spacing.sm,
+    paddingBottom: 100,
   },
   conversationItem: {
     flexDirection: 'row',
@@ -337,9 +339,6 @@ const styles = StyleSheet.create({
   nameUnread: {
     fontWeight: FontWeight.bold,
   },
-  muteIcon: {
-    marginLeft: Spacing.xs,
-  },
   time: {
     fontSize: FontSize.xs,
     color: Colors.textTertiary,
@@ -362,9 +361,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontWeight: FontWeight.medium,
   },
-  senderName: {
-    fontWeight: FontWeight.medium,
-  },
   unreadBadge: {
     minWidth: 20,
     height: 20,
@@ -375,9 +371,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
   },
   unreadText: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.xxs,
     fontWeight: FontWeight.bold,
-    color: Colors.textLight,
+    color: Colors.white,
   },
   emptyContainer: {
     flex: 1,
@@ -385,10 +381,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 100,
   },
+  emptyTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.lg,
+  },
   emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.textTertiary,
-    marginTop: Spacing.md,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: Spacing.sm,
   },
   loadingContainer: {
     flex: 1,

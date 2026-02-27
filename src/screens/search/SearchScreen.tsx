@@ -9,22 +9,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar, Card } from '../../components/common';
-import { PostCard } from '../../components/home';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { Avatar } from '../../components/common';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { User, Post, Group } from '../../types';
+import { User, Group } from '../../types';
 
-// Mock search results
 const mockUsers: User[] = [
   { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2', studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
   { id: '3', fullName: 'Lê Thị C', avatar: 'https://i.pravatar.cc/150?img=3', studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
   { id: '4', fullName: 'Phạm Văn D', avatar: 'https://i.pravatar.cc/150?img=4', studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
-];
-
-const mockGroups: Group[] = [
-  { id: '1', name: 'CLB Lập trình PTIT', avatar: 'https://picsum.photos/100?random=1', membersCount: 1250, privacy: 'public', postsCount: 456, admins: [], moderators: [], isJoined: true, isPendingApproval: false, createdAt: '', updatedAt: '' },
-  { id: '2', name: 'Hội sinh viên D21CQCN', avatar: 'https://picsum.photos/100?random=2', membersCount: 89, privacy: 'private', postsCount: 234, admins: [], moderators: [], isJoined: false, isPendingApproval: false, createdAt: '', updatedAt: '' },
 ];
 
 const recentSearches = [
@@ -37,44 +30,53 @@ interface SearchScreenProps {
   navigation: any;
 }
 
-type SearchTab = 'all' | 'people' | 'posts' | 'groups';
-
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<SearchTab>('all');
   const [isSearching, setIsSearching] = useState(false);
+  const [recentList, setRecentList] = useState(recentSearches);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    if (query.trim().length > 0) {
-      setIsSearching(true);
-      // Simulate search API call
-    } else {
-      setIsSearching(false);
-    }
+    setIsSearching(query.trim().length > 0);
   }, []);
 
   const handleUserPress = (userId: string) => {
     navigation.navigate('UserProfile', { userId });
   };
 
-  const handleGroupPress = (groupId: string) => {
-    navigation.navigate('GroupDetail', { groupId });
-  };
-
-  const [recentList, setRecentList] = useState(recentSearches);
-
   const handleClearRecent = () => {
     setRecentList([]);
   };
 
+  const renderUserItem = (user: User) => (
+    <TouchableOpacity
+      key={user.id}
+      style={styles.userItem}
+      onPress={() => handleUserPress(user.id)}
+      activeOpacity={0.7}
+    >
+      <Avatar uri={user.avatar} name={user.fullName} size="md" />
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{user.fullName}</Text>
+        <Text style={styles.userDetail}>
+          {user.studentId} · {user.faculty}
+        </Text>
+      </View>
+      <TouchableOpacity style={styles.followButton}>
+        <Text style={styles.followButtonText}>Theo dõi</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
   const renderRecentSearches = () => (
     <View style={styles.recentContainer}>
       <View style={styles.recentHeader}>
-        <Text style={styles.sectionTitle}>{Strings.search.recent}</Text>
-        <TouchableOpacity onPress={handleClearRecent}>
-          <Text style={styles.clearText}>{Strings.search.clearHistory}</Text>
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Gần đây</Text>
+        {recentList.length > 0 && (
+          <TouchableOpacity onPress={handleClearRecent}>
+            <Text style={styles.clearText}>Xóa tất cả</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {recentList.map(item => (
         <TouchableOpacity
@@ -84,8 +86,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
         >
           <View style={styles.recentIcon}>
             <Ionicons
-              name={item.type === 'user' ? 'person-outline' : item.type === 'group' ? 'people-outline' : 'time-outline'}
-              size={20}
+              name={item.type === 'user' ? 'person-outline' : 'time-outline'}
+              size={18}
               color={Colors.textSecondary}
             />
           </View>
@@ -101,113 +103,30 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
     </View>
   );
 
-  const renderUserItem = (user: User) => (
-    <TouchableOpacity
-      key={user.id}
-      style={styles.userItem}
-      onPress={() => handleUserPress(user.id)}
-    >
-      <Avatar uri={user.avatar} name={user.fullName} size="md" />
-      <View style={styles.userInfo}>
-        <Text style={styles.userName}>{user.fullName}</Text>
-        <Text style={styles.userDetail}>
-          {user.studentId} • {user.faculty}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
-      >
-        <Ionicons name="person-add-outline" size={20} color={Colors.primary} />
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
-
-  const renderGroupItem = (group: Group) => (
-    <TouchableOpacity
-      key={group.id}
-      style={styles.groupItem}
-      onPress={() => handleGroupPress(group.id)}
-    >
-      <Avatar uri={group.avatar} name={group.name} size="md" />
-      <View style={styles.groupInfo}>
-        <Text style={styles.groupName}>{group.name}</Text>
-        <Text style={styles.groupDetail}>
-          {group.membersCount} thành viên • {group.privacy === 'public' ? 'Công khai' : 'Riêng tư'}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={[styles.joinButton, group.isJoined && styles.joinedButton]}
-        onPress={() => handleGroupPress(group.id)}
-      >
-        <Text style={[styles.joinButtonText, group.isJoined && styles.joinedButtonText]}>
-          {group.isJoined ? 'Đã tham gia' : 'Tham gia'}
-        </Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
-
   const renderSearchResults = () => (
     <View style={styles.resultsContainer}>
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {(['all', 'people', 'posts', 'groups'] as SearchTab[]).map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'all' ? 'Tất cả' :
-               tab === 'people' ? Strings.search.people :
-               tab === 'posts' ? Strings.search.posts : Strings.search.groups}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Results */}
-      {(activeTab === 'all' || activeTab === 'people') && (
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{Strings.search.people}</Text>
-          {mockUsers.map(renderUserItem)}
-          <TouchableOpacity style={styles.seeAllButton} onPress={() => setActiveTab('people')}>
-            <Text style={styles.seeAllText}>Xem tất cả</Text>
-          </TouchableOpacity>
-        </Card>
-      )}
-
-      {(activeTab === 'all' || activeTab === 'groups') && (
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{Strings.search.groups}</Text>
-          {mockGroups.map(renderGroupItem)}
-          <TouchableOpacity style={styles.seeAllButton} onPress={() => setActiveTab('groups')}>
-            <Text style={styles.seeAllText}>Xem tất cả</Text>
-          </TouchableOpacity>
-        </Card>
-      )}
+      <Text style={styles.sectionTitle}>Mọi người</Text>
+      {mockUsers.map(renderUserItem)}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Tìm kiếm</Text>
+      </View>
+
       {/* Search Bar */}
-      <View style={styles.searchHeader}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
+      <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color={Colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder={Strings.search.placeholder}
+            placeholder="Tìm kiếm bạn bè, bài viết..."
             placeholderTextColor={Colors.textTertiary}
             value={searchQuery}
             onChangeText={handleSearch}
-            autoFocus
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
@@ -231,29 +150,31 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.white,
   },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
+  header: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  headerTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.textPrimary,
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  backButton: {
-    padding: Spacing.sm,
   },
   searchBar: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.backgroundSecondary,
-    borderRadius: BorderRadius.round,
-    paddingHorizontal: Spacing.md,
-    height: 40,
-    marginLeft: Spacing.sm,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.lg,
+    height: 44,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   searchInput: {
     flex: 1,
@@ -262,10 +183,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   listContent: {
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 100,
   },
   recentContainer: {
-    backgroundColor: Colors.background,
     paddingTop: Spacing.md,
   },
   recentHeader: {
@@ -277,12 +197,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   clearText: {
     fontSize: FontSize.sm,
     color: Colors.primary,
+    fontWeight: FontWeight.semiBold,
   },
   recentItem: {
     flexDirection: 'row',
@@ -291,10 +214,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   recentIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.backgroundSecondary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -308,39 +231,12 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
   },
   resultsContainer: {
-    flex: 1,
-  },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: Colors.background,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  tab: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.backgroundSecondary,
-  },
-  activeTab: {
-    backgroundColor: Colors.primarySoft,
-  },
-  tabText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
-  },
-  activeTabText: {
-    color: Colors.primary,
-  },
-  section: {
-    marginTop: Spacing.sm,
-    padding: Spacing.lg,
+    paddingTop: Spacing.md,
   },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
   userInfo: {
@@ -349,7 +245,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
   userDetail: {
@@ -357,56 +253,16 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  addButton: {
-    padding: Spacing.sm,
-  },
-  groupItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-  },
-  groupInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  groupName: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-  },
-  groupDetail: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  joinButton: {
+  followButton: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.full,
   },
-  joinedButton: {
-    backgroundColor: Colors.backgroundSecondary,
-  },
-  joinButtonText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textLight,
-  },
-  joinedButtonText: {
-    color: Colors.textSecondary,
-  },
-  seeAllButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  seeAllText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-    color: Colors.primary,
+  followButtonText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
   },
 });
 
