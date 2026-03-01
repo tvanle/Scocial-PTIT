@@ -5,13 +5,12 @@ import { ENDPOINTS } from '../../constants/api';
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
-    // Backend: { success, data: { user, accessToken, refreshToken } }
-    return response.data.data;
+    return response.data;
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, data);
-    return response.data.data;
+    return response.data;
   }
 
   async logout(refreshToken?: string): Promise<void> {
@@ -20,8 +19,7 @@ class AuthService {
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     const response = await apiClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken });
-    // Backend: { success, data: { accessToken, refreshToken } }
-    return response.data.data;
+    return response.data;
   }
 
   async forgotPassword(email: string): Promise<void> {
