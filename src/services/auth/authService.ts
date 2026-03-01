@@ -4,22 +4,24 @@ import { ENDPOINTS } from '../../constants/api';
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>(ENDPOINTS.AUTH.LOGIN, credentials);
-    return response.data;
+    const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
+    // Backend: { success, data: { user, accessToken, refreshToken } }
+    return response.data.data;
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>(ENDPOINTS.AUTH.REGISTER, data);
-    return response.data;
+    const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, data);
+    return response.data.data;
   }
 
-  async logout(): Promise<void> {
-    await apiClient.post(ENDPOINTS.AUTH.LOGOUT);
+  async logout(refreshToken?: string): Promise<void> {
+    await apiClient.post(ENDPOINTS.AUTH.LOGOUT, { refreshToken });
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     const response = await apiClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken });
-    return response.data;
+    // Backend: { success, data: { accessToken, refreshToken } }
+    return response.data.data;
   }
 
   async forgotPassword(email: string): Promise<void> {
