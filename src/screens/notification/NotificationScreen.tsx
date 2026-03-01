@@ -18,6 +18,7 @@ import { Strings } from '../../constants/strings';
 import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { notificationService } from '../../services/notification/notificationService';
+import { useAuthStore } from '../../store/slices/authSlice';
 
 interface NotificationScreenProps {
   navigation: any;
@@ -30,9 +31,11 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
+  const { accessToken } = useAuthStore();
 
   const fetchNotifications = async () => {
     try {
+      setLoading(true);
       const response = await notificationService.getNotifications({ page: 1, limit: 50 });
       setNotifications(response.data);
     } catch (error) {
@@ -43,8 +46,11 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    if (accessToken) {
+      setNotifications([]);
+      fetchNotifications();
+    }
+  }, [accessToken]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

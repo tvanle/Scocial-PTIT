@@ -210,13 +210,14 @@ const getTimeAgo = (dateString: string): string => {
 };
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { user } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchPosts = async () => {
     try {
+      setLoading(true);
       const response = await postService.getFeed({ page: 1, limit: 20 });
       setPosts(response.data);
     } catch (error) {
@@ -227,8 +228,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    if (accessToken) {
+      setPosts([]);
+      fetchPosts();
+    }
+  }, [accessToken]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

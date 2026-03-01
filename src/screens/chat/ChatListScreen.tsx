@@ -18,6 +18,7 @@ import { Strings } from '../../constants/strings';
 import { Conversation } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { chatService } from '../../services/chat/chatService';
+import { useAuthStore } from '../../store/slices/authSlice';
 
 interface ChatListScreenProps {
   navigation: any;
@@ -28,9 +29,11 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const { accessToken } = useAuthStore();
 
   const fetchConversations = async () => {
     try {
+      setLoading(true);
       const response = await chatService.getConversations({ page: 1, limit: 50 });
       setConversations(response.data);
     } catch (error) {
@@ -41,8 +44,11 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (accessToken) {
+      setConversations([]);
+      fetchConversations();
+    }
+  }, [accessToken]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
