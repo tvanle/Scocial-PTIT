@@ -5,6 +5,15 @@ import { parsePagination, paginate } from '../../shared/utils';
 import { CreatePostInput, UpdatePostInput, CreateCommentInput } from './post.validator';
 
 export class PostService {
+  // Transform post to flatten _count into likesCount/commentsCount
+  private transformPost(post: any) {
+    const { _count, ...rest } = post;
+    return {
+      ...rest,
+      likesCount: _count?.likes ?? 0,
+      commentsCount: _count?.comments ?? 0,
+    };
+  }
   // Create post
   async createPost(authorId: string, data: CreatePostInput, mediaIds?: string[]) {
     const post = await prisma.post.create({
@@ -38,7 +47,7 @@ export class PostService {
       },
     });
 
-    return post;
+    return this.transformPost(post);
   }
 
   // Get post by ID
@@ -83,7 +92,7 @@ export class PostService {
       isLiked = !!like;
     }
 
-    return { ...post, isLiked };
+    return { ...this.transformPost(post), isLiked };
   }
 
   // Update post
@@ -100,7 +109,7 @@ export class PostService {
       throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
     }
 
-    return prisma.post.update({
+    const updated = await prisma.post.update({
       where: { id: postId },
       data,
       include: {
@@ -109,6 +118,8 @@ export class PostService {
             id: true,
             fullName: true,
             avatar: true,
+            studentId: true,
+            isVerified: true,
           },
         },
         media: true,
@@ -120,6 +131,8 @@ export class PostService {
         },
       },
     });
+
+    return this.transformPost(updated);
   }
 
   // Delete post
@@ -152,11 +165,13 @@ export class PostService {
     });
 
     const followingIds = following.map((f) => f.followingId);
-    followingIds.push(userId); // Include own posts
 
+    // Own posts (any privacy) + followed users' public posts
     const where = {
-      authorId: { in: followingIds },
-      privacy: 'PUBLIC' as const,
+      OR: [
+        { authorId: userId },
+        { authorId: { in: followingIds }, privacy: 'PUBLIC' as const },
+      ],
     };
 
     const [posts, total] = await Promise.all([
@@ -198,7 +213,7 @@ export class PostService {
 
     const likedPostIds = new Set(likedPosts.map((l) => l.postId));
     const postsWithLikeStatus = posts.map((post) => ({
-      ...post,
+      ...this.transformPost(post),
       isLiked: likedPostIds.has(post.id),
     }));
 
@@ -242,7 +257,7 @@ export class PostService {
       prisma.post.count({ where }),
     ]);
 
-    return paginate(posts, total, p, l);
+    return paginate(posts.map((p) => this.transformPost(p)), total, p, l);
   }
 
   // Like post
