@@ -18,21 +18,14 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } f
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post } from '../../types';
 import { postService } from '../../services/post/postService';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 interface ProfileScreenProps {
   navigation: any;
   route?: any;
 }
 
-const getTimeAgo = (dateString: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (seconds < 60) return 'Vừa xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} phút`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ`;
-  return `${Math.floor(seconds / 86400)} ngày`;
-};
-
-const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = ({ post, onPress }) => (
+const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = React.memo(({ post, onPress }) => (
   <TouchableOpacity style={styles.postItem} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.postContent}>
       <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
@@ -48,11 +41,11 @@ const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = ({ post, onPr
           <Ionicons name="chatbubble-outline" size={14} color={Colors.textTertiary} />
           <Text style={styles.postStatText}>{post.commentsCount}</Text>
         </View>
-        <Text style={styles.postTime}>{getTimeAgo(post.createdAt)}</Text>
+        <Text style={styles.postTime}>{formatTimeAgo(post.createdAt)}</Text>
       </View>
     </View>
   </TouchableOpacity>
-);
+));
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const { user: currentUser, logout } = useAuthStore();

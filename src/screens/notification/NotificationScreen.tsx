@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,18 +7,16 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar } from '../../components/common';
+import { Avatar, EmptyState } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { notificationService } from '../../services/notification/notificationService';
-import { useAuthStore } from '../../store/slices/authSlice';
+import { useFetch } from '../../hooks';
 
 interface NotificationScreenProps {
   navigation: any;
@@ -27,42 +25,20 @@ interface NotificationScreenProps {
 type FilterChip = 'all' | 'replies' | 'mentions' | 'likes' | 'follows';
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: notificationsData, loading, refreshing, onRefresh, setData, refetch } = useFetch(
+    useCallback(() => notificationService.getNotifications({ page: 1, limit: 50 }), []),
+  );
+  const notifications = notificationsData?.data || [];
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
-  const { accessToken } = useAuthStore();
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await notificationService.getNotifications({ page: 1, limit: 50 });
-      setNotifications(response.data);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (accessToken) {
-      setNotifications([]);
-      fetchNotifications();
-    }
-  }, [accessToken]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchNotifications();
-    setRefreshing(false);
-  }, []);
 
   const handleNotificationPress = async (notification: Notification) => {
     if (!notification.isRead) {
-      setNotifications(prev =>
-        prev.map(n => (n.id === notification.id ? { ...n, isRead: true } : n))
-      );
+      setData(notificationsData ? {
+        ...notificationsData,
+        data: notificationsData.data.map((n: Notification) =>
+          n.id === notification.id ? { ...n, isRead: true } : n
+        ),
+      } : null);
       try {
         await notificationService.markAsRead(notification.id);
       } catch (error) {
@@ -94,11 +70,14 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const handleMarkAllRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setData(notificationsData ? {
+      ...notificationsData,
+      data: notificationsData.data.map((n: Notification) => ({ ...n, isRead: true })),
+    } : null);
     try {
       await notificationService.markAllAsRead();
     } catch (error) {
-      fetchNotifications();
+      refetch();
     }
   };
 
@@ -129,7 +108,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     { key: 'follows', label: 'Theo dõi' },
   ];
 
-  const getFilteredNotifications = () => {
+  const filteredNotifications = useMemo(() => {
     if (activeFilter === 'all') return notifications;
     const typeMap: Record<FilterChip, NotificationType[]> = {
       all: [],
@@ -139,9 +118,9 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       follows: ['follow', 'follow_back'],
     };
     return notifications.filter(n => typeMap[activeFilter]?.includes(n.type));
-  };
+  }, [notifications, activeFilter]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
 
   const renderNotification = ({ item }: { item: Notification }) => {
     const icon = getNotificationIcon(item.type);
@@ -223,7 +202,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       </ScrollView>
 
       <FlatList
-        data={getFilteredNotifications()}
+        data={filteredNotifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id}
         refreshControl={
@@ -237,12 +216,16 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-outline" size={64} color={Colors.gray300} />
-            <Text style={styles.emptyTitle}>Không có hoạt động nào</Text>
-            <Text style={styles.emptyText}>Khi có người tương tác, bạn sẽ thấy ở đây</Text>
-          </View>
+          <EmptyState
+            icon="notifications-outline"
+            title="Không có hoạt động nào"
+            subtitle="Khi có người tương tác, bạn sẽ thấy ở đây"
+          />
         }
+        removeClippedSubviews
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        windowSize={5}
       />
     </SafeAreaView>
   );
@@ -358,23 +341,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
     color: Colors.white,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  emptyTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginTop: Spacing.lg,
-  },
-  emptyText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.sm,
   },
   loadingContainer: {
     flex: 1,

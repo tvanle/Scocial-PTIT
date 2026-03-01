@@ -20,6 +20,7 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, RootStackParamList, UserProfile } from '../../types';
 import { userService } from '../../services/user/userService';
 import { postService } from '../../services/post/postService';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
@@ -63,7 +64,7 @@ const UserProfileScreen: React.FC = () => {
     setRefreshing(false);
   }, [userId]);
 
-  const handleFollow = async () => {
+  const handleFollow = useCallback(async () => {
     if (!profileUser) return;
 
     const wasFollowing = profileUser.isFollowing;
@@ -92,20 +93,12 @@ const UserProfileScreen: React.FC = () => {
       });
       Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
-  };
+  }, [profileUser, userId]);
 
-  const handleMessage = () => {
+  const handleMessage = useCallback(() => {
     if (!profileUser) return;
     navigation.navigate('ChatRoom', { conversationId: userId });
-  };
-
-  const getTimeAgo = (dateString: string): string => {
-    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-    if (seconds < 60) return 'Vua xong';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-    return `${Math.floor(seconds / 86400)}d`;
-  };
+  }, [profileUser, navigation, userId]);
 
   if (loading || !profileUser) {
     return (

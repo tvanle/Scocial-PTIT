@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Media, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { formatTimeAgo } from '../../utils/dateUtils';
+import { EmptyState } from '../../components/common';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
@@ -31,7 +33,7 @@ interface HomeScreenProps {
 }
 
 // Image layout component
-const PostImages: React.FC<{ media: Media[] }> = ({ media }) => {
+const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
   if (!media || media.length === 0) return null;
 
   if (media.length === 1) {
@@ -61,7 +63,7 @@ const PostImages: React.FC<{ media: Media[] }> = ({ media }) => {
       </View>
     </View>
   );
-};
+});
 
 const imgStyles = StyleSheet.create({
   singleContainer: {
@@ -117,8 +119,8 @@ const PostCard: React.FC<{
   onShare: () => void;
   onProfile: () => void;
   onMore: () => void;
-}> = ({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
-  const timeAgo = getTimeAgo(post.createdAt);
+}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
     <View style={styles.postCard}>
@@ -194,20 +196,7 @@ const PostCard: React.FC<{
       </View>
     </View>
   );
-};
-
-// Helper function
-const getTimeAgo = (dateString: string): string => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (seconds < 60) return 'Vừa xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} phút`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày`;
-  return date.toLocaleDateString('vi-VN');
-};
+});
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user, accessToken } = useAuthStore();
@@ -240,7 +229,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setRefreshing(false);
   }, []);
 
-  const handleLike = async (postId: string) => {
+  const handleLike = useCallback(async (postId: string) => {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
@@ -263,27 +252,47 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           : p
       ));
     }
-  };
+  }, [posts]);
 
-  const renderPost = ({ item }: { item: Post }) => (
+  const handleComment = useCallback((postId: string) => {
+    navigation.navigate('PostDetail', { postId });
+  }, [navigation]);
+
+  const handleRepost = useCallback(() => {
+    Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
+      { text: 'Hủy', style: 'cancel' },
+      { text: 'Đăng lại', onPress: () => {} },
+    ]);
+  }, []);
+
+  const handleShare = useCallback((authorName: string) => {
+    Share.share({ message: `Xem bài viết của ${authorName} trên PTIT Social!` });
+  }, []);
+
+  const handleProfile = useCallback((userId: string) => {
+    navigation.navigate('UserProfile', { userId });
+  }, [navigation]);
+
+  const handleMore = useCallback((postId: string) => {
+    Alert.alert('Tùy chọn', '', [
+      { text: 'Lưu bài viết', onPress: () => {} },
+      { text: 'Ẩn bài viết', onPress: () => setPosts(prev => prev.filter(p => p.id !== postId)) },
+      { text: 'Báo cáo', style: 'destructive', onPress: () => {} },
+      { text: 'Hủy', style: 'cancel' },
+    ]);
+  }, []);
+
+  const renderPost = useCallback(({ item }: { item: Post }) => (
     <PostCard
       post={item}
       onLike={() => handleLike(item.id)}
-      onComment={() => navigation.navigate('PostDetail', { postId: item.id })}
-      onRepost={() => Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Đăng lại', onPress: () => {} },
-      ])}
-      onShare={() => Share.share({ message: `Xem bài viết của ${item.author.fullName} trên PTIT Social!` })}
-      onProfile={() => navigation.navigate('UserProfile', { userId: item.author.id })}
-      onMore={() => Alert.alert('Tùy chọn', '', [
-        { text: 'Lưu bài viết', onPress: () => {} },
-        { text: 'Ẩn bài viết', onPress: () => setPosts(posts.filter(p => p.id !== item.id)) },
-        { text: 'Báo cáo', style: 'destructive', onPress: () => {} },
-        { text: 'Hủy', style: 'cancel' },
-      ])}
+      onComment={() => handleComment(item.id)}
+      onRepost={handleRepost}
+      onShare={() => handleShare(item.author.fullName)}
+      onProfile={() => handleProfile(item.author.id)}
+      onMore={() => handleMore(item.id)}
     />
-  );
+  ), [handleLike, handleComment, handleRepost, handleShare, handleProfile, handleMore]);
 
   if (loading) {
     return (
@@ -339,12 +348,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
         contentContainerStyle={styles.feedContent}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="newspaper-outline" size={64} color={Colors.gray300} />
-            <Text style={styles.emptyTitle}>Chưa có bài viết nào</Text>
-            <Text style={styles.emptyText}>Hãy theo dõi bạn bè để xem bài viết</Text>
-          </View>
+          <EmptyState
+            icon="newspaper-outline"
+            title="Chưa có bài viết nào"
+            subtitle="Hãy theo dõi bạn bè để xem bài viết"
+          />
         }
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        initialNumToRender={5}
+        windowSize={5}
       />
     </SafeAreaView>
   );

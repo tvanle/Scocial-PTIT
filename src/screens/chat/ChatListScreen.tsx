@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,55 +6,27 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
+import { Avatar, SearchInput, EmptyState } from '../../components/common';
+import { Colors, FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
 import { Conversation } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { chatService } from '../../services/chat/chatService';
-import { useAuthStore } from '../../store/slices/authSlice';
+import { useFetch } from '../../hooks';
 
 interface ChatListScreenProps {
   navigation: any;
 }
 
 const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data: conversationsData, loading, refreshing, onRefresh } = useFetch(
+    useCallback(() => chatService.getConversations({ page: 1, limit: 50 }), []),
+  );
+  const conversations = conversationsData?.data || [];
   const [searchQuery, setSearchQuery] = useState('');
-  const { accessToken } = useAuthStore();
-
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      const response = await chatService.getConversations({ page: 1, limit: 50 });
-      setConversations(response.data);
-    } catch (error) {
-      console.error('Failed to fetch conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (accessToken) {
-      setConversations([]);
-      fetchConversations();
-    }
-  }, [accessToken]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchConversations();
-    setRefreshing(false);
-  }, []);
 
   const handleConversationPress = (conversation: Conversation) => {
     navigation.navigate('ChatRoom', { conversationId: conversation.id });
@@ -166,23 +138,11 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={Colors.textTertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm cuộc trò chuyện"
-            placeholderTextColor={Colors.textTertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <SearchInput
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Tìm kiếm cuộc trò chuyện"
+      />
 
       {/* Online Users */}
       {conversations.filter(c => c.type === 'private' && c.isOnline).length > 0 && (
@@ -229,12 +189,16 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        removeClippedSubviews
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        windowSize={5}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={64} color={Colors.gray300} />
-            <Text style={styles.emptyTitle}>Chưa có tin nhắn</Text>
-            <Text style={styles.emptyText}>Bắt đầu trò chuyện với bạn bè</Text>
-          </View>
+          <EmptyState
+            icon="chatbubbles-outline"
+            title="Chưa có tin nhắn"
+            subtitle="Bắt đầu trò chuyện với bạn bè"
+          />
         }
       />
     </SafeAreaView>
@@ -269,26 +233,6 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  searchContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gray50,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.lg,
-    height: 40,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: Spacing.sm,
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
   },
   onlineSection: {
     paddingVertical: Spacing.sm,
@@ -380,23 +324,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xxs,
     fontWeight: FontWeight.bold,
     color: Colors.white,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  emptyTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginTop: Spacing.lg,
-  },
-  emptyText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.sm,
   },
   loadingContainer: {
     flex: 1,
