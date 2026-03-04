@@ -48,9 +48,15 @@ app.use(
 // Static files (uploads)
 app.use('/uploads', express.static(path.join(__dirname, '..', config.upload.dir)));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check - dùng để test xem server có gọi đến được không
+app.get('/health', (_req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    message: 'Server đang chạy, API gọi đến được.',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 // API Routes
