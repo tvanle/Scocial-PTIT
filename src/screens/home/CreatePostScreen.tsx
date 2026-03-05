@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import Avatar from '../../components/common/Avatar';
 import { useAuthStore } from '../../store/slices/authSlice';
+import { postService } from '../../services/post/postService';
 
 interface MediaItem {
   uri: string;
@@ -80,12 +81,14 @@ const CreatePostScreen: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      Alert.alert('Thành công', 'Bài viết đã được đăng', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    } catch {
-      Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');
+      await postService.createPost({
+        content: content.trim(),
+        privacy: 'public',
+      });
+      navigation.goBack();
+    } catch (error: any) {
+      console.error('Create post error:', error);
+      Alert.alert('Lỗi', error?.message || 'Không thể đăng bài viết. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -106,9 +109,10 @@ const CreatePostScreen: React.FC = () => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thread mới</Text>
           <TouchableOpacity
-            style={styles.headerSide}
+            style={styles.postButton}
             onPress={handlePost}
-            disabled={!canPost || isLoading}
+            disabled={isLoading}
+            activeOpacity={0.6}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color={Colors.primary} />
@@ -214,6 +218,12 @@ const styles = StyleSheet.create({
   },
   headerSide: {
     minWidth: 50,
+  },
+  postButton: {
+    minWidth: 50,
+    alignItems: 'flex-end',
+    paddingVertical: Spacing.sm,
+    paddingLeft: Spacing.md,
   },
   cancelText: {
     fontSize: FontSize.md,
