@@ -311,9 +311,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
         <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
-      <View style={styles.headerLogo}>
-        <Text style={styles.headerLogoText}>ptit</Text>
-      </View>
+      <Image
+        source={require('../../../assets/logo.png')}
+        style={styles.headerLogo}
+        resizeMode="contain"
+      />
       <TouchableOpacity
         style={styles.headerIconButton}
         onPress={() => (navigation as any).navigate('Search')}
@@ -389,18 +391,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
   },
   headerLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerLogoText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
+    width: 32,
+    height: 32,
   },
   headerIconButton: {
     width: 40,
