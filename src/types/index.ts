@@ -91,7 +91,7 @@ export interface Post {
   updatedAt: string;
 }
 
-export type PostPrivacy = 'public' | 'followers' | 'private';
+export type PostPrivacy = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
 
 export interface CreatePostData {
   content: string;

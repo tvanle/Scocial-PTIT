@@ -83,7 +83,7 @@ const CreatePostScreen: React.FC = () => {
     try {
       await postService.createPost({
         content: content.trim(),
-        privacy: 'public',
+        privacy: 'PUBLIC',
       });
       navigation.goBack();
     } catch (error: any) {
