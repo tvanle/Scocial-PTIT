@@ -9,11 +9,11 @@ import {
   StatusBar,
   TextInput,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 
 interface LoginScreenProps {
@@ -32,13 +32,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = 'Vui long nhap email';
+      newErrors.email = 'Vui lòng nhập email';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email khong hop le';
+      newErrors.email = 'Email không hợp lệ';
     }
 
     if (!password) {
-      newErrors.password = 'Vui long nhap mat khau';
+      newErrors.password = 'Vui lòng nhập mật khẩu';
     }
 
     setErrors(newErrors);
@@ -60,101 +60,123 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       <KeyboardAvoidingView
-        style={styles.content}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Logo */}
-        <View style={styles.logoSection}>
-          <Text style={styles.logoAt}>@</Text>
-        </View>
-
-        {/* Form */}
-        <View style={styles.form}>
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Email hoac ten nguoi dung"
-              placeholderTextColor={Colors.textTertiary}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({ ...errors, email: undefined });
-              }}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <View style={[styles.passwordContainer, errors.password && styles.inputError]}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Mat khau"
-                placeholderTextColor={Colors.textTertiary}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (errors.password) setErrors({ ...errors, password: undefined });
-                }}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={Colors.textTertiary}
-                />
-              </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo Section */}
+          <View style={styles.logoSection}>
+            <View style={styles.logoContainer}>
+              <Ionicons name="school" size={40} color={Colors.white} />
             </View>
-            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            <Text style={styles.appName}>PTIT Social</Text>
           </View>
 
-          {/* Error from API */}
-          {error && (
-            <Text style={styles.apiError}>{error}</Text>
-          )}
+          {/* Welcome Text */}
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Chào mừng trở lại!</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Đăng nhập để kết nối với bạn bè PTIT
+            </Text>
+          </View>
 
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.loginButton, (!email || !password) && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading || !email || !password}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={Colors.white} size="small" />
-            ) : (
-              <Text style={styles.loginButtonText}>Dang nhap</Text>
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Email Input */}
+            <View style={styles.inputWrapper}>
+              <View style={[styles.inputContainer, errors.email && styles.inputError]}>
+                <Ionicons name="mail-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email hoặc tên người dùng"
+                  placeholderTextColor={Colors.gray400}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) setErrors({ ...errors, email: undefined });
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputWrapper}>
+              <View style={styles.passwordLabelRow}>
+                <Text style={styles.inputLabel}>Mật khẩu</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                  <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.inputContainer, errors.password && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập mật khẩu"
+                  placeholderTextColor={Colors.gray400}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) setErrors({ ...errors, password: undefined });
+                  }}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={Colors.gray400}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            </View>
+
+            {/* Error from API */}
+            {error && (
+              <View style={styles.apiErrorContainer}>
+                <Ionicons name="alert-circle" size={16} color={Colors.error} />
+                <Text style={styles.apiError}>{error}</Text>
+              </View>
             )}
+
+            {/* Login Button */}
+            <TouchableOpacity
+              style={[styles.loginButton, (!email || !password) && styles.loginButtonDisabled]}
+              onPress={handleLogin}
+              disabled={isLoading || !email || !password}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={Colors.white} size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>hoặc</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* Social Login */}
+          <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+            <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
+            <Text style={styles.socialButtonText}>Tiếp tục với Google</Text>
           </TouchableOpacity>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotButton}
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
-            <Text style={styles.forgotText}>Quen mat khau?</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>hoac</Text>
-          <View style={styles.divider} />
-        </View>
-
-        {/* Social Login */}
-        <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-          <Ionicons name="logo-instagram" size={20} color={Colors.textPrimary} />
-          <Text style={styles.socialButtonText}>Tiep tuc voi Instagram</Text>
-        </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Bottom Register */}
@@ -163,10 +185,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           style={styles.registerButton}
           onPress={() => navigation.navigate('Register')}
         >
-          <Text style={styles.registerText}>Tao tai khoan moi</Text>
+          <Text style={styles.registerText}>
+            Chưa có tài khoản? <Text style={styles.registerLink}>Đăng ký</Text>
+          </Text>
         </TouchableOpacity>
-
-        <Text style={styles.metaText}>PTIT Social</Text>
       </View>
     </SafeAreaView>
   );
@@ -177,94 +199,129 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
+  flex: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.huge,
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: Spacing.huge,
+    marginBottom: Spacing.xxxl,
   },
-  logoAt: {
-    fontSize: 72,
+  logoContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+    ...Shadow.red,
+  },
+  appName: {
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
+    color: Colors.primary,
+  },
+  welcomeSection: {
+    marginBottom: Spacing.xxxl,
+  },
+  welcomeTitle: {
+    fontSize: FontSize.xxxl,
+    fontWeight: FontWeight.extraBold,
     color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  welcomeSubtitle: {
+    fontSize: FontSize.md,
+    color: Colors.textSecondary,
+    lineHeight: 22,
   },
   form: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
+  },
+  inputWrapper: {},
+  inputLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
   inputContainer: {
-    marginBottom: Spacing.xs,
-  },
-  input: {
+    flexDirection: 'row',
+    alignItems: 'center',
     height: Layout.inputHeight,
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.lg,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    borderWidth: 1,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
     borderColor: Colors.gray100,
+    paddingHorizontal: Spacing.lg,
   },
   inputError: {
     borderColor: Colors.error,
   },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: Layout.inputHeight,
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.gray100,
+  inputIcon: {
+    marginRight: Spacing.md,
   },
-  passwordInput: {
+  input: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: Spacing.lg,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
   },
   eyeButton: {
-    paddingHorizontal: Spacing.lg,
-    height: '100%',
-    justifyContent: 'center',
+    padding: Spacing.sm,
   },
   errorText: {
     fontSize: FontSize.xs,
     color: Colors.error,
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.lg,
+  },
+  apiErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.errorLight,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
   },
   apiError: {
     fontSize: FontSize.sm,
     color: Colors.error,
-    textAlign: 'center',
+    flex: 1,
+  },
+  forgotText: {
+    color: Colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
   },
   loginButton: {
     height: Layout.buttonHeight,
-    backgroundColor: Colors.black,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.sm,
+    ...Shadow.red,
   },
   loginButtonDisabled: {
     backgroundColor: Colors.gray300,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginButtonText: {
     color: Colors.white,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-  },
-  forgotButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-  },
-  forgotText: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -286,38 +343,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: Layout.buttonHeight,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
     borderColor: Colors.border,
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   socialButtonText: {
     color: Colors.textPrimary,
     fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
+    fontWeight: FontWeight.semiBold,
   },
   bottomSection: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.lg,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
   },
   registerButton: {
-    height: Layout.buttonHeight,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
   },
   registerText: {
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
     fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
   },
-  metaText: {
-    textAlign: 'center',
-    color: Colors.textTertiary,
-    fontSize: FontSize.sm,
+  registerLink: {
+    color: Colors.primary,
+    fontWeight: FontWeight.bold,
   },
 });
 

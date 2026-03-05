@@ -63,7 +63,7 @@ const Input: React.FC<InputProps> = ({
 
   const getIconColor = (): string => {
     if (error) return Colors.error;
-    if (isFocused) return Colors.black;
+    if (isFocused) return Colors.primary;
     return Colors.gray400;
   };
 
@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.black,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   required: {
@@ -155,22 +155,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: Layout.inputHeight,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
   },
   inputContainerFilled: {
     flexDirection: 'row',
     alignItems: 'center',
     height: Layout.inputHeight,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.gray50,
   },
   focused: {
-    borderColor: Colors.black,
+    borderColor: Colors.primary,
     backgroundColor: Colors.white,
   },
   error: {
@@ -181,20 +181,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.gray200,
   },
   leftIconContainer: {
-    paddingLeft: Spacing.lg,
+    paddingLeft: Spacing.xl,
     paddingRight: Spacing.sm,
   },
   rightIconContainer: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     height: '100%',
     justifyContent: 'center',
   },
   input: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     paddingVertical: 0,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
   inputWithLeftIcon: {
     paddingLeft: 0,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.error,
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.lg,
   },
   hintText: {
     fontSize: FontSize.xs,

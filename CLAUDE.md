@@ -34,20 +34,19 @@ docker-compose down    # Stop all services
 
 ### Monorepo Structure
 - `/src/` - React Native mobile app
-- `/backend/` - Monolithic backend API server (port 3000)
+- `/backend/` - Monolithic backend API server (port 3001)
 
 ### Backend Modules
 All modules are integrated into a single Express application:
 
 | Module | Route | Purpose |
 |--------|-------|---------|
-| Auth | `/api/v1/auth` | Authentication, JWT tokens, register/login |
+| Auth | `/api/v1/auth` | Authentication, JWT, register/login, email verification, forgot password, 2FA |
 | Users | `/api/v1/users` | User profiles, follow system |
 | Posts | `/api/v1/posts` | Posts, comments, likes, feed |
 | Chat | `/api/v1/chat` | Real-time messaging, conversations |
 | Notifications | `/api/v1/notifications` | User notifications |
 | Media | `/api/v1/media` | File uploads (images, videos) |
-| Groups | `/api/v1/groups` | Group management, membership |
 
 ### API Routes
 - **Public routes**: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/users/search`
@@ -73,14 +72,13 @@ All modules are integrated into a single Express application:
 
 ### Main Models:
 - **User** - User accounts, profiles, authentication
+- **VerificationCode** - Email verification and password reset OTP codes
 - **RefreshToken** - JWT refresh tokens
 - **Follow** - User follow relationships
 - **Post** - User posts with privacy settings
 - **Comment** - Post comments (supports nested replies)
 - **Like** - Post likes
 - **Media** - Uploaded files (images, videos)
-- **Group** - User groups with privacy settings
-- **GroupMember** - Group memberships with roles
 - **Conversation** - Chat conversations (private/group)
 - **ConversationParticipant** - Conversation members
 - **Message** - Chat messages with read status
@@ -89,23 +87,27 @@ All modules are integrated into a single Express application:
 
 ### Database Connection:
 ```
-postgresql://postgres:postgres@localhost:5432/ptit_social
+postgresql://postgres:postgres@localhost:5434/ptit_social
 ```
 
 ## Development Notes
 
 - TypeScript strict mode is enabled across the entire project
 - JWT authentication via Bearer tokens (validated by middleware)
+- Email verification via OTP (6-digit code, expires in 15 minutes)
+- Password reset via email OTP
+- Two-Factor Authentication (2FA) using TOTP (Google Authenticator compatible)
 - Rate limiting: 1000 requests/15 minutes per IP
 - File storage supports both local (`uploads/`) and AWS S3 (controlled by `USE_S3` env var)
 - Real-time chat via Socket.io on the same port as HTTP server
 - All database operations use Prisma ORM with PostgreSQL
 - Redis for caching and session management
+- Email sending via SMTP (Nodemailer) - configure SMTP_* env vars
 - Theme color: PTIT Red `#C41E3A`
 
 ## Real-time Features (Socket.io)
 
-Socket.io runs on the same server (port 3000) for real-time chat:
+Socket.io runs on the same server (port 3001) for real-time chat:
 
 **Events:**
 - `join` - User joins their room

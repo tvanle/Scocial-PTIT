@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const createPostSchema = z.object({
   content: z.string().max(5000).optional(),
   privacy: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).default('PUBLIC'),
-  groupId: z.string().uuid().optional(),
 });
 
 export const updatePostSchema = z.object({

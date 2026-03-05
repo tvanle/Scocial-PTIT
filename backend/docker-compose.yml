@@ -1,16 +1,18 @@
-version: '3.8'
+name: ptit-social
 
 services:
   # Main API Server
   api:
+    container_name: ptit-social-api
     build: .
     env_file:
       - .env
     environment:
+      - PORT=3000
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ptit_social?schema=public
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - uploads:/app/uploads
     depends_on:
@@ -21,6 +23,7 @@ services:
 
   # PostgreSQL
   postgres:
+    container_name: ptit-social-postgres
     image: postgres:15-alpine
     environment:
       - POSTGRES_USER=postgres
@@ -29,17 +32,18 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5434:5432"
     networks:
       - ptit-network
 
   # Redis
   redis:
+    container_name: ptit-social-redis
     image: redis:7-alpine
     volumes:
       - redis-data:/data
     ports:
-      - "6379:6379"
+      - "6381:6379"
     networks:
       - ptit-network
 

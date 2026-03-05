@@ -14,44 +14,43 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post } from '../../types';
 import { postService } from '../../services/post/postService';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 interface ProfileScreenProps {
   navigation: any;
   route?: any;
 }
 
-// Helper
-const getTimeAgo = (dateString: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (seconds < 60) return 'Vua xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  return `${Math.floor(seconds / 86400)}d`;
-};
-
-// Thread Post Component (simplified for profile)
-const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = ({ post, onPress }) => (
+const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = React.memo(({ post, onPress }) => (
   <TouchableOpacity style={styles.postItem} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.postContent}>
       <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-      <Text style={styles.postMeta}>
-        {post.commentsCount} tra loi · {post.likesCount} luot thich
-      </Text>
+      {post.media && post.media.length > 0 && (
+        <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
+      )}
+      <View style={styles.postStats}>
+        <View style={styles.postStat}>
+          <Ionicons name="heart-outline" size={16} color={Colors.textTertiary} />
+          <Text style={styles.postStatText}>{post.likesCount}</Text>
+        </View>
+        <View style={styles.postStat}>
+          <Ionicons name="chatbubble-outline" size={14} color={Colors.textTertiary} />
+          <Text style={styles.postStatText}>{post.commentsCount}</Text>
+        </View>
+        <Text style={styles.postTime}>{formatTimeAgo(post.createdAt)}</Text>
+      </View>
     </View>
-    {post.media && post.media.length > 0 && (
-      <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
-    )}
   </TouchableOpacity>
-);
+));
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const { user: currentUser, logout } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'threads' | 'replies'>('threads');
+  const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +58,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const user = currentUser;
   const userId = route?.params?.userId || currentUser?.id;
 
-  // Fetch user posts
   const fetchUserPosts = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -72,7 +70,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
       const postsData = response?.data || [];
       setPosts(postsData);
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể tải bài viết. Vui lòng thử lại.');
       setPosts([]);
     } finally {
       setLoading(false);
@@ -89,31 +86,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
     setRefreshing(false);
   }, [fetchUserPosts]);
 
+  const tabs = [
+    { key: 'posts' as const, label: 'Bài đăng' },
+    { key: 'replies' as const, label: 'Trả lời' },
+    { key: 'reposts' as const, label: 'Bài đăng lại' },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerIcon}
-          onPress={() => Alert.alert('Ngon ngu', 'Hien tai chi ho tro Tieng Viet')}
-        >
-          <Ionicons name="globe-outline" size={24} color={Colors.black} />
+        <TouchableOpacity style={styles.headerIcon}>
+          <Ionicons name="globe-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="menu-outline" size={26} color={Colors.black} />
+          <Ionicons name="settings-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.black}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
       >
         {/* Profile Info */}
@@ -121,12 +117,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
           <View style={styles.profileTop}>
             <View style={styles.profileInfo}>
               <Text style={styles.fullName}>{user?.fullName || 'User'}</Text>
-              <View style={styles.usernameRow}>
-                <Text style={styles.username}>{user?.studentId || 'username'}</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>ptit.edu.vn</Text>
-                </View>
-              </View>
+              <Text style={styles.usernameHandle}>@{user?.studentId || 'username'}</Text>
             </View>
             <Image
               source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
@@ -134,13 +125,25 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
             />
           </View>
 
-          {/* Bio */}
           {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
 
-          {/* Followers */}
-          <Text style={styles.followers}>
-            {user?.followersCount || 0} nguoi theo doi
-          </Text>
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <TouchableOpacity style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.followersCount || 0}</Text>
+              <Text style={styles.statLabel}>Người theo dõi</Text>
+            </TouchableOpacity>
+            <View style={styles.statDivider} />
+            <TouchableOpacity style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.followingCount || 0}</Text>
+              <Text style={styles.statLabel}>Đang theo dõi</Text>
+            </TouchableOpacity>
+            <View style={styles.statDivider} />
+            <TouchableOpacity style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.postsCount || 0}</Text>
+              <Text style={styles.statLabel}>Bài viết</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
@@ -150,28 +153,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
                   style={styles.actionButton}
                   onPress={() => navigation.navigate('EditProfile')}
                 >
-                  <Text style={styles.actionButtonText}>Chinh sua trang ca nhan</Text>
+                  <Text style={styles.actionButtonText}>Chỉnh sửa</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => Share.share({ message: `Xem trang ca nhan cua ${user?.fullName} tren PTIT Social!` })}
+                  onPress={() => Share.share({ message: `Xem trang cá nhân của ${user?.fullName} trên PTIT Social!` })}
                 >
-                  <Text style={styles.actionButtonText}>Chia se trang ca nhan</Text>
+                  <Text style={styles.actionButtonText}>Chia sẻ</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.followButton]}
-                  onPress={() => Alert.alert('Theo doi', 'Da gui yeu cau theo doi')}
-                >
-                  <Text style={styles.followButtonText}>Theo doi</Text>
+                <TouchableOpacity style={[styles.actionButton, styles.followButton]}>
+                  <Text style={styles.followButtonText}>Theo dõi</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => navigation.navigate('ChatRoom', { conversationId: route?.params?.userId })}
-                >
-                  <Text style={styles.actionButtonText}>Nhan tin</Text>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.actionButtonText}>Nhắn tin</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -180,31 +177,26 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
         {/* Tabs */}
         <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'threads' && styles.activeTab]}
-            onPress={() => setActiveTab('threads')}
-          >
-            <Text style={[styles.tabText, activeTab === 'threads' && styles.activeTabText]}>
-              Thread
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'replies' && styles.activeTab]}
-            onPress={() => setActiveTab('replies')}
-          >
-            <Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>
-              Tra loi
-            </Text>
-          </TouchableOpacity>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Posts */}
         <View style={styles.postsSection}>
           {loading ? (
             <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color={Colors.black} />
+              <ActivityIndicator size="large" color={Colors.primary} />
             </View>
-          ) : activeTab === 'threads' ? (
+          ) : activeTab === 'posts' ? (
             posts.length > 0 ? (
               posts.map(post => (
                 <ProfilePost
@@ -216,13 +208,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
             ) : (
               <View style={styles.emptyState}>
                 <Ionicons name="document-text-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
               </View>
             )
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
-              <Text style={styles.emptyText}>Chua co tra loi nao</Text>
+              <Ionicons
+                name={activeTab === 'replies' ? 'chatbubble-outline' : 'repeat-outline'}
+                size={48}
+                color={Colors.gray300}
+              />
+              <Text style={styles.emptyText}>
+                {activeTab === 'replies' ? 'Chưa có trả lời nào' : 'Chưa có bài đăng lại nào'}
+              </Text>
             </View>
           )}
         </View>
@@ -246,7 +244,10 @@ const styles = StyleSheet.create({
     height: Layout.headerHeight,
   },
   headerIcon: {
-    padding: Spacing.xs,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileSection: {
     paddingHorizontal: Spacing.lg,
@@ -262,45 +263,53 @@ const styles = StyleSheet.create({
   },
   fullName: {
     fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.black,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
-  usernameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  username: {
+  usernameHandle: {
     fontSize: FontSize.md,
-    color: Colors.black,
-  },
-  badge: {
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xxs,
-    marginLeft: Spacing.sm,
-  },
-  badgeText: {
-    fontSize: FontSize.xs,
-    color: Colors.gray500,
+    color: Colors.textSecondary,
   },
   avatar: {
-    width: Layout.avatarSize.xl,
-    height: Layout.avatarSize.xl,
-    borderRadius: Layout.avatarSize.xl / 2,
+    width: Layout.avatarSize.xxl,
+    height: Layout.avatarSize.xxl,
+    borderRadius: Layout.avatarSize.xxl / 2,
     backgroundColor: Colors.gray200,
   },
   bio: {
     fontSize: FontSize.md,
-    color: Colors.black,
-    marginTop: Spacing.md,
+    color: Colors.textPrimary,
+    marginTop: Spacing.lg,
     lineHeight: 22,
   },
-  followers: {
-    fontSize: FontSize.md,
-    color: Colors.gray500,
-    marginTop: Spacing.md,
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xl,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.textPrimary,
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.border,
   },
   actions: {
     flexDirection: 'row',
@@ -309,32 +318,32 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
     borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionButtonText: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
   },
   followButton: {
-    backgroundColor: Colors.black,
-    borderColor: Colors.black,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   followButtonText: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.white,
   },
   tabs: {
     flexDirection: 'row',
     marginTop: Spacing.xl,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
   },
   tab: {
     flex: 1,
@@ -342,46 +351,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.black,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.gray400,
+    color: Colors.textTertiary,
   },
   activeTabText: {
-    color: Colors.black,
+    color: Colors.primary,
+    fontWeight: FontWeight.bold,
   },
   postsSection: {
     paddingTop: Spacing.sm,
   },
   postItem: {
-    flexDirection: 'row',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
   },
-  postContent: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
+  postContent: {},
   postText: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     lineHeight: 22,
   },
-  postMeta: {
-    fontSize: FontSize.sm,
-    color: Colors.gray500,
-    marginTop: Spacing.sm,
-  },
   postThumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.sm,
+    width: '100%',
+    height: 160,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.gray100,
+    marginTop: Spacing.md,
+  },
+  postStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  postStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  postStatText: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+  },
+  postTime: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    marginLeft: 'auto',
   },
   loadingState: {
     padding: Spacing.huge,
@@ -394,7 +416,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.gray400,
+    color: Colors.textTertiary,
     marginTop: Spacing.md,
   },
 });

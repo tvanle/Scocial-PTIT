@@ -26,8 +26,13 @@ model User {
 
   // Status
   isVerified      Boolean   @default(false)
+  isEmailVerified Boolean   @default(false)
   isActive        Boolean   @default(true)
   lastActiveAt    DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?
 
   // Timestamps
   createdAt       DateTime  @default(now())
@@ -42,16 +47,15 @@ model User {
   followers       Follow[]  @relation("Following")
   following       Follow[]  @relation("Followers")
 
-  // Group
-  ownedGroups     Group[]   @relation("GroupOwner")
-  groupMembers    GroupMember[]
-
   // Notifications
   sentNotifications     Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
 
   // Refresh tokens
   refreshTokens   RefreshToken[]
+
+  // Verification codes
+  verificationCodes VerificationCode[]
 
   // Chat relations
   conversationParticipants ConversationParticipant[]
@@ -71,6 +75,20 @@ model User {
 
   @@index([email])
   @@index([studentId])
+}
+
+model VerificationCode {
+  id          String             @id @default(uuid())
+  code        String
+  type        VerificationCodeType
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  isUsed      Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+
+  @@index([userId, type])
+  @@index([code, type])
 }
 
 model RefreshToken {
@@ -119,12 +137,7 @@ model Post {
   comments    Comment[]
   likes       Like[]
 
-  // Group post
-  groupId     String?
-  group       Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
   @@index([authorId])
-  @@index([groupId])
   @@index([createdAt])
 }
 
@@ -183,43 +196,6 @@ model Media {
   @@index([postId])
 }
 
-// ============== GROUP ==============
-
-model Group {
-  id          String      @id @default(uuid())
-  name        String
-  description String?
-  avatar      String?
-  coverImage  String?
-  privacy     GroupPrivacy @default(PUBLIC)
-
-  ownerId     String
-  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relations
-  members     GroupMember[]
-  posts       Post[]
-
-  @@index([ownerId])
-}
-
-model GroupMember {
-  id        String          @id @default(uuid())
-  userId    String
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  groupId   String
-  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  role      GroupRole       @default(MEMBER)
-  status    MemberStatus    @default(PENDING)
-  joinedAt  DateTime        @default(now())
-
-  @@unique([userId, groupId])
-  @@index([groupId])
-  @@index([userId])
-}
 
 // ============== NOTIFICATION ==============
 
@@ -266,32 +242,11 @@ enum MediaType {
   DOCUMENT
 }
 
-enum GroupPrivacy {
-  PUBLIC
-  PRIVATE
-}
-
-enum GroupRole {
-  OWNER
-  ADMIN
-  MODERATOR
-  MEMBER
-}
-
-enum MemberStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  BANNED
-}
 
 enum NotificationType {
   LIKE
   COMMENT
   FOLLOW
-  GROUP_INVITE
-  GROUP_REQUEST
-  GROUP_APPROVED
   MENTION
   SYSTEM
   MATCH_CREATED
@@ -377,12 +332,22 @@ enum MessageType {
   FILE
 }
 
+<<<<<<< HEAD
+=======
+enum VerificationCodeType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  TWO_FACTOR
+}
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
 // ============== DATING ==============
 
 model DatingProfile {
   id          String   @id @default(uuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   
   bio         String?
   isActive    Boolean  @default(true)
@@ -390,12 +355,25 @@ model DatingProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+=======
+
+  bio         String?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   // Relations
   photos      DatingProfilePhoto[]
   prompts     DatingProfilePrompt[]
   lifestyle   DatingProfileLifestyle?
   preferences DatingPreferences?
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   @@index([userId])
 }
 
@@ -403,12 +381,21 @@ model DatingProfilePhoto {
   id          String         @id @default(uuid())
   profileId    String
   profile     DatingProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   
   url         String
   order       Int             // 0-5 for ordering photos
   
   createdAt   DateTime        @default(now())
   
+=======
+
+  url         String
+  order       Int             // 0-5 for ordering photos
+
+  createdAt   DateTime        @default(now())
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   @@index([profileId])
   @@index([profileId, order])
 }
@@ -417,6 +404,7 @@ model DatingProfilePrompt {
   id          String         @id @default(uuid())
   profileId   String
   profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   
   question    String
   answer      String
@@ -426,6 +414,17 @@ model DatingProfilePrompt {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   
+=======
+
+  question    String
+  answer      String
+
+  order       Int            // 0-2 for ordering prompts
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   @@index([profileId])
   @@index([profileId, order])
 }
@@ -434,6 +433,7 @@ model DatingProfileLifestyle {
   id          String         @id @default(uuid())
   profileId   String         @unique
   profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   
   education   String?
   job         String?
@@ -445,6 +445,19 @@ model DatingProfileLifestyle {
   
   updatedAt   DateTime       @updatedAt
   
+=======
+
+  education   String?
+  job         String?
+  smoking     FrequencyLevel?
+  drinking    FrequencyLevel?
+  exercise    FrequencyLevel?
+  height      Int?           // in cm
+  religion    String?
+
+  updatedAt   DateTime       @updatedAt
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   @@index([profileId])
 }
 
@@ -452,14 +465,24 @@ model DatingPreferences {
   id          String         @id @default(uuid())
   profileId   String         @unique
   profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   ageMin      Int            @default(18)
   ageMax      Int            @default(99)
   maxDistance Int?           // in km, null = no limit
   gender      Gender?        // Preferred gender
+<<<<<<< HEAD
   
   updatedAt   DateTime       @updatedAt
   
+=======
+
+  updatedAt   DateTime       @updatedAt
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
   @@index([profileId])
 }
 
@@ -498,6 +521,15 @@ enum SwipeAction {
   PASS
 }
 
+<<<<<<< HEAD
+=======
+enum FrequencyLevel {
+  NEVER
+  SOMETIMES
+  REGULARLY
+}
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
 // ============== BLOCK ==============
 
 model UserBlock {

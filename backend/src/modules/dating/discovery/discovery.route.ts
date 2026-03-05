@@ -10,7 +10,11 @@ router.use(authenticate);
 router.get(
   '/',
   validateQuery(discoveryQuerySchema),
+<<<<<<< HEAD
   discoveryController.getCandidates.bind(discoveryController),
+=======
+  discoveryController.getCandidates,
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
 );
 
 export default router;

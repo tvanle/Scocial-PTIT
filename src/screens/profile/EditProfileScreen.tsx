@@ -75,7 +75,7 @@ const EditProfileScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Ionicons name="close" size={28} color={Colors.black} />
+          <Ionicons name="close" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chinh sua trang ca nhan</Text>
         <TouchableOpacity
@@ -84,7 +84,7 @@ const EditProfileScreen: React.FC = () => {
           style={styles.headerButton}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color={Colors.black} />
+            <ActivityIndicator size="small" color={Colors.textPrimary} />
           ) : (
             <Text style={styles.saveText}>Luu</Text>
           )}
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   saveText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   content: {
     paddingBottom: 100,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     paddingVertical: Spacing.sm,

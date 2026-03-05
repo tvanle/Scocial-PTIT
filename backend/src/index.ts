@@ -15,7 +15,6 @@ import { authRoutes } from './modules/auth';
 import { userRoutes } from './modules/user';
 import { postRoutes } from './modules/post';
 import { mediaRoutes } from './modules/media';
-import { groupRoutes } from './modules/group';
 import { notificationRoutes } from './modules/notification';
 import { chatRoutes } from './modules/chat';
 import { datingRoutes } from './modules/dating';
@@ -49,9 +48,15 @@ app.use(
 // Static files (uploads)
 app.use('/uploads', express.static(path.join(__dirname, '..', config.upload.dir)));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check - dùng để test xem server có gọi đến được không
+app.get('/health', (_req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    message: 'Server đang chạy, API gọi đến được.',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 // API Routes
@@ -59,7 +64,6 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/media', mediaRoutes);
-app.use('/api/v1/groups', groupRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/dating', datingRoutes);

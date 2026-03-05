@@ -134,6 +134,14 @@ export class ProfileService {
 
   // Get profile by userId (public view, with block check)
   async getProfileByUserId(currentUserId: string, targetUserId: string) {
+<<<<<<< HEAD
+=======
+    // Early return for own profile — skip unnecessary block check
+    if (currentUserId === targetUserId) {
+      return this.getMyProfile(currentUserId);
+    }
+
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
     // Block check
     const blockExists = await prisma.userBlock.findFirst({
       where: {
@@ -245,6 +253,12 @@ export class ProfileService {
     } else {
       // Auto-assign next order
       order = existingOrders.length > 0 ? Math.max(...existingOrders) + 1 : 0;
+<<<<<<< HEAD
+=======
+      if (order > 5) {
+        throw new AppError('Photo order exceeds maximum (0-5). Please specify an order manually.', HTTP_STATUS.BAD_REQUEST);
+      }
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
     }
 
     const photo = await prisma.datingProfilePhoto.create({
@@ -276,6 +290,7 @@ export class ProfileService {
       throw new AppError(ERROR_MESSAGES.PHOTO_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
+<<<<<<< HEAD
     // Check total photos count
     const photoCount = await prisma.datingProfilePhoto.count({
       where: { profileId },
@@ -285,6 +300,10 @@ export class ProfileService {
       throw new AppError(ERROR_MESSAGES.MIN_PHOTOS_REQUIRED, HTTP_STATUS.BAD_REQUEST);
     }
 
+=======
+    // Note: Allowing deletion of last photo.
+    // Profiles with no photos are automatically hidden from discovery.
+>>>>>>> f9b4a30b4e403563d001bd67d7b7646e7fd223c6
     await prisma.datingProfilePhoto.delete({
       where: { id: photoId },
     });

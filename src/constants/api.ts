@@ -1,6 +1,6 @@
 // API Endpoints Configuration for Microservices
 export const API_CONFIG = {
-  BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
+  BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001',
   API_VERSION: 'v1',
   TIMEOUT: 30000,
 };

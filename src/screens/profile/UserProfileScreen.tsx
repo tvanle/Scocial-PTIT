@@ -20,6 +20,7 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, RootStackParamList, UserProfile } from '../../types';
 import { userService } from '../../services/user/userService';
 import { postService } from '../../services/post/postService';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
@@ -63,7 +64,7 @@ const UserProfileScreen: React.FC = () => {
     setRefreshing(false);
   }, [userId]);
 
-  const handleFollow = async () => {
+  const handleFollow = useCallback(async () => {
     if (!profileUser) return;
 
     const wasFollowing = profileUser.isFollowing;
@@ -92,20 +93,12 @@ const UserProfileScreen: React.FC = () => {
       });
       Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
-  };
+  }, [profileUser, userId]);
 
-  const handleMessage = () => {
+  const handleMessage = useCallback(() => {
     if (!profileUser) return;
     navigation.navigate('ChatRoom', { conversationId: userId });
-  };
-
-  const getTimeAgo = (dateString: string): string => {
-    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-    if (seconds < 60) return 'Vua xong';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-    return `${Math.floor(seconds / 86400)}d`;
-  };
+  }, [profileUser, navigation, userId]);
 
   if (loading || !profileUser) {
     return (
@@ -113,10 +106,10 @@ const UserProfileScreen: React.FC = () => {
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
-            <Ionicons name="arrow-back" size={24} color={Colors.black} />
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.black} />
+            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
         </View>
         <View style={styles.loadingContainer}>
@@ -133,17 +126,17 @@ const UserProfileScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
-          <Ionicons name="arrow-back" size={24} color={Colors.black} />
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={Colors.black} />
+          <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.black} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.textPrimary} />
         }
       >
         {/* Profile Info */}
@@ -275,7 +268,7 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
-    color: Colors.black,
+    color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
   usernameRow: {
@@ -284,7 +277,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   badge: {
     backgroundColor: Colors.gray100,
@@ -305,7 +298,7 @@ const styles = StyleSheet.create({
   },
   bio: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     marginTop: Spacing.md,
     lineHeight: 22,
   },
@@ -331,11 +324,11 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   followButton: {
-    backgroundColor: Colors.black,
-    borderColor: Colors.black,
+    backgroundColor: Colors.textPrimary,
+    borderColor: Colors.textPrimary,
   },
   followButtonText: {
     fontSize: FontSize.sm,
@@ -349,7 +342,7 @@ const styles = StyleSheet.create({
   followingButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   tabs: {
     flexDirection: 'row',
@@ -364,7 +357,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 1,
-    borderBottomColor: Colors.black,
+    borderBottomColor: Colors.textPrimary,
   },
   tabText: {
     fontSize: FontSize.md,
@@ -372,7 +365,7 @@ const styles = StyleSheet.create({
     color: Colors.gray400,
   },
   activeTabText: {
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   postsSection: {
     paddingTop: Spacing.sm,
@@ -390,7 +383,7 @@ const styles = StyleSheet.create({
   },
   postText: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     lineHeight: 22,
   },
   postMeta: {

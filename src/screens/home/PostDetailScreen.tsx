@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,17 +20,11 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Comment, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
+import { formatTimeAgo } from '../../utils/dateUtils';
+import { ScreenHeader } from '../../components/common';
 
 type PostDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostDetailRouteProp = RouteProp<RootStackParamList, 'PostDetail'>;
-
-const getTimeAgo = (dateString: string): string => {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (seconds < 60) return 'Vua xong';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}p`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  return `${Math.floor(seconds / 86400)}d`;
-};
 
 const PostDetailScreen: React.FC = () => {
   const navigation = useNavigation<PostDetailNavigationProp>();
@@ -65,7 +59,7 @@ const PostDetailScreen: React.FC = () => {
     fetchData();
   }, [postId]);
 
-  const handleLike = async () => {
+  const handleLike = useCallback(async () => {
     if (!post) return;
 
     // Optimistic update
@@ -92,14 +86,14 @@ const PostDetailScreen: React.FC = () => {
       });
       Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
-  };
+  }, [post, postId]);
 
   const handleCommentLike = (commentId: string) => {
     // Comment likes not implemented in API yet
     Alert.alert('Thông báo', 'Tính năng đang phát triển');
   };
 
-  const handleSendComment = async () => {
+  const handleSendComment = useCallback(async () => {
     if (!commentText.trim() || !post) return;
 
     try {
@@ -113,18 +107,12 @@ const PostDetailScreen: React.FC = () => {
       console.error('Failed to send comment:', error);
       Alert.alert('Lỗi', 'Không thể gửi bình luận. Vui lòng thử lại.');
     }
-  };
+  }, [commentText, post, postId, comments]);
 
   if (loading || !post) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={Colors.black} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thread</Text>
-          <View style={{ width: 32 }} />
-        </View>
+        <ScreenHeader title="Thread" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -135,13 +123,7 @@ const PostDetailScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.black} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thread</Text>
-        <View style={{ width: 32 }} />
-      </View>
+      <ScreenHeader title="Thread" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -166,7 +148,7 @@ const PostDetailScreen: React.FC = () => {
                       <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
                     )}
                   </View>
-                  <Text style={styles.timeText}>{getTimeAgo(post.createdAt)}</Text>
+                  <Text style={styles.timeText}>{formatTimeAgo(post.createdAt)}</Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity>
@@ -221,7 +203,7 @@ const PostDetailScreen: React.FC = () => {
                     <Text style={styles.commentText}>{comment.content}</Text>
                   </View>
                   <View style={styles.commentActions}>
-                    <Text style={styles.commentTime}>{getTimeAgo(comment.createdAt)}</Text>
+                    <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt)}</Text>
                     <TouchableOpacity onPress={() => handleCommentLike(comment.id)}>
                       <Text style={[styles.commentAction, comment.isLiked && { color: Colors.like }]}>
                         Thich {comment.likesCount > 0 ? `(${comment.likesCount})` : ''}
@@ -258,7 +240,7 @@ const PostDetailScreen: React.FC = () => {
           </View>
           {commentText.trim().length > 0 && (
             <TouchableOpacity onPress={handleSendComment} style={styles.sendButton}>
-              <Ionicons name="send" size={20} color={Colors.black} />
+              <Ionicons name="send" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
           )}
         </View>
@@ -287,7 +269,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   content: {
     flex: 1,
@@ -321,7 +303,7 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   timeText: {
     fontSize: FontSize.sm,
@@ -330,7 +312,7 @@ const styles = StyleSheet.create({
   },
   postContent: {
     fontSize: FontSize.lg,
-    color: Colors.black,
+    color: Colors.textPrimary,
     lineHeight: 24,
     marginTop: Spacing.md,
   },
@@ -390,11 +372,11 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   commentText: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     marginTop: 2,
     lineHeight: 20,
   },
@@ -439,7 +421,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
     maxHeight: 60,
   },
   sendButton: {

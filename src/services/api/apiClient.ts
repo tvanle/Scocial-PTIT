@@ -27,16 +27,22 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor - unwrap backend { success, data } wrapper
 apiClient.interceptors.response.use(
   (response) => {
+    // Backend always returns { success, data, message? }
+    // Unwrap so services get the inner data directly via response.data
+    if (response.data && response.data.success !== undefined && response.data.data !== undefined) {
+      response.data = response.data.data;
+    }
     return response;
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 Unauthorized (skip for auth requests to avoid infinite loop)
+    const isAuthRequest = originalRequest.url?.includes('/logout') || originalRequest.url?.includes('/refresh');
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
       try {

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { RegisterData } from '../../types';
 
@@ -22,7 +22,6 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<RegisterData>({
     email: '',
     password: '',
@@ -45,30 +44,20 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
   };
 
-  const validateStep1 = (): boolean => {
+  const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Nhap ten cua ban';
-    if (!formData.email.trim()) newErrors.email = 'Nhap email';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email khong hop le';
+    if (!formData.fullName.trim()) newErrors.fullName = 'Nhập tên của bạn';
+    if (!formData.email.trim()) newErrors.email = 'Nhập email';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email không hợp lệ';
+    if (!formData.password) newErrors.password = 'Nhập mật khẩu';
+    else if (formData.password.length < 6) newErrors.password = 'Mật khẩu ít nhất 6 ký tự';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mật khẩu không khớp';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const validateStep2 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.password) newErrors.password = 'Nhap mat khau';
-    else if (formData.password.length < 6) newErrors.password = 'Mat khau it nhat 6 ky tu';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mat khau khong khop';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
-    else if (step === 2 && validateStep2()) handleRegister();
   };
 
   const handleRegister = async () => {
+    if (!validate()) return;
     try {
       await register(formData);
     } catch (err) {
@@ -83,7 +72,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => step === 1 ? navigation.goBack() : setStep(1)}
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
@@ -91,128 +80,148 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       </View>
 
       <KeyboardAvoidingView
-        style={styles.content}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Title */}
-          <Text style={styles.title}>
-            {step === 1 ? 'Ten cua ban la gi?' : 'Tao mat khau'}
-          </Text>
+          <Text style={styles.title}>Tạo tài khoản</Text>
           <Text style={styles.subtitle}>
-            {step === 1
-              ? 'Ban co the thay doi ten nay bat cu luc nao.'
-              : 'Mat khau cua ban phai co it nhat 6 ky tu.'}
+            Tham gia cộng đồng sinh viên PTIT ngay hôm nay
           </Text>
 
-          {/* Step 1: Name & Email */}
-          {step === 1 && (
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Full Name */}
+            <View style={styles.inputWrapper}>
+              <View style={[styles.inputContainer, errors.fullName && styles.inputError]}>
+                <Ionicons name="person-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, errors.fullName && styles.inputError]}
-                  placeholder="Ten day du"
-                  placeholderTextColor={Colors.textTertiary}
+                  style={styles.input}
+                  placeholder="Họ và tên"
+                  placeholderTextColor={Colors.gray400}
                   value={formData.fullName}
                   onChangeText={(text) => updateField('fullName', text)}
                 />
-                {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
               </View>
+              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+            </View>
 
-              <View style={styles.inputContainer}>
+            {/* Email */}
+            <View style={styles.inputWrapper}>
+              <View style={[styles.inputContainer, errors.email && styles.inputError]}>
+                <Ionicons name="mail-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, errors.email && styles.inputError]}
+                  style={styles.input}
                   placeholder="Email"
-                  placeholderTextColor={Colors.textTertiary}
+                  placeholderTextColor={Colors.gray400}
                   value={formData.email}
                   onChangeText={(text) => updateField('email', text)}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
-                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
               </View>
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            </View>
 
+            {/* Student ID */}
+            <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
+                <Ionicons name="card-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Ma sinh vien (khong bat buoc)"
-                  placeholderTextColor={Colors.textTertiary}
+                  placeholder="Mã sinh viên (không bắt buộc)"
+                  placeholderTextColor={Colors.gray400}
                   value={formData.studentId}
                   onChangeText={(text) => updateField('studentId', text.toUpperCase())}
                   autoCapitalize="characters"
                 />
               </View>
             </View>
-          )}
 
-          {/* Step 2: Password */}
-          {step === 2 && (
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <View style={[styles.passwordContainer, errors.password && styles.inputError]}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Mat khau"
-                    placeholderTextColor={Colors.textTertiary}
-                    value={formData.password}
-                    onChangeText={(text) => updateField('password', text)}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeButton}
-                  >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color={Colors.textTertiary}
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-              </View>
-
-              <View style={styles.inputContainer}>
+            {/* Password */}
+            <View style={styles.inputWrapper}>
+              <View style={[styles.inputContainer, errors.password && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, errors.confirmPassword && styles.inputError]}
-                  placeholder="Xac nhan mat khau"
-                  placeholderTextColor={Colors.textTertiary}
+                  style={styles.input}
+                  placeholder="Mật khẩu"
+                  placeholderTextColor={Colors.gray400}
+                  value={formData.password}
+                  onChangeText={(text) => updateField('password', text)}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={Colors.gray400}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            </View>
+
+            {/* Confirm Password */}
+            <View style={styles.inputWrapper}>
+              <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
+                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Xác nhận mật khẩu"
+                  placeholderTextColor={Colors.gray400}
                   value={formData.confirmPassword}
                   onChangeText={(text) => updateField('confirmPassword', text)}
                   secureTextEntry={!showPassword}
                 />
-                {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
               </View>
+              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+            </View>
+          </View>
+
+          {error && (
+            <View style={styles.apiErrorContainer}>
+              <Ionicons name="alert-circle" size={16} color={Colors.error} />
+              <Text style={styles.apiError}>{error}</Text>
             </View>
           )}
 
-          {error && <Text style={styles.apiError}>{error}</Text>}
-
-          {/* Next/Register Button */}
+          {/* Register Button */}
           <TouchableOpacity
-            style={styles.nextButton}
-            onPress={handleNext}
+            style={styles.registerButton}
+            onPress={handleRegister}
             disabled={isLoading}
             activeOpacity={0.8}
           >
             {isLoading ? (
               <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.nextButtonText}>
-                {step === 2 ? 'Dang ky' : 'Tiep tuc'}
-              </Text>
+              <Text style={styles.registerButtonText}>Đăng ký</Text>
             )}
           </TouchableOpacity>
+
+          {/* Terms */}
+          <Text style={styles.termsText}>
+            Bằng cách đăng ký, bạn đồng ý với{' '}
+            <Text style={styles.termsLink}>Điều khoản dịch vụ</Text> và{' '}
+            <Text style={styles.termsLink}>Chính sách bảo mật</Text>
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Bottom */}
       <View style={styles.bottomSection}>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.loginText}>Da co tai khoan? <Text style={styles.loginLink}>Dang nhap</Text></Text>
+          <Text style={styles.loginText}>
+            Đã có tài khoản? <Text style={styles.loginLink}>Đăng nhập</Text>
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -224,6 +233,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  flex: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
@@ -231,19 +243,19 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
-    flex: 1,
-  },
   scrollContent: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xxxl,
   },
   title: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
+    fontSize: FontSize.xxxl,
+    fontWeight: FontWeight.extraBold,
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -251,84 +263,96 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textSecondary,
     marginBottom: Spacing.xxl,
+    lineHeight: 22,
   },
   form: {
     gap: Spacing.md,
   },
+  inputWrapper: {},
   inputContainer: {
-    marginBottom: Spacing.xs,
-  },
-  input: {
+    flexDirection: 'row',
+    alignItems: 'center',
     height: Layout.inputHeight,
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.lg,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    borderWidth: 1,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
     borderColor: Colors.gray100,
+    paddingHorizontal: Spacing.lg,
   },
   inputError: {
     borderColor: Colors.error,
   },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: Layout.inputHeight,
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.gray100,
+  inputIcon: {
+    marginRight: Spacing.md,
   },
-  passwordInput: {
+  input: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: Spacing.lg,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
   },
   eyeButton: {
-    paddingHorizontal: Spacing.lg,
-    height: '100%',
-    justifyContent: 'center',
+    padding: Spacing.sm,
   },
   errorText: {
     fontSize: FontSize.xs,
     color: Colors.error,
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.lg,
+  },
+  apiErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.errorLight,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
   apiError: {
     fontSize: FontSize.sm,
     color: Colors.error,
-    textAlign: 'center',
-    marginTop: Spacing.md,
+    flex: 1,
   },
-  nextButton: {
+  registerButton: {
     height: Layout.buttonHeight,
-    backgroundColor: Colors.black,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.xxl,
+    ...Shadow.red,
   },
-  nextButtonText: {
+  registerButtonText: {
     color: Colors.white,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  termsText: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginTop: Spacing.lg,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: Colors.primary,
+    fontWeight: FontWeight.medium,
   },
   bottomSection: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
   },
   loginText: {
     color: Colors.textSecondary,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
   },
   loginLink: {
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.semiBold,
+    color: Colors.primary,
+    fontWeight: FontWeight.bold,
   },
 });
 

@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray200,
   },
   placeholder: {
-    backgroundColor: Colors.gray300,
+    backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    color: Colors.white,
-    fontWeight: FontWeight.semiBold,
+    color: Colors.primary,
+    fontWeight: FontWeight.bold,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,

@@ -32,18 +32,18 @@ const IconButton: React.FC<IconButtonProps> = ({
     switch (variant) {
       case 'primary':
         return {
-          bg: backgroundColor || Colors.black,
+          bg: backgroundColor || Colors.textPrimary,
           iconColor: color || Colors.white,
         };
       case 'ghost':
         return {
           bg: 'transparent',
-          iconColor: color || Colors.black,
+          iconColor: color || Colors.textPrimary,
         };
       default:
         return {
           bg: backgroundColor || Colors.gray100,
-          iconColor: color || Colors.black,
+          iconColor: color || Colors.textPrimary,
         };
     }
   };

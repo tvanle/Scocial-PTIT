@@ -10,7 +10,6 @@
 - **Chat/Messenger**: Nhắn tin realtime
 - **Thông báo**: Push notifications
 - **Tìm kiếm**: Tìm bạn bè, nhóm, bài viết
-- **Nhóm**: Tạo và quản lý các nhóm sinh viên
 
 ## 🏗️ Kiến trúc
 
@@ -51,7 +50,6 @@ backend/
 │   ├── chat-service/    # Real-time chat
 │   ├── notification-service/
 │   ├── media-service/   # File uploads
-│   └── group-service/   # Group management
 ├── shared/              # Shared types & utils
 └── docker/              # Docker compose
 ```

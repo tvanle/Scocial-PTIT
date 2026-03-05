@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({
               style={styles.iconButton}
               activeOpacity={0.6}
             >
-              <Ionicons name="arrow-back" size={24} color={Colors.black} />
+              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
             </TouchableOpacity>
           ) : leftComponent ? (
             leftComponent
@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
               style={styles.iconButton}
               activeOpacity={0.6}
             >
-              <Ionicons name={rightIcon} size={24} color={Colors.black} />
+              <Ionicons name={rightIcon} size={24} color={Colors.textPrimary} />
             </TouchableOpacity>
           ) : (
             <View style={styles.placeholder} />
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.black,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,
