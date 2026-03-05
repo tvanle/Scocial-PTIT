@@ -16,40 +16,43 @@ interface NearbyUserRow {
   bio: string | null;
   first_photo_url: string | null;
   distance: number;
+  total_count: bigint;
 }
 
 export class LocationService {
   async updateLocation(userId: string, data: UpdateLocationInput) {
-    const profile = await prisma.datingProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
+    try {
+      const updated = await prisma.datingProfile.update({
+        where: { userId },
+        data: {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          locationUpdatedAt: new Date(),
+        },
+        select: {
+          userId: true,
+          latitude: true,
+          longitude: true,
+          locationUpdatedAt: true,
+        },
+      });
 
-    if (!profile) {
-      throw new AppError(ERROR_MESSAGES.DATING_PROFILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+      return updated;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new AppError(ERROR_MESSAGES.DATING_PROFILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+      }
+      throw error;
     }
-
-    const updated = await prisma.datingProfile.update({
-      where: { userId },
-      data: {
-        latitude: data.latitude,
-        longitude: data.longitude,
-        locationUpdatedAt: new Date(),
-      },
-      select: {
-        userId: true,
-        latitude: true,
-        longitude: true,
-        locationUpdatedAt: true,
-      },
-    });
-
-    return updated;
   }
 
   /**
-   * Raw SQL Haversine query – find nearby dating profiles.
-   * Sorted by distance ASC (nearest first).
+   * CTE-based Haversine query – find nearby dating profiles.
+   * Uses a bounding box pre-filter, then exact Haversine in outer WHERE.
+   * Single query returns data + total_count via window function.
    */
   async findNearbyUsers(
     userId: string,
@@ -105,7 +108,6 @@ export class LocationService {
     );
     const allExcludeIds = [...new Set([...excludeIds, ...blockedIds])];
 
-    // Build age filter
     const now = new Date();
     const preferredGender = myProfile.preferences?.gender ?? null;
     const ageMin = myProfile.preferences?.ageMin ?? 18;
@@ -113,75 +115,28 @@ export class LocationService {
     const minBirthDate = new Date(now.getFullYear() - ageMax - 1, now.getMonth(), now.getDate());
     const maxBirthDate = new Date(now.getFullYear() - ageMin, now.getMonth(), now.getDate());
 
-    // Raw SQL with Haversine formula
-    const rows = await prisma.$queryRaw<NearbyUserRow[]>`
-      SELECT
-        u.id AS user_id,
-        u."fullName" AS full_name,
-        u.avatar,
-        u."dateOfBirth" AS date_of_birth,
-        u.gender,
-        dp.bio,
-        (
-          SELECT dpp.url FROM "DatingProfilePhoto" dpp
-          WHERE dpp."profileId" = dp.id
-          ORDER BY dpp."order" ASC
-          LIMIT 1
-        ) AS first_photo_url,
-        (
-          ${EARTH_RADIUS_KM} * acos(
-            LEAST(1.0, GREATEST(-1.0,
-              cos(radians(${myLat}))
-              * cos(radians(dp.latitude))
-              * cos(radians(dp.longitude) - radians(${myLng}))
-              + sin(radians(${myLat}))
-              * sin(radians(dp.latitude))
-            ))
-          )
-        ) AS distance
-      FROM "DatingProfile" dp
-      INNER JOIN "User" u ON u.id = dp."userId"
-      WHERE dp."isActive" = true
-        AND dp.latitude IS NOT NULL
-        AND dp.longitude IS NOT NULL
-        AND dp."userId" != ALL(${allExcludeIds}::text[])
-        AND EXISTS (
-          SELECT 1 FROM "DatingProfilePhoto" dpp WHERE dpp."profileId" = dp.id
-        )
-        ${preferredGender ? Prisma.sql`AND u.gender = ${preferredGender}::"Gender"` : Prisma.empty}
-        AND (u."dateOfBirth" IS NULL OR (u."dateOfBirth" >= ${minBirthDate} AND u."dateOfBirth" <= ${maxBirthDate}))
-      HAVING (
-        ${EARTH_RADIUS_KM} * acos(
-          LEAST(1.0, GREATEST(-1.0,
-            cos(radians(${myLat}))
-            * cos(radians(dp.latitude))
-            * cos(radians(dp.longitude) - radians(${myLng}))
-            + sin(radians(${myLat}))
-            * sin(radians(dp.latitude))
-          ))
-        )
-      ) <= ${effectiveDistance}
-      ORDER BY distance ASC
-      LIMIT ${l}
-      OFFSET ${skip}
-    `;
+    // Bounding box pre-filter: 1 degree latitude ≈ 111 km
+    const latDelta = effectiveDistance / 111.0;
+    const lngDelta = effectiveDistance / (111.0 * Math.cos((myLat * Math.PI) / 180));
 
-    // Count total
-    const countResult = await prisma.$queryRaw<[{ total: bigint }]>`
-      SELECT COUNT(*) AS total FROM (
-        SELECT dp.id
-        FROM "DatingProfile" dp
-        INNER JOIN "User" u ON u.id = dp."userId"
-        WHERE dp."isActive" = true
-          AND dp.latitude IS NOT NULL
-          AND dp.longitude IS NOT NULL
-          AND dp."userId" != ALL(${allExcludeIds}::text[])
-          AND EXISTS (
-            SELECT 1 FROM "DatingProfilePhoto" dpp WHERE dpp."profileId" = dp.id
-          )
-          ${preferredGender ? Prisma.sql`AND u.gender = ${preferredGender}::"Gender"` : Prisma.empty}
-          AND (u."dateOfBirth" IS NULL OR (u."dateOfBirth" >= ${minBirthDate} AND u."dateOfBirth" <= ${maxBirthDate}))
-          AND (
+    // Single CTE query: compute distance in inner query, filter + paginate in outer,
+    // window function for total count to avoid a second round-trip.
+    const rows = await prisma.$queryRaw<NearbyUserRow[]>`
+      WITH nearby AS (
+        SELECT
+          u.id AS user_id,
+          u."fullName" AS full_name,
+          u.avatar,
+          u."dateOfBirth" AS date_of_birth,
+          u.gender,
+          dp.bio,
+          (
+            SELECT dpp.url FROM "DatingProfilePhoto" dpp
+            WHERE dpp."profileId" = dp.id
+            ORDER BY dpp."order" ASC
+            LIMIT 1
+          ) AS first_photo_url,
+          (
             ${EARTH_RADIUS_KM} * acos(
               LEAST(1.0, GREATEST(-1.0,
                 cos(radians(${myLat}))
@@ -191,11 +146,30 @@ export class LocationService {
                 * sin(radians(dp.latitude))
               ))
             )
-          ) <= ${effectiveDistance}
-      ) sub
+          ) AS distance
+        FROM "DatingProfile" dp
+        INNER JOIN "User" u ON u.id = dp."userId"
+        WHERE dp."isActive" = true
+          AND dp.latitude IS NOT NULL
+          AND dp.longitude IS NOT NULL
+          AND dp.latitude BETWEEN ${myLat - latDelta} AND ${myLat + latDelta}
+          AND dp.longitude BETWEEN ${myLng - lngDelta} AND ${myLng + lngDelta}
+          AND dp."userId" != ALL(${allExcludeIds}::text[])
+          AND EXISTS (
+            SELECT 1 FROM "DatingProfilePhoto" dpp WHERE dpp."profileId" = dp.id
+          )
+          ${preferredGender ? Prisma.sql`AND u.gender = ${preferredGender}::"Gender"` : Prisma.empty}
+          AND (u."dateOfBirth" IS NULL OR (u."dateOfBirth" >= ${minBirthDate} AND u."dateOfBirth" <= ${maxBirthDate}))
+      )
+      SELECT *, COUNT(*) OVER() AS total_count
+      FROM nearby
+      WHERE distance <= ${effectiveDistance}
+      ORDER BY distance ASC
+      LIMIT ${l}
+      OFFSET ${skip}
     `;
 
-    const total = Number(countResult[0]?.total ?? 0);
+    const total = Number(rows[0]?.total_count ?? 0);
 
     const data = rows.map((row) => ({
       userId: row.user_id,

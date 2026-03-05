@@ -18,10 +18,9 @@ export class LocationController {
     try {
       const userId = req.user!.userId;
       const { distance, page, limit } = req.query;
-      const maxDistance = distance ? parseFloat(distance as string) : undefined;
       const result = await locationService.findNearbyUsers(
         userId,
-        maxDistance,
+        distance as unknown as number | undefined,
         page as string,
         limit as string,
       );

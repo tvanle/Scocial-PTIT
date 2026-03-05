@@ -41,11 +41,25 @@ export class DiscoveryService {
       throw new AppError(ERROR_MESSAGES.DATING_PROFILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    const swipedUsers = await prisma.datingSwipe.findMany({
-      where: { fromUserId: userId },
-      select: { toUserId: true },
-    });
-    const excludeIds = [userId, ...swipedUsers.map((s) => s.toUserId)];
+    const [swipedUsers, blockedRelations] = await Promise.all([
+      prisma.datingSwipe.findMany({
+        where: { fromUserId: userId },
+        select: { toUserId: true },
+      }),
+      prisma.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: userId }, { blockedUserId: userId }],
+        },
+        select: { blockerId: true, blockedUserId: true },
+      }),
+    ]);
+
+    const blockedIds = blockedRelations.map((b) =>
+      b.blockerId === userId ? b.blockedUserId : b.blockerId,
+    );
+    const excludeIds = [
+      ...new Set([userId, ...swipedUsers.map((s) => s.toUserId), ...blockedIds]),
+    ];
 
     const where: Prisma.DatingProfileWhereInput = {
       userId: { notIn: excludeIds },
