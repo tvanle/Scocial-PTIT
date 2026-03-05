@@ -139,6 +139,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const shouldTruncate = contentLength > 200 && !showFullContent;
 
   return (
+    <TouchableOpacity activeOpacity={0.8} onPress={onComment}>
     <Card style={styles.card} padding="none">
       {/* Header */}
       <View style={styles.header}>
@@ -276,6 +277,7 @@ const PostCard: React.FC<PostCardProps> = ({
         </TouchableOpacity>
       </View>
     </Card>
+    </TouchableOpacity>
   );
 };
 

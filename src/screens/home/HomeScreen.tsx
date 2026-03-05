@@ -123,7 +123,7 @@ const PostCard: React.FC<{
   const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
-    <View style={styles.postCard}>
+    <TouchableOpacity activeOpacity={0.8} onPress={onComment} style={styles.postCard}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
@@ -203,7 +203,7 @@ const PostCard: React.FC<{
           />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 });
 
