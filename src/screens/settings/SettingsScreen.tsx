@@ -17,6 +17,7 @@ import { colors, typography, spacing, borderRadius } from '../../constants/theme
 import Avatar from '../../components/common/Avatar';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { RootStackParamList } from '../../types';
+import { DEFAULT_AVATAR } from '../../constants/strings';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -132,7 +133,7 @@ const SettingsScreen: React.FC = () => {
           onPress={() => navigation.navigate('EditProfile')}
         >
           <Avatar
-            uri={user?.avatar || 'https://i.pravatar.cc/150?img=3'}
+            uri={user?.avatar || DEFAULT_AVATAR}
             size={60}
           />
           <View style={styles.profileInfo}>

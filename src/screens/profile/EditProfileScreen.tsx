@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { userService } from '../../services/user/userService';
+import { DEFAULT_AVATAR } from '../../constants/strings';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -107,7 +108,7 @@ const EditProfileScreen: React.FC = () => {
           {/* Avatar */}
           <TouchableOpacity style={styles.avatarSection} onPress={pickAvatar}>
             <Image
-              source={{ uri: avatar || 'https://i.pravatar.cc/150?img=1' }}
+              source={{ uri: avatar || DEFAULT_AVATAR }}
               style={styles.avatar}
             />
             <View style={styles.cameraIcon}>

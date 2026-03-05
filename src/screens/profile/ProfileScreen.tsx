@@ -19,6 +19,7 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { Post } from '../../types';
 import { postService } from '../../services/post/postService';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import { DEFAULT_AVATAR } from '../../constants/strings';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -120,7 +121,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
               <Text style={styles.usernameHandle}>@{user?.studentId || 'username'}</Text>
             </View>
             <Image
-              source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
+              source={{ uri: user?.avatar || DEFAULT_AVATAR }}
               style={styles.avatar}
             />
           </View>

@@ -11,13 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
-import { User, Group } from '../../types';
+import { Strings, DEFAULT_AVATAR } from '../../constants/strings';
+import { User } from '../../types';
 
 const mockUsers: User[] = [
-  { id: '2', fullName: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?img=2', studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '3', fullName: 'Lê Thị C', avatar: 'https://i.pravatar.cc/150?img=3', studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '4', fullName: 'Phạm Văn D', avatar: 'https://i.pravatar.cc/150?img=4', studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '2', fullName: 'Trần Văn B', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '3', fullName: 'Lê Thị C', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '4', fullName: 'Phạm Văn D', avatar: DEFAULT_AVATAR, studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
 ];
 
 const recentSearches = [

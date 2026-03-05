@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Image,
-  Share,
   Alert,
   ActivityIndicator,
   Dimensions,
@@ -22,6 +21,8 @@ import { postService } from '../../services/post/postService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { EmptyState } from '../../components/common';
+import { DEFAULT_AVATAR } from '../../constants/strings';
+import { usePostActions } from '../../hooks/usePostActions';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
@@ -128,7 +129,7 @@ const PostCard: React.FC<{
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
           <Image
-            source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
+            source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
             style={styles.postAvatar}
           />
           <View style={styles.postHeaderInfo}>
@@ -212,6 +213,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { handleShare, handleRepost, handleToggleLike } = usePostActions();
 
   const fetchPosts = async () => {
     try {
@@ -248,35 +250,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         : p
     ));
 
-    try {
-      if (post.isLiked) {
-        await postService.unlikePost(postId);
-      } else {
-        await postService.likePost(postId);
-      }
-    } catch (error) {
+    const success = await handleToggleLike(postId, post.isLiked);
+    if (!success) {
       setPosts(posts.map(p =>
         p.id === postId
           ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount + 1 : p.likesCount - 1 }
           : p
       ));
     }
-  }, [posts]);
+  }, [posts, handleToggleLike]);
 
   const handleComment = useCallback((postId: string) => {
     navigation.navigate('PostDetail', { postId });
   }, [navigation]);
-
-  const handleRepost = useCallback(() => {
-    Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng lại', onPress: () => { } },
-    ]);
-  }, []);
-
-  const handleShare = useCallback((authorName: string) => {
-    Share.share({ message: `Xem bài viết của ${authorName} trên PTIT Social!` });
-  }, []);
 
   const handleProfile = useCallback((userId: string) => {
     navigation.navigate('UserProfile', { userId });
@@ -296,7 +282,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       post={item}
       onLike={() => handleLike(item.id)}
       onComment={() => handleComment(item.id)}
-      onRepost={handleRepost}
+      onRepost={() => handleRepost(item)}
       onShare={() => handleShare(item.author.fullName)}
       onProfile={() => handleProfile(item.author.id)}
       onMore={() => handleMore(item.id)}

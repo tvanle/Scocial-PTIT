@@ -22,6 +22,8 @@ import { Post, Comment, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { ScreenHeader } from '../../components/common';
+import { DEFAULT_AVATAR } from '../../constants/strings';
+import { usePostActions } from '../../hooks/usePostActions';
 
 type PostDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostDetailRouteProp = RouteProp<RootStackParamList, 'PostDetail'>;
@@ -37,6 +39,7 @@ const PostDetailScreen: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
+  const { handleShare, handleRepost, handleToggleLike } = usePostActions();
 
   const fetchData = async () => {
     try {
@@ -62,7 +65,6 @@ const PostDetailScreen: React.FC = () => {
   const handleLike = useCallback(async () => {
     if (!post) return;
 
-    // Optimistic update
     const wasLiked = post.isLiked;
     setPost({
       ...post,
@@ -70,15 +72,8 @@ const PostDetailScreen: React.FC = () => {
       likesCount: wasLiked ? post.likesCount - 1 : post.likesCount + 1,
     });
 
-    try {
-      if (wasLiked) {
-        await postService.unlikePost(postId);
-      } else {
-        await postService.likePost(postId);
-      }
-    } catch (error) {
-      console.error('Failed to like/unlike post:', error);
-      // Revert on error
+    const success = await handleToggleLike(postId, wasLiked);
+    if (!success) {
       setPost({
         ...post,
         isLiked: wasLiked,
@@ -86,7 +81,7 @@ const PostDetailScreen: React.FC = () => {
       });
       Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
-  }, [post, postId]);
+  }, [post, postId, handleToggleLike]);
 
   const handleCommentLike = (commentId: string) => {
     // Comment likes not implemented in API yet
@@ -138,7 +133,7 @@ const PostDetailScreen: React.FC = () => {
                 onPress={() => navigation.navigate('UserProfile', { userId: post.author.id })}
               >
                 <Image
-                  source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
+                  source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
                   style={styles.avatar}
                 />
                 <View>
@@ -181,10 +176,10 @@ const PostDetailScreen: React.FC = () => {
               <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.actionButton}>
                 <Ionicons name="chatbox-outline" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleRepost(post)}>
                 <Ionicons name="repeat-outline" size={24} color={Colors.textPrimary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleShare(post.author.fullName)}>
                 <Ionicons name="paper-plane-outline" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -195,23 +190,36 @@ const PostDetailScreen: React.FC = () => {
             {comments.map(comment => (
               <View key={comment.id} style={styles.commentItem}>
                 <Image
-                  source={{ uri: comment.author.avatar || 'https://i.pravatar.cc/150' }}
+                  source={{ uri: comment.author.avatar || DEFAULT_AVATAR }}
                   style={styles.commentAvatar}
                 />
                 <View style={styles.commentContent}>
-                  <View style={styles.commentInline}>
+                  <View style={styles.commentHeader}>
                     <Text style={styles.commentAuthor}>{comment.author.fullName}</Text>
-                    <Text style={styles.commentText}> {comment.content}</Text>
-                  </View>
-                  <View style={styles.commentActions}>
                     <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt)}</Text>
-                    <TouchableOpacity onPress={() => handleCommentLike(comment.id)}>
-                      <Text style={[styles.commentAction, comment.isLiked && { color: Colors.like }]}>
-                        Thich {comment.likesCount > 0 ? `(${comment.likesCount})` : ''}
-                      </Text>
+                  </View>
+                  <Text style={styles.commentText}>{comment.content}</Text>
+                  <View style={styles.commentActions}>
+                    <TouchableOpacity onPress={() => handleCommentLike(comment.id)} style={styles.commentActionBtn}>
+                      <Ionicons
+                        name={comment.isLiked ? 'heart' : 'heart-outline'}
+                        size={16}
+                        color={comment.isLiked ? Colors.like : Colors.gray400}
+                      />
+                      {comment.likesCount > 0 && (
+                        <Text style={[styles.commentActionCount, comment.isLiked && { color: Colors.like }]}>
+                          {comment.likesCount}
+                        </Text>
+                      )}
                     </TouchableOpacity>
-                    <TouchableOpacity>
-                      <Text style={styles.commentAction}>Tra loi</Text>
+                    <TouchableOpacity style={styles.commentActionBtn}>
+                      <Ionicons name="chatbox-outline" size={16} color={Colors.gray400} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.commentActionBtn}>
+                      <Ionicons name="repeat-outline" size={16} color={Colors.gray400} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.commentActionBtn}>
+                      <Ionicons name="paper-plane-outline" size={16} color={Colors.gray400} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -225,7 +233,7 @@ const PostDetailScreen: React.FC = () => {
         {/* Comment Input */}
         <View style={styles.inputContainer}>
           <Image
-            source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
+            source={{ uri: user?.avatar || DEFAULT_AVATAR }}
             style={styles.inputAvatar}
           />
           <View style={styles.textInputWrapper}>
@@ -363,9 +371,10 @@ const styles = StyleSheet.create({
   commentContent: {
     flex: 1,
   },
-  commentInline: {
+  commentHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   commentAuthor: {
     fontSize: FontSize.sm,
@@ -376,20 +385,25 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.textPrimary,
     lineHeight: 20,
+    marginTop: Spacing.xxs,
   },
   commentActions: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.xs,
+    gap: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  commentActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  commentActionCount: {
+    fontSize: FontSize.xs,
+    color: Colors.gray400,
   },
   commentTime: {
     fontSize: FontSize.xs,
-    color: Colors.gray500,
-  },
-  commentAction: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.gray500,
+    color: Colors.gray400,
   },
   inputContainer: {
     flexDirection: 'row',

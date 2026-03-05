@@ -1,4 +1,7 @@
 // Vietnamese strings for PTIT Social App
+
+export const DEFAULT_AVATAR = 'https://i.pravatar.cc/150';
+
 export const Strings = {
   // App
   appName: 'PTIT Social',
@@ -41,7 +44,6 @@ export const Strings = {
     notifications: 'Thông báo',
     profile: 'Cá nhân',
     messages: 'Tin nhắn',
-    groups: 'Nhóm',
     events: 'Sự kiện',
     settings: 'Cài đặt',
   },
@@ -151,25 +153,8 @@ export const Strings = {
     clearHistory: 'Xóa lịch sử',
     people: 'Mọi người',
     posts: 'Bài viết',
-    groups: 'Nhóm',
     events: 'Sự kiện',
     noResults: 'Không tìm thấy kết quả',
-  },
-
-  // Groups
-  groups: {
-    myGroups: 'Nhóm của bạn',
-    discover: 'Khám phá',
-    createGroup: 'Tạo nhóm',
-    joinGroup: 'Tham gia',
-    leaveGroup: 'Rời nhóm',
-    members: 'thành viên',
-    admin: 'Quản trị viên',
-    moderator: 'Điều hành viên',
-    publicGroup: 'Nhóm công khai',
-    privateGroup: 'Nhóm riêng tư',
-    pendingPosts: 'Bài chờ duyệt',
-    groupRules: 'Quy tắc nhóm',
   },
 
   // Settings
