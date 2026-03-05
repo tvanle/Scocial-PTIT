@@ -80,10 +80,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           <View style={styles.form}>
             {/* Email Input */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Email</Text>
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder="hello@reallygreatsite.com"
                   placeholderTextColor={Colors.gray400}
                   value={email}
                   onChangeText={(text) => {
@@ -99,6 +100,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Password Input */}
             <View style={styles.inputWrapper}>
+              <View style={styles.passwordLabelRow}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                  <Text style={styles.forgotText}>Forgot my password</Text>
+                </TouchableOpacity>
+              </View>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -125,14 +132,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
 
-            {/* Forgot Password */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ForgotPassword')}
-              style={styles.forgotButton}
-            >
-              <Text style={styles.forgotText}>Forgot password?</Text>
-            </TouchableOpacity>
-
             {/* Error from API */}
             {error && (
               <View style={styles.apiErrorContainer}>
@@ -151,23 +150,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Log in</Text>
+                <Text style={styles.loginButtonText}>Log In</Text>
               )}
             </TouchableOpacity>
           </View>
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
-          </View>
-
-          {/* Social Login */}
-          <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-            <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -217,6 +203,18 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   inputWrapper: {},
+  inputLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -244,9 +242,6 @@ const styles = StyleSheet.create({
     color: Colors.error,
     marginTop: Spacing.xs,
     marginLeft: Spacing.lg,
-  },
-  forgotButton: {
-    alignSelf: 'flex-end',
   },
   forgotText: {
     color: Colors.primary,
@@ -284,36 +279,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Spacing.xxl,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    paddingHorizontal: Spacing.lg,
-    color: Colors.textTertiary,
-    fontSize: FontSize.sm,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: Layout.buttonHeight,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    gap: Spacing.md,
-  },
-  socialButtonText: {
-    color: Colors.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
   },
   bottomSection: {
     paddingHorizontal: Spacing.xxl,

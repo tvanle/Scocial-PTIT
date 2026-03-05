@@ -76,7 +76,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -99,10 +99,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           <View style={styles.form}>
             {/* Full Name */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Full Name</Text>
               <View style={[styles.inputContainer, errors.fullName && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Full Name"
+                  placeholder="Enter your name"
                   placeholderTextColor={Colors.gray400}
                   value={formData.fullName}
                   onChangeText={(text) => updateField('fullName', text)}
@@ -113,10 +114,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
             {/* Email */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Email</Text>
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder="Enter your Email"
                   placeholderTextColor={Colors.gray400}
                   value={formData.email}
                   onChangeText={(text) => updateField('email', text)}
@@ -129,6 +131,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
             {/* Password */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Password</Text>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -154,6 +157,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
             {/* Confirm Password */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
               <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -202,19 +206,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             ) : (
               <Text style={styles.registerButtonText}>Create Account</Text>
             )}
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
-          </View>
-
-          {/* Google Sign-in */}
-          <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-            <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -270,6 +261,12 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   inputWrapper: {},
+  inputLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -359,36 +356,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Spacing.xxl,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    paddingHorizontal: Spacing.lg,
-    color: Colors.textTertiary,
-    fontSize: FontSize.sm,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: Layout.buttonHeight,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    gap: Spacing.md,
-  },
-  socialButtonText: {
-    color: Colors.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
   },
   bottomSection: {
     paddingHorizontal: Spacing.xxl,
