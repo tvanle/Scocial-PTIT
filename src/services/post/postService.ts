@@ -32,7 +32,7 @@ class PostService {
   }
 
   async unlikePost(postId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.POST.UNLIKE(postId));
+    await apiClient.delete(ENDPOINTS.POST.LIKE(postId));
   }
 
   async getComments(postId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
