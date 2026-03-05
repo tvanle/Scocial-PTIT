@@ -26,82 +26,78 @@ const MATCH_SELECT: Prisma.DatingMatchSelect = {
 
 export class SwipeService {
   async swipe(userId: string, targetUserId: string, action: 'LIKE' | 'PASS') {
-    // 1. Prevent self swipe
     if (userId === targetUserId) {
       throw new AppError(ERROR_MESSAGES.CANNOT_SWIPE_SELF, HTTP_STATUS.BAD_REQUEST);
     }
 
-    // 2. Prevent duplicate swipe
-    const existing = await prisma.datingSwipe.findUnique({
-      where: {
-        fromUserId_toUserId: {
-          fromUserId: userId,
-          toUserId: targetUserId,
+    // Validate both profiles + block check in parallel
+    const [myProfile, targetProfile, blockExists] = await Promise.all([
+      prisma.datingProfile.findUnique({
+        where: { userId },
+        select: { id: true, isActive: true },
+      }),
+      prisma.datingProfile.findUnique({
+        where: { userId: targetUserId },
+        select: { id: true, isActive: true },
+      }),
+      prisma.userBlock.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedUserId: targetUserId },
+            { blockerId: targetUserId, blockedUserId: userId },
+          ],
         },
-      },
-      select: { id: true },
-    });
-
-    if (existing) {
-      throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
-    }
-
-    // 3. Validate current user has active dating profile
-    const myProfile = await prisma.datingProfile.findUnique({
-      where: { userId },
-      select: { id: true, isActive: true },
-    });
+        select: { id: true },
+      }),
+    ]);
 
     if (!myProfile || !myProfile.isActive) {
       throw new AppError(ERROR_MESSAGES.DATING_PROFILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    // 4. Ensure target profile exists and isActive
-    const targetProfile = await prisma.datingProfile.findUnique({
-      where: { userId: targetUserId },
-      select: { id: true, isActive: true },
-    });
-
     if (!targetProfile || !targetProfile.isActive) {
       throw new AppError(ERROR_MESSAGES.DATING_PROFILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
-
-    // 5. Block relationship check (both directions)
-    const blockExists = await prisma.userBlock.findFirst({
-      where: {
-        OR: [
-          { blockerId: userId, blockedUserId: targetUserId },
-          { blockerId: targetUserId, blockedUserId: userId },
-        ],
-      },
-      select: { id: true },
-    });
 
     if (blockExists) {
       throw new AppError(ERROR_MESSAGES.BLOCKED_USER, HTTP_STATUS.FORBIDDEN);
     }
 
-    // 6. Create swipe + mutual match check
     if (action === 'LIKE') {
       return this.swipeWithMatchCheck(userId, targetUserId);
     }
 
-    // PASS — no match logic needed
-    const swipe = await prisma.datingSwipe.create({
-      data: { fromUserId: userId, toUserId: targetUserId, action: 'PASS' },
-      select: SWIPE_SELECT,
-    });
+    // PASS — attempt create, catch duplicate via P2002
+    try {
+      const swipe = await prisma.datingSwipe.create({
+        data: { fromUserId: userId, toUserId: targetUserId, action: 'PASS' },
+        select: SWIPE_SELECT,
+      });
 
-    return { swipe, matched: false, match: null };
+      return { swipe, matched: false, match: null };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
+      }
+      throw error;
+    }
   }
 
   private async swipeWithMatchCheck(userId: string, targetUserId: string) {
     return prisma.$transaction(async (tx) => {
-      // Create LIKE swipe
-      const swipe = await tx.datingSwipe.create({
-        data: { fromUserId: userId, toUserId: targetUserId, action: 'LIKE' },
-        select: SWIPE_SELECT,
-      });
+      // Create LIKE swipe — catch P2002 (duplicate) inside transaction
+      let swipe;
+      try {
+        swipe = await tx.datingSwipe.create({
+          data: { fromUserId: userId, toUserId: targetUserId, action: 'LIKE' },
+          select: SWIPE_SELECT,
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
+        }
+        throw error;
+      }
 
       // Check reciprocal LIKE
       const reciprocal = await tx.datingSwipe.findFirst({

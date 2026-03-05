@@ -348,6 +348,11 @@ model DatingProfile {
   bio         String?
   isActive    Boolean  @default(true)
 
+  // Location (GPS)
+  latitude    Float?
+  longitude   Float?
+  locationUpdatedAt DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -358,6 +363,8 @@ model DatingProfile {
   preferences DatingPreferences?
 
   @@index([userId])
+  @@index([latitude, longitude])
+  @@index([isActive])
 }
 
 model DatingProfilePhoto {
@@ -416,7 +423,7 @@ model DatingPreferences {
 
   ageMin      Int            @default(18)
   ageMax      Int            @default(99)
-  maxDistance Int?           // in km, null = no limit
+  maxDistance  Int?           // in km, null = no limit
   gender      Gender?        // Preferred gender
 
   updatedAt   DateTime       @updatedAt
