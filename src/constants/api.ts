@@ -123,6 +123,34 @@ export const ENDPOINTS = {
     DELETE: (id: string) => `/media/${id}`,
     GET: (id: string) => `/media/${id}`,
   },
+
+  // Dating Service (backend: /api/v1/dating)
+  DATING: {
+    // Profile
+    PROFILE: '/dating/profile',
+    PROFILE_ME: '/dating/profile/me',
+    PROFILE_BY_USER: (userId: string) => `/dating/profile/${userId}`,
+    UPDATE_PROFILE: '/dating/profile',
+    ADD_PHOTO: '/dating/profile/photos',
+    DELETE_PHOTO: (photoId: string) => `/dating/profile/photos/${photoId}`,
+    UPDATE_PROMPTS: '/dating/profile/prompts',
+    UPDATE_LIFESTYLE: '/dating/profile/lifestyle',
+    UPDATE_PREFERENCES: '/dating/profile/preferences',
+
+    // Discovery
+    DISCOVERY: '/dating/discovery',
+
+    // Swipe
+    SWIPE: '/dating/swipe',
+
+    // Match
+    MATCHES: '/dating/matches',
+    MATCH_DETAIL: (matchId: string) => `/dating/matches/${matchId}`,
+
+    // Location
+    UPDATE_LOCATION: '/dating/location',
+    NEARBY: '/dating/location/nearby',
+  },
 };
 
 // WebSocket Events
