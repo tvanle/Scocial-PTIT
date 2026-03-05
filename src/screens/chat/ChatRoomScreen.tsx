@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Avatar, Header, IconButton } from '../../components/common';
+import { Avatar, Header } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Message, User, Conversation, RootStackParamList } from '../../types';
@@ -99,10 +99,6 @@ const ChatRoomScreen: React.FC = () => {
 
   const handleAttachment = async () => {
     Alert.alert('Đính kèm', 'Tính năng đính kèm file đang phát triển');
-  };
-
-  const handleCamera = async () => {
-    Alert.alert('Camera', 'Tính năng camera đang phát triển');
   };
 
   const formatMessageTime = (dateString: string): string => {
@@ -248,24 +244,6 @@ const ChatRoomScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
         }
-        rightComponent={
-          <View style={styles.headerRight}>
-            <IconButton
-              icon="call-outline"
-              onPress={() => Alert.alert('Gọi điện', 'Tính năng gọi điện đang phát triển')}
-              variant="ghost"
-              size={36}
-              iconSize={22}
-            />
-            <IconButton
-              icon="videocam-outline"
-              onPress={() => Alert.alert('Gọi video', 'Tính năng gọi video đang phát triển')}
-              variant="ghost"
-              size={36}
-              iconSize={22}
-            />
-          </View>
-        }
       />
 
       <KeyboardAvoidingView
@@ -295,23 +273,16 @@ const ChatRoomScreen: React.FC = () => {
             <Ionicons name="add-circle" size={28} color={Colors.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.cameraButton} onPress={handleCamera}>
-            <Ionicons name="camera" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder={Strings.chat.typeMessage}
+              placeholder="Type a message..."
               placeholderTextColor={Colors.textTertiary}
               value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={1000}
             />
-            <TouchableOpacity style={styles.emojiButton}>
-              <Ionicons name="happy-outline" size={24} color={Colors.textTertiary} />
-            </TouchableOpacity>
           </View>
 
           {inputText.trim() ? (
@@ -352,9 +323,6 @@ const styles = StyleSheet.create({
   headerStatus: {
     fontSize: FontSize.xs,
     color: Colors.success,
-  },
-  headerRight: {
-    flexDirection: 'row',
   },
   messageList: {
     paddingHorizontal: Spacing.md,
@@ -436,9 +404,6 @@ const styles = StyleSheet.create({
   attachButton: {
     padding: Spacing.xs,
   },
-  cameraButton: {
-    padding: Spacing.xs,
-  },
   textInputContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -456,9 +421,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     paddingVertical: Spacing.xs,
     maxHeight: 80,
-  },
-  emojiButton: {
-    padding: Spacing.xs,
   },
   sendButton: {
     width: 40,

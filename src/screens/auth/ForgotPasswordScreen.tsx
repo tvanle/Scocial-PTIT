@@ -67,13 +67,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.content}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-
           <View style={styles.successContainer}>
             <View style={styles.successIcon}>
               <Ionicons name="mail" size={40} color={Colors.primary} />
@@ -103,8 +96,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               style={styles.backToLogin}
               onPress={() => navigation.navigate('Login')}
             >
-              <Ionicons name="arrow-back" size={18} color={Colors.primary} />
-              <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
+              <Text style={styles.backToLoginText}>Back to Login</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -119,30 +111,22 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.content}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-
           <View style={styles.headerSection}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="lock-closed" size={36} color={Colors.primary} />
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoText}>ptit</Text>
             </View>
             <Text style={styles.title}>Quên mật khẩu?</Text>
             <Text style={styles.subtitle}>
-              Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu
+              Enter your email or student ID to reset your password
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, error && styles.inputError]}>
-                <Ionicons name="mail-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="example@ptit.edu.vn"
+                  placeholder="Email or StudentID"
                   placeholderTextColor={Colors.gray400}
                   value={email}
                   onChangeText={(text) => {
@@ -153,6 +137,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                   autoCapitalize="none"
                 />
               </View>
+              <Text style={styles.hintText}>ie. 0970154000</Text>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
 
@@ -165,7 +150,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.sendButtonText}>Gửi liên kết đặt lại</Text>
+                <Text style={styles.sendButtonText}>Send Reset Link {'>'}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -174,8 +159,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             style={styles.backToLogin}
             onPress={() => navigation.navigate('Login')}
           >
-            <Ionicons name="arrow-back" size={18} color={Colors.primary} />
-            <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
+            <Text style={styles.backToLoginText}>Back to Login</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -195,27 +179,25 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.xxl,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.gray50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xxl,
-  },
   headerSection: {
     alignItems: 'center',
+    marginTop: Spacing.xxxl,
     marginBottom: Spacing.xxxl,
   },
-  iconContainer: {
+  logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: 24,
-    backgroundColor: Colors.primaryLight,
+    borderRadius: 40,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,
+  },
+  logoText: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extraBold,
+    color: Colors.white,
+    letterSpacing: 1,
   },
   title: {
     fontSize: FontSize.xxl,
@@ -248,14 +230,17 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: Colors.error,
   },
-  inputIcon: {
-    marginRight: Spacing.md,
-  },
   input: {
     flex: 1,
     height: '100%',
     fontSize: FontSize.md,
     color: Colors.textPrimary,
+  },
+  hintText: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.lg,
   },
   errorText: {
     fontSize: FontSize.xs,
@@ -277,12 +262,9 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
   },
   backToLogin: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 'auto',
     paddingVertical: Spacing.lg,
-    gap: Spacing.xs,
   },
   backToLoginText: {
     fontSize: FontSize.md,

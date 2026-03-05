@@ -68,19 +68,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo Section */}
-          <View style={styles.logoSection}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="school" size={40} color={Colors.white} />
-            </View>
-            <Text style={styles.appName}>PTIT Social</Text>
-          </View>
-
           {/* Welcome Text */}
           <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Chào mừng trở lại!</Text>
+            <Text style={styles.welcomeTitle}>Welcome Back</Text>
             <Text style={styles.welcomeSubtitle}>
-              Đăng nhập để kết nối với bạn bè PTIT
+              Log in to see what's happening
             </Text>
           </View>
 
@@ -89,10 +81,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             {/* Email Input */}
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-                <Ionicons name="mail-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Email hoặc tên người dùng"
+                  placeholder="Email"
                   placeholderTextColor={Colors.gray400}
                   value={email}
                   onChangeText={(text) => {
@@ -108,17 +99,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Password Input */}
             <View style={styles.inputWrapper}>
-              <View style={styles.passwordLabelRow}>
-                <Text style={styles.inputLabel}>Mật khẩu</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.forgotText}>Quên mật khẩu?</Text>
-                </TouchableOpacity>
-              </View>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-                <Ionicons name="lock-closed-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Password"
                   placeholderTextColor={Colors.gray400}
                   value={password}
                   onChangeText={(text) => {
@@ -141,6 +125,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
 
+            {/* Forgot Password */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotButton}
+            >
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
+
             {/* Error from API */}
             {error && (
               <View style={styles.apiErrorContainer}>
@@ -159,7 +151,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                <Text style={styles.loginButtonText}>Log in</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -167,14 +159,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           {/* Divider */}
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
-            <Text style={styles.dividerText}>hoặc</Text>
+            <Text style={styles.dividerText}>or</Text>
             <View style={styles.divider} />
           </View>
 
           {/* Social Login */}
           <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
             <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
-            <Text style={styles.socialButtonText}>Tiếp tục với Google</Text>
+            <Text style={styles.socialButtonText}>Continue with Google</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -186,7 +178,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate('Register')}
         >
           <Text style={styles.registerText}>
-            Chưa có tài khoản? <Text style={styles.registerLink}>Đăng ký</Text>
+            Don't have an account? <Text style={styles.registerLink}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -207,25 +199,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xxl,
     paddingTop: Spacing.huge,
   },
-  logoSection: {
-    alignItems: 'center',
-    marginBottom: Spacing.xxxl,
-  },
-  logoContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-    ...Shadow.red,
-  },
-  appName: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-  },
   welcomeSection: {
     marginBottom: Spacing.xxxl,
   },
@@ -244,17 +217,6 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   inputWrapper: {},
-  inputLabel: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-  },
-  passwordLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,9 +229,6 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: Colors.error,
-  },
-  inputIcon: {
-    marginRight: Spacing.md,
   },
   input: {
     flex: 1,
@@ -286,6 +245,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     marginLeft: Spacing.lg,
   },
+  forgotButton: {
+    alignSelf: 'flex-end',
+  },
+  forgotText: {
+    color: Colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+  },
   apiErrorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -298,11 +265,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.error,
     flex: 1,
-  },
-  forgotText: {
-    color: Colors.primary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
   },
   loginButton: {
     height: Layout.buttonHeight,

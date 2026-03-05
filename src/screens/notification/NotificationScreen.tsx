@@ -22,7 +22,7 @@ interface NotificationScreenProps {
   navigation: any;
 }
 
-type FilterChip = 'all' | 'replies' | 'mentions' | 'likes' | 'follows';
+type FilterChip = 'all' | 'follows' | 'invites' | 'edits';
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
   const { data: notificationsData, loading, refreshing, onRefresh, setData, refetch } = useFetch(
@@ -102,20 +102,18 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   const filterChips: { key: FilterChip; label: string }[] = [
     { key: 'all', label: 'Tất cả' },
-    { key: 'replies', label: 'Trả lời' },
-    { key: 'mentions', label: 'Đề cập' },
-    { key: 'likes', label: 'Thích' },
-    { key: 'follows', label: 'Theo dõi' },
+    { key: 'follows', label: 'Lời theo dõi' },
+    { key: 'invites', label: 'Gửi lời mời mới' },
+    { key: 'edits', label: 'yêu cầu sửa' },
   ];
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === 'all') return notifications;
     const typeMap: Record<FilterChip, NotificationType[]> = {
       all: [],
-      replies: ['comment_post'],
-      mentions: ['mention', 'tag'],
-      likes: ['like_post'],
       follows: ['follow', 'follow_back'],
+      invites: ['mention', 'tag'],
+      edits: ['comment_post'],
     };
     return notifications.filter(n => typeMap[activeFilter]?.includes(n.type));
   }, [notifications, activeFilter]);

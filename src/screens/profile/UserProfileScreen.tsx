@@ -35,7 +35,7 @@ const UserProfileScreen: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'threads' | 'replies'>('threads');
+  const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
 
   const fetchData = async () => {
     try {
@@ -182,11 +182,11 @@ const UserProfileScreen: React.FC = () => {
         {/* Tabs */}
         <View style={styles.tabs}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'threads' && styles.activeTab]}
-            onPress={() => setActiveTab('threads')}
+            style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
+            onPress={() => setActiveTab('posts')}
           >
-            <Text style={[styles.tabText, activeTab === 'threads' && styles.activeTabText]}>
-              Thread
+            <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
+              Bài đăng
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -197,11 +197,19 @@ const UserProfileScreen: React.FC = () => {
               Tra loi
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'reposts' && styles.activeTab]}
+            onPress={() => setActiveTab('reposts')}
+          >
+            <Text style={[styles.tabText, activeTab === 'reposts' && styles.activeTabText]}>
+              Bài đăng lại
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Posts */}
         <View style={styles.postsSection}>
-          {activeTab === 'threads' ? (
+          {activeTab === 'posts' ? (
             posts.length > 0 ? (
               posts.map(post => (
                 <TouchableOpacity
@@ -225,6 +233,10 @@ const UserProfileScreen: React.FC = () => {
                 <Text style={styles.emptyText}>Chua co bai viet nao</Text>
               </View>
             )
+          ) : activeTab === 'reposts' ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
+            </View>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>Chua co tra loi nao</Text>
@@ -314,8 +326,8 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    height: 36,
-    borderRadius: BorderRadius.sm,
+    height: 40,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: Colors.border,
     alignItems: 'center',
@@ -327,8 +339,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   followButton: {
-    backgroundColor: Colors.textPrimary,
-    borderColor: Colors.textPrimary,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   followButtonText: {
     fontSize: FontSize.sm,
@@ -356,8 +368,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.textPrimary,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
@@ -365,7 +377,8 @@ const styles = StyleSheet.create({
     color: Colors.gray400,
   },
   activeTabText: {
-    color: Colors.textPrimary,
+    color: Colors.primary,
+    fontWeight: FontWeight.bold,
   },
   postsSection: {
     paddingTop: Spacing.sm,

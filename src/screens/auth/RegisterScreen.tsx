@@ -33,6 +33,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     phone: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   const { register, isLoading, error } = useAuthStore();
@@ -46,12 +47,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Nhập tên của bạn';
-    if (!formData.email.trim()) newErrors.email = 'Nhập email';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email không hợp lệ';
-    if (!formData.password) newErrors.password = 'Nhập mật khẩu';
-    else if (formData.password.length < 6) newErrors.password = 'Mật khẩu ít nhất 6 ký tự';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mật khẩu không khớp';
+    if (!formData.fullName.trim()) newErrors.fullName = 'Please enter your name';
+    if (!formData.email.trim()) newErrors.email = 'Please enter your email';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email address';
+    if (!formData.password) newErrors.password = 'Please enter a password';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -89,9 +90,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Title */}
-          <Text style={styles.title}>Tạo tài khoản</Text>
+          <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>
-            Tham gia cộng đồng sinh viên PTIT ngay hôm nay
+            Join our community today
           </Text>
 
           {/* Form */}
@@ -99,10 +100,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             {/* Full Name */}
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.fullName && styles.inputError]}>
-                <Ionicons name="person-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Họ và tên"
+                  placeholder="Full Name"
                   placeholderTextColor={Colors.gray400}
                   value={formData.fullName}
                   onChangeText={(text) => updateField('fullName', text)}
@@ -114,7 +114,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             {/* Email */}
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-                <Ionicons name="mail-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Email"
@@ -128,28 +127,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
-            {/* Student ID */}
-            <View style={styles.inputWrapper}>
-              <View style={styles.inputContainer}>
-                <Ionicons name="card-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mã sinh viên (không bắt buộc)"
-                  placeholderTextColor={Colors.gray400}
-                  value={formData.studentId}
-                  onChangeText={(text) => updateField('studentId', text.toUpperCase())}
-                  autoCapitalize="characters"
-                />
-              </View>
-            </View>
-
             {/* Password */}
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-                <Ionicons name="lock-closed-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Mật khẩu"
+                  placeholder="Password"
                   placeholderTextColor={Colors.gray400}
                   value={formData.password}
                   onChangeText={(text) => updateField('password', text)}
@@ -172,10 +155,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             {/* Confirm Password */}
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.gray400} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Xác nhận mật khẩu"
+                  placeholder="Confirm Password"
                   placeholderTextColor={Colors.gray400}
                   value={formData.confirmPassword}
                   onChangeText={(text) => updateField('confirmPassword', text)}
@@ -193,26 +175,47 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             </View>
           )}
 
+          {/* Terms Checkbox */}
+          <TouchableOpacity
+            style={styles.termsRow}
+            onPress={() => setAgreeTerms(!agreeTerms)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
+              {agreeTerms && <Ionicons name="checkmark" size={14} color={Colors.white} />}
+            </View>
+            <Text style={styles.termsText}>
+              I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text> and{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Text>
+          </TouchableOpacity>
+
           {/* Register Button */}
           <TouchableOpacity
-            style={styles.registerButton}
+            style={[styles.registerButton, !agreeTerms && styles.registerButtonDisabled]}
             onPress={handleRegister}
-            disabled={isLoading}
+            disabled={isLoading || !agreeTerms}
             activeOpacity={0.8}
           >
             {isLoading ? (
               <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.registerButtonText}>Đăng ký</Text>
+              <Text style={styles.registerButtonText}>Create Account</Text>
             )}
           </TouchableOpacity>
 
-          {/* Terms */}
-          <Text style={styles.termsText}>
-            Bằng cách đăng ký, bạn đồng ý với{' '}
-            <Text style={styles.termsLink}>Điều khoản dịch vụ</Text> và{' '}
-            <Text style={styles.termsLink}>Chính sách bảo mật</Text>
-          </Text>
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* Google Sign-in */}
+          <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+            <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
+            <Text style={styles.socialButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -220,7 +223,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       <View style={styles.bottomSection}>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginText}>
-            Đã có tài khoản? <Text style={styles.loginLink}>Đăng nhập</Text>
+            Already have an account? <Text style={styles.loginLink}>Sign in</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -243,8 +246,6 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -282,9 +283,6 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: Colors.error,
   },
-  inputIcon: {
-    marginRight: Spacing.md,
-  },
   input: {
     flex: 1,
     height: '100%',
@@ -314,30 +312,83 @@ const styles = StyleSheet.create({
     color: Colors.error,
     flex: 1,
   },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xl,
+    gap: Spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.gray300,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  termsText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    flex: 1,
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: Colors.primary,
+    fontWeight: FontWeight.medium,
+  },
   registerButton: {
     height: Layout.buttonHeight,
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.xxl,
+    marginTop: Spacing.lg,
     ...Shadow.red,
+  },
+  registerButtonDisabled: {
+    backgroundColor: Colors.gray300,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   registerButtonText: {
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-  termsText: {
-    fontSize: FontSize.xs,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.lg,
-    lineHeight: 18,
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.xxl,
   },
-  termsLink: {
-    color: Colors.primary,
-    fontWeight: FontWeight.medium,
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    paddingHorizontal: Spacing.lg,
+    color: Colors.textTertiary,
+    fontSize: FontSize.sm,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: Layout.buttonHeight,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    gap: Spacing.md,
+  },
+  socialButtonText: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
   },
   bottomSection: {
     paddingHorizontal: Spacing.xxl,

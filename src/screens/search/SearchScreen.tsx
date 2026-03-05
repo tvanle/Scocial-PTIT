@@ -112,12 +112,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tìm kiếm</Text>
-      </View>
-
-      {/* Search Bar */}
+      {/* Search Bar as primary header */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color={Colors.textTertiary} />
@@ -128,10 +123,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
             value={searchQuery}
             onChangeText={handleSearch}
           />
-          {searchQuery.length > 0 && (
+          {searchQuery.length > 0 ? (
             <TouchableOpacity onPress={() => handleSearch('')}>
               <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
             </TouchableOpacity>
+          ) : (
+            <Ionicons name="mic-outline" size={20} color={Colors.textTertiary} />
           )}
         </View>
       </View>
@@ -151,16 +148,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
-  },
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xs,
-  },
-  headerTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,

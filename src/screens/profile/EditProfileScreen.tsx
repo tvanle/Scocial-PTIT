@@ -111,61 +111,71 @@ const EditProfileScreen: React.FC = () => {
           <View style={styles.form}>
             <View style={styles.field}>
               <Text style={styles.label}>Ten</Text>
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Nhap ten cua ban"
-                placeholderTextColor={Colors.gray400}
-              />
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Nhap ten cua ban"
+                  placeholderTextColor={Colors.gray400}
+                />
+              </View>
             </View>
 
             <View style={styles.field}>
               <Text style={styles.label}>Tieu su</Text>
-              <TextInput
-                style={[styles.input, styles.bioInput]}
-                value={bio}
-                onChangeText={setBio}
-                placeholder="Viet gi do ve ban than..."
-                placeholderTextColor={Colors.gray400}
-                multiline
-                maxLength={150}
-              />
+              <View style={[styles.inputContainer, styles.bioInputContainer]}>
+                <TextInput
+                  style={[styles.input, styles.bioInput]}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder="Viet gi do ve ban than..."
+                  placeholderTextColor={Colors.gray400}
+                  multiline
+                  maxLength={150}
+                />
+              </View>
               <Text style={styles.charCount}>{bio.length}/150</Text>
             </View>
 
             <View style={styles.field}>
               <Text style={styles.label}>So dien thoai</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="Nhap so dien thoai"
-                placeholderTextColor={Colors.gray400}
-                keyboardType="phone-pad"
-              />
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="Nhap so dien thoai"
+                  placeholderTextColor={Colors.gray400}
+                  keyboardType="phone-pad"
+                />
+              </View>
             </View>
 
             <View style={styles.field}>
               <Text style={styles.label}>Khoa</Text>
-              <TextInput
-                style={styles.input}
-                value={faculty}
-                onChangeText={setFaculty}
-                placeholder="VD: Cong nghe thong tin"
-                placeholderTextColor={Colors.gray400}
-              />
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={faculty}
+                  onChangeText={setFaculty}
+                  placeholder="VD: Cong nghe thong tin"
+                  placeholderTextColor={Colors.gray400}
+                />
+              </View>
             </View>
 
             <View style={styles.field}>
               <Text style={styles.label}>Lop</Text>
-              <TextInput
-                style={styles.input}
-                value={className}
-                onChangeText={setClassName}
-                placeholder="VD: D21CQCN01-N"
-                placeholderTextColor={Colors.gray400}
-              />
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={className}
+                  onChangeText={setClassName}
+                  placeholder="VD: D21CQCN01-N"
+                  placeholderTextColor={Colors.gray400}
+                />
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -237,17 +247,28 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
     color: Colors.gray500,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  inputContainer: {
+    height: Layout.inputHeight,
+    backgroundColor: Colors.gray50,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.gray100,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: 'center',
+  },
+  bioInputContainer: {
+    height: 100,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.md,
   },
   input: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingVertical: Spacing.sm,
   },
   bioInput: {
-    height: 80,
+    height: '100%',
     textAlignVertical: 'top',
   },
   charCount: {

@@ -164,8 +164,9 @@ const PostDetailScreen: React.FC = () => {
 
             {/* Stats */}
             <View style={styles.statsRow}>
-              <Text style={styles.statsText}>{post.likesCount} luot thich</Text>
-              <Text style={styles.statsText}>{post.commentsCount} binh luan</Text>
+              <Text style={styles.statsText}>
+                {post.likesCount} Likes . {post.commentsCount} Comments
+              </Text>
             </View>
 
             {/* Actions */}
@@ -198,9 +199,9 @@ const PostDetailScreen: React.FC = () => {
                   style={styles.commentAvatar}
                 />
                 <View style={styles.commentContent}>
-                  <View style={styles.commentBubble}>
+                  <View style={styles.commentInline}>
                     <Text style={styles.commentAuthor}>{comment.author.fullName}</Text>
-                    <Text style={styles.commentText}>{comment.content}</Text>
+                    <Text style={styles.commentText}> {comment.content}</Text>
                   </View>
                   <View style={styles.commentActions}>
                     <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt)}</Text>
@@ -231,7 +232,7 @@ const PostDetailScreen: React.FC = () => {
             <TextInput
               ref={inputRef}
               style={styles.textInput}
-              placeholder="Viet binh luan..."
+              placeholder={`Viết đến ${post.author.fullName}...`}
               placeholderTextColor={Colors.gray400}
               value={commentText}
               onChangeText={setCommentText}
@@ -324,8 +325,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray100,
   },
   statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.lg,
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 0.5,
@@ -364,27 +363,24 @@ const styles = StyleSheet.create({
   commentContent: {
     flex: 1,
   },
-  commentBubble: {
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+  commentInline: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   commentAuthor: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
   commentText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.textPrimary,
-    marginTop: 2,
     lineHeight: 20,
   },
   commentActions: {
     flexDirection: 'row',
     gap: Spacing.md,
     marginTop: Spacing.xs,
-    marginLeft: Spacing.sm,
   },
   commentTime: {
     fontSize: FontSize.xs,

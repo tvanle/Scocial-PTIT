@@ -99,7 +99,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="globe-outline" size={24} color={Colors.textPrimary} />
+          <Ionicons name="share-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={24} color={Colors.textPrimary} />
@@ -127,23 +127,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
           {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
 
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            <TouchableOpacity style={styles.statItem}>
-              <Text style={styles.statNumber}>{user?.followersCount || 0}</Text>
-              <Text style={styles.statLabel}>Người theo dõi</Text>
-            </TouchableOpacity>
-            <View style={styles.statDivider} />
-            <TouchableOpacity style={styles.statItem}>
-              <Text style={styles.statNumber}>{user?.followingCount || 0}</Text>
-              <Text style={styles.statLabel}>Đang theo dõi</Text>
-            </TouchableOpacity>
-            <View style={styles.statDivider} />
-            <TouchableOpacity style={styles.statItem}>
-              <Text style={styles.statNumber}>{user?.postsCount || 0}</Text>
-              <Text style={styles.statLabel}>Bài viết</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Stats - Inline text style */}
+          <Text style={styles.statsInline}>
+            {user?.postsCount || 0} bài đăng . {user?.followersCount || 0} Lượt người theo dõi
+          </Text>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
@@ -153,13 +140,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
                   style={styles.actionButton}
                   onPress={() => navigation.navigate('EditProfile')}
                 >
-                  <Text style={styles.actionButtonText}>Chỉnh sửa</Text>
+                  <Text style={styles.actionButtonText}>Chỉnh sửa trang cá nhân</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => Share.share({ message: `Xem trang cá nhân của ${user?.fullName} trên PTIT Social!` })}
                 >
-                  <Text style={styles.actionButtonText}>Chia sẻ</Text>
+                  <Text style={styles.actionButtonText}>Chia sẻ trang cá nhân</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -283,33 +270,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     lineHeight: 22,
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xl,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.gray50,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: FontSize.xs,
+  statsInline: {
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.border,
+    marginTop: Spacing.lg,
   },
   actions: {
     flexDirection: 'row',

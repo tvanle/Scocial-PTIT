@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import Avatar from '../../components/common/Avatar';
+import { useAuthStore } from '../../store/slices/authSlice';
 
 type Privacy = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
 
@@ -28,6 +29,7 @@ interface MediaItem {
 
 const CreatePostScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { user } = useAuthStore();
   const inputRef = useRef<TextInput>(null);
 
   const [content, setContent] = useState('');
@@ -154,11 +156,11 @@ const CreatePostScreen: React.FC = () => {
           {/* User Info & Privacy */}
           <View style={styles.userSection}>
             <Avatar
-              uri="https://i.pravatar.cc/150?img=3"
+              uri={user?.avatar || 'https://i.pravatar.cc/150?img=3'}
               size={48}
             />
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>Nguyễn Văn A</Text>
+              <Text style={styles.userName}>{user?.fullName || 'Người dùng'}</Text>
               <TouchableOpacity
                 style={styles.privacyButton}
                 onPress={() => setShowPrivacyPicker(!showPrivacyPicker)}
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     minWidth: 70,
     alignItems: 'center',
   },

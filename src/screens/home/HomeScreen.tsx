@@ -129,7 +129,7 @@ const PostCard: React.FC<{
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
           <Image
             source={{ uri: post.author.avatar || 'https://i.pravatar.cc/150' }}
-            style={styles.avatar}
+            style={styles.postAvatar}
           />
           <View style={styles.postHeaderInfo}>
             <View style={styles.usernameRow}>
@@ -152,6 +152,15 @@ const PostCard: React.FC<{
       {/* Media */}
       {post.media && post.media.length > 0 && (
         <PostImages media={post.media} />
+      )}
+
+      {/* Stats Text Line */}
+      {(post.likesCount > 0 || post.commentsCount > 0) && (
+        <Text style={styles.statsText}>
+          {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
+          {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
+          {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
+        </Text>
       )}
 
       {/* Interaction Bar */}
@@ -294,19 +303,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     />
   ), [handleLike, handleComment, handleRepost, handleShare, handleProfile, handleMore]);
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.headerLeft}>
+        <Image
+          source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
+          style={styles.headerAvatar}
+        />
+      </TouchableOpacity>
+      <View style={styles.headerRight}>
+        <TouchableOpacity style={styles.headerIconButton}>
+          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={() => navigation.navigate('Messages')}
+        >
+          <Ionicons name="paper-plane-outline" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
-          </View>
-          <Text style={styles.headerTitle}>PTIT Social</Text>
-          <View style={styles.headerRight}>
-            <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
-          </View>
-        </View>
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -319,18 +342,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerLeft}>
-          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>PTIT Social</Text>
-        <TouchableOpacity
-          style={styles.headerRight}
-          onPress={() => navigation.navigate('Messages')}
-        >
-          <Ionicons name="chatbubbles-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      {renderHeader()}
 
       {/* Feed */}
       <FlatList
@@ -384,12 +396,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.primary,
+  headerAvatar: {
+    width: Layout.avatarSize.sm,
+    height: Layout.avatarSize.sm,
+    borderRadius: Layout.avatarSize.sm / 2,
+    backgroundColor: Colors.gray200,
   },
   headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  headerIconButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -418,7 +436,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  avatar: {
+  postAvatar: {
     width: Layout.avatarSize.md,
     height: Layout.avatarSize.md,
     borderRadius: Layout.avatarSize.md / 2,
@@ -449,6 +467,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     lineHeight: 22,
+    marginTop: Spacing.md,
+  },
+  statsText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
   interactionBar: {

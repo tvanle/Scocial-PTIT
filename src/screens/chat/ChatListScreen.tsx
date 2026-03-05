@@ -112,7 +112,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tin nhắn</Text>
+          <Text style={styles.headerTitle}>Messages</Text>
           <TouchableOpacity style={styles.newChatButton}>
             <Ionicons name="create-outline" size={24} color={Colors.primary} />
           </TouchableOpacity>
@@ -131,7 +131,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tin nhắn</Text>
+        <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity style={styles.newChatButton}>
           <Ionicons name="create-outline" size={24} color={Colors.primary} />
         </TouchableOpacity>
@@ -143,36 +143,6 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         onChangeText={setSearchQuery}
         placeholder="Tìm kiếm cuộc trò chuyện"
       />
-
-      {/* Online Users */}
-      {conversations.filter(c => c.type === 'private' && c.isOnline).length > 0 && (
-        <View style={styles.onlineSection}>
-          <FlatList
-            horizontal
-            data={conversations.filter(c => c.type === 'private' && c.isOnline)}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.onlineItem}
-                onPress={() => handleConversationPress(item)}
-              >
-                <Avatar
-                  uri={item.participants[0]?.avatar}
-                  name={item.participants[0]?.fullName || ''}
-                  size="md"
-                  showOnlineStatus
-                  isOnline
-                />
-                <Text style={styles.onlineName} numberOfLines={1}>
-                  {item.participants[0]?.fullName?.split(' ').pop()}
-                </Text>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => `online-${item.id}`}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.onlineList}
-          />
-        </View>
-      )}
 
       {/* Conversations */}
       <FlatList
@@ -233,26 +203,6 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  onlineSection: {
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  onlineList: {
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.lg,
-  },
-  onlineItem: {
-    alignItems: 'center',
-    width: 56,
-  },
-  onlineName: {
-    fontSize: FontSize.xxs,
-    color: Colors.textPrimary,
-    marginTop: Spacing.xs,
-    width: 56,
-    textAlign: 'center',
   },
   listContent: {
     paddingVertical: Spacing.sm,
