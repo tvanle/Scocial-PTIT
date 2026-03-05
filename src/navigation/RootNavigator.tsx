@@ -15,6 +15,8 @@ import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import GroupListScreen from '../screens/groups/GroupListScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
+import { SearchScreen } from '../screens/search';
+import { NotificationScreen } from '../screens/notification';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -79,6 +81,8 @@ const RootNavigator: React.FC = () => {
                 animation: 'fade',
               }}
             />
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="Notifications" component={NotificationScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Followers" component={FollowersScreen} />
             <Stack.Screen name="Following" component={FollowingScreen} />

@@ -301,6 +301,7 @@ export type RootStackParamList = {
   ImageViewer: { images: Media[]; initialIndex: number };
   Settings: undefined;
   Search: undefined;
+  Notifications: undefined;
   Followers: { userId: string };
   Following: { userId: string };
 };

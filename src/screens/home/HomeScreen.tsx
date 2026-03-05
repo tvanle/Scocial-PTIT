@@ -305,13 +305,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.headerIconButton}>
+      <TouchableOpacity
+        style={styles.headerIconButton}
+        onPress={() => navigation.navigate('Notifications')}
+      >
         <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
       <View style={styles.headerLogo}>
         <Text style={styles.headerLogoText}>ptit</Text>
       </View>
-      <TouchableOpacity style={styles.headerIconButton}>
+      <TouchableOpacity
+        style={styles.headerIconButton}
+        onPress={() => navigation.navigate('Search')}
+      >
         <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
     </View>
