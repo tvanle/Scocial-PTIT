@@ -258,6 +258,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
     gap: Spacing.sm,
+    alignItems: 'center',
   },
   chip: {
     paddingHorizontal: Spacing.lg,
