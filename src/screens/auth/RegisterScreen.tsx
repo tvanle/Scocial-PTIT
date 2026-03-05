@@ -47,12 +47,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Please enter your name';
-    if (!formData.email.trim()) newErrors.email = 'Please enter your email';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email address';
-    if (!formData.password) newErrors.password = 'Please enter a password';
-    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!formData.fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ và tên';
+    if (!formData.email.trim()) newErrors.email = 'Vui lòng nhập email';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email không hợp lệ. Vui lòng thử lại.';
+    if (!formData.studentId?.trim()) newErrors.studentId = 'Vui lòng nhập mã sinh viên';
+    if (!formData.password) newErrors.password = 'Vui lòng nhập mật khẩu';
+    else if (formData.password.length < 6) newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mật khẩu không khớp. Vui lòng thử lại.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,26 +91,53 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Title */}
-          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.title}>Tạo tài khoản</Text>
           <Text style={styles.subtitle}>
-            Join our community today
+            Tham gia cộng đồng sinh viên PTIT ngay hôm nay.
           </Text>
 
           {/* Form */}
           <View style={styles.form}>
             {/* Full Name */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Full Name</Text>
+              <Text style={styles.inputLabel}>Họ và tên</Text>
               <View style={[styles.inputContainer, errors.fullName && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter your name"
+                  placeholder="Nhập họ và tên"
                   placeholderTextColor={Colors.gray400}
                   value={formData.fullName}
                   onChangeText={(text) => updateField('fullName', text)}
                 />
               </View>
-              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+              {errors.fullName && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.fullName}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Student ID */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Mã sinh viên</Text>
+              <View style={[styles.inputContainer, errors.studentId && styles.inputError]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="vd. B21DCCN001"
+                  placeholderTextColor={Colors.gray400}
+                  value={formData.studentId}
+                  onChangeText={(text) => updateField('studentId', text)}
+                  autoCapitalize="characters"
+                />
+                <Ionicons name="school-outline" size={20} color={Colors.gray400} />
+              </View>
+              {errors.studentId && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.studentId}</Text>
+                </View>
+              )}
             </View>
 
             {/* Email */}
@@ -118,7 +146,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter your Email"
+                  placeholder="hello@example.com"
                   placeholderTextColor={Colors.gray400}
                   value={formData.email}
                   onChangeText={(text) => updateField('email', text)}
@@ -126,16 +154,21 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
                   keyboardType="email-address"
                 />
               </View>
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              {errors.email && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                </View>
+              )}
             </View>
 
             {/* Password */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text style={styles.inputLabel}>Mật khẩu</Text>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Password"
+                  placeholder="••••••••"
                   placeholderTextColor={Colors.gray400}
                   value={formData.password}
                   onChangeText={(text) => updateField('password', text)}
@@ -152,23 +185,43 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
                   />
                 </TouchableOpacity>
               </View>
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {errors.password && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                </View>
+              )}
             </View>
 
             {/* Confirm Password */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <Text style={styles.inputLabel}>Xác nhận mật khẩu</Text>
               <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Confirm Password"
+                  placeholder="••••••••"
                   placeholderTextColor={Colors.gray400}
                   value={formData.confirmPassword}
                   onChangeText={(text) => updateField('confirmPassword', text)}
                   secureTextEntry={!showPassword}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={Colors.gray400}
+                  />
+                </TouchableOpacity>
               </View>
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+              {errors.confirmPassword && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -189,8 +242,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               {agreeTerms && <Ionicons name="checkmark" size={14} color={Colors.white} />}
             </View>
             <Text style={styles.termsText}>
-              I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text> and{' '}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
+              Tôi đồng ý với <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{' '}
+              <Text style={styles.termsLink}>Chính sách bảo mật</Text>
             </Text>
           </TouchableOpacity>
 
@@ -204,7 +257,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.registerButtonText}>Create Account</Text>
+              <Text style={styles.registerButtonText}>Tạo tài khoản</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -214,7 +267,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       <View style={styles.bottomSection}>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginText}>
-            Already have an account? <Text style={styles.loginLink}>Sign in</Text>
+            Đã có tài khoản? <Text style={styles.loginLink}>Đăng nhập</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -289,11 +342,16 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: Spacing.sm,
   },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.lg,
+  },
   errorText: {
     fontSize: FontSize.xs,
     color: Colors.error,
-    marginTop: Spacing.xs,
-    marginLeft: Spacing.lg,
   },
   apiErrorContainer: {
     flexDirection: 'row',

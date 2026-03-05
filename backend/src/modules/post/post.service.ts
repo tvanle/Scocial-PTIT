@@ -154,29 +154,21 @@ export class PostService {
     });
   }
 
-  // Get feed (posts from followed users)
+  // Get feed - all posts are public, followed users' posts prioritized first (Threads-style)
   async getFeed(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
-    // Get followed user IDs
+    // Get followed user IDs for priority sorting
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
     });
 
-    const followingIds = following.map((f) => f.followingId);
+    const followingIds = new Set(following.map((f) => f.followingId));
 
-    // Own posts (any privacy) + followed users' public posts
-    const where = {
-      OR: [
-        { authorId: userId },
-        { authorId: { in: followingIds }, privacy: 'PUBLIC' as const },
-      ],
-    };
-
+    // All posts are public - show everything
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
-        where,
         include: {
           author: {
             select: {
@@ -199,7 +191,7 @@ export class PostService {
         take: l,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.post.count({ where }),
+      prisma.post.count(),
     ]);
 
     // Check liked status for each post
@@ -212,21 +204,31 @@ export class PostService {
     });
 
     const likedPostIds = new Set(likedPosts.map((l) => l.postId));
-    const postsWithLikeStatus = posts.map((post) => ({
+
+    // Transform and mark followed authors' posts
+    const postsWithStatus = posts.map((post) => ({
       ...this.transformPost(post),
       isLiked: likedPostIds.has(post.id),
+      isFollowing: followingIds.has(post.authorId),
     }));
 
-    return paginate(postsWithLikeStatus, total, p, l);
+    // Sort: followed users' posts first, then by recency (already sorted by createdAt desc)
+    postsWithStatus.sort((a, b) => {
+      const aIsFollowed = a.isFollowing || a.author.id === userId ? 1 : 0;
+      const bIsFollowed = b.isFollowing || b.author.id === userId ? 1 : 0;
+      if (aIsFollowed !== bIsFollowed) return bIsFollowed - aIsFollowed;
+      return 0; // Keep existing createdAt desc order
+    });
+
+    return paginate(postsWithStatus, total, p, l);
   }
 
-  // Get user posts
+  // Get user posts (all posts are public)
   async getUserPosts(userId: string, currentUserId?: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
     const where = {
       authorId: userId,
-      privacy: userId === currentUserId ? undefined : ('PUBLIC' as const),
     };
 
     const [posts, total] = await Promise.all([

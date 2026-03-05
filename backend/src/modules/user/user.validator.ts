@@ -6,6 +6,8 @@ export const updateProfileSchema = z.object({
   dateOfBirth: z.string().datetime().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   phone: z.string().optional(),
+  faculty: z.string().optional(),
+  className: z.string().optional(),
 });
 
 export const userIdParamSchema = z.object({

@@ -10,6 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,7 +35,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     if (!email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email không hợp lệ';
+      newErrors.email = 'Email không hợp lệ. Vui lòng thử lại.';
     }
 
     if (!password) {
@@ -68,11 +69,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Logo PTIT */}
+          <Image
+            source={require('../../../assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+
           {/* Welcome Text */}
           <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Welcome Back</Text>
+            <Text style={styles.welcomeTitle}>Chào mừng trở lại</Text>
             <Text style={styles.welcomeSubtitle}>
-              Log in to see what's happening
+              Đăng nhập để xem những gì đang diễn ra.
             </Text>
           </View>
 
@@ -84,7 +92,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="hello@reallygreatsite.com"
+                  placeholder="hello@example.com"
                   placeholderTextColor={Colors.gray400}
                   value={email}
                   onChangeText={(text) => {
@@ -95,21 +103,26 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   keyboardType="email-address"
                 />
               </View>
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              {errors.email && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                </View>
+              )}
             </View>
 
             {/* Password Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.passwordLabelRow}>
-                <Text style={styles.inputLabel}>Password</Text>
+                <Text style={styles.inputLabel}>Mật khẩu</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.forgotText}>Forgot my password</Text>
+                  <Text style={styles.forgotText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
               </View>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Password"
+                  placeholder="••••••••"
                   placeholderTextColor={Colors.gray400}
                   value={password}
                   onChangeText={(text) => {
@@ -129,7 +142,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   />
                 </TouchableOpacity>
               </View>
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {errors.password && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                </View>
+              )}
             </View>
 
             {/* Error from API */}
@@ -150,7 +168,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Log In</Text>
+                <Text style={styles.loginButtonText}>Đăng nhập</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -164,7 +182,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate('Register')}
         >
           <Text style={styles.registerText}>
-            Don't have an account? <Text style={styles.registerLink}>Sign Up</Text>
+            Chưa có tài khoản? <Text style={styles.registerLink}>Đăng ký</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -183,7 +201,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xxl,
-    paddingTop: Spacing.huge,
+    paddingTop: Spacing.xxxl,
+  },
+  logo: {
+    width: 56,
+    height: 56,
+    marginBottom: Spacing.xl,
   },
   welcomeSection: {
     marginBottom: Spacing.xxxl,
@@ -237,11 +260,16 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: Spacing.sm,
   },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.lg,
+  },
   errorText: {
     fontSize: FontSize.xs,
     color: Colors.error,
-    marginTop: Spacing.xs,
-    marginLeft: Spacing.lg,
   },
   forgotText: {
     color: Colors.primary,

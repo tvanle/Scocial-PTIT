@@ -1,12 +1,13 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeScreen } from '../screens/home';
 import { ProfileScreen } from '../screens/profile';
-import { NotificationScreen } from '../screens/notification';
+import { ChatListScreen } from '../screens/chat';
 import { SearchScreen } from '../screens/search';
+import { NotificationScreen } from '../screens/notification';
 import { Colors, Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
 import { MainTabParamList } from '../types';
 
@@ -14,6 +15,12 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // Placeholder screens
 const CreatePostScreen = () => null;
+const DatingPlaceholder = () => (
+  <View style={{ flex: 1, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' }}>
+    <Ionicons name="heart" size={48} color={Colors.primary} />
+    <Text style={{ marginTop: 12, fontSize: 16, color: Colors.textSecondary }}>Sắp ra mắt</Text>
+  </View>
+);
 
 // PTIT-style Tab Bar with floating red FAB
 const PTITTabBar = ({ state, navigation }: any) => {
@@ -21,9 +28,9 @@ const PTITTabBar = ({ state, navigation }: any) => {
 
   const tabs = [
     { name: 'Home', icon: 'home-outline', iconFocused: 'home' },
-    { name: 'Search', icon: 'search-outline', iconFocused: 'search' },
+    { name: 'Messages', icon: 'chatbubble-outline', iconFocused: 'chatbubble' },
     { name: 'CreatePost', icon: 'add', iconFocused: 'add' },
-    { name: 'Notifications', icon: 'heart-outline', iconFocused: 'heart' },
+    { name: 'Dating', icon: 'heart-outline', iconFocused: 'heart' },
     { name: 'Profile', icon: 'person-outline', iconFocused: 'person' },
   ];
 
@@ -85,10 +92,12 @@ const MainTabNavigator: React.FC = () => {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Messages" component={ChatListScreen} />
       <Tab.Screen name="CreatePost" component={CreatePostScreen} />
-      <Tab.Screen name="Notifications" component={NotificationScreen} />
+      <Tab.Screen name="Dating" component={DatingPlaceholder} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Notifications" component={NotificationScreen} />
     </Tab.Navigator>
   );
 };

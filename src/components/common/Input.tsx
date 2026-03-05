@@ -195,7 +195,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     paddingVertical: 0,
     paddingHorizontal: Spacing.xl,
-  },
+    outlineStyle: 'none',
+  } as any,
   inputWithLeftIcon: {
     paddingLeft: 0,
   },
