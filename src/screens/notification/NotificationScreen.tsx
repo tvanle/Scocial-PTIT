@@ -88,7 +88,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       case 'like_post':
         return { name: 'heart', color: Colors.like };
       case 'comment_post':
-        return { name: 'chatbubble', color: Colors.info };
+        return { name: 'chatbox', color: Colors.info };
       case 'share_post':
         return { name: 'repeat', color: Colors.success };
       case 'follow':

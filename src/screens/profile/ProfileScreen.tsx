@@ -38,7 +38,7 @@ const ProfilePost: React.FC<{ post: Post; onPress: () => void }> = React.memo(({
           <Text style={styles.postStatText}>{post.likesCount}</Text>
         </View>
         <View style={styles.postStat}>
-          <Ionicons name="chatbubble-outline" size={14} color={Colors.textTertiary} />
+          <Ionicons name="chatbox-outline" size={14} color={Colors.textTertiary} />
           <Text style={styles.postStatText}>{post.commentsCount}</Text>
         </View>
         <Text style={styles.postTime}>{formatTimeAgo(post.createdAt)}</Text>
@@ -201,7 +201,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
           ) : (
             <View style={styles.emptyState}>
               <Ionicons
-                name={activeTab === 'replies' ? 'chatbubble-outline' : 'repeat-outline'}
+                name={activeTab === 'replies' ? 'chatbox-outline' : 'repeat-outline'}
                 size={48}
                 color={Colors.gray300}
               />

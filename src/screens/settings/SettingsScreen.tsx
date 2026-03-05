@@ -239,7 +239,7 @@ const SettingsScreen: React.FC = () => {
               onPress={() => handleOpenUrl('https://ptit.edu.vn')}
             />
             <SettingItem
-              icon="chatbubble-ellipses-outline"
+              icon="chatbox-ellipses-outline"
               iconColor={colors.success}
               title="Liên hệ hỗ trợ"
               onPress={() => handleOpenUrl('mailto:support@ptit.edu.vn')}

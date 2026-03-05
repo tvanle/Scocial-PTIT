@@ -165,7 +165,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         windowSize={5}
         ListEmptyComponent={
           <EmptyState
-            icon="chatbubbles-outline"
+            icon="chatbox-outline"
             title="Chưa có tin nhắn"
             subtitle="Bắt đầu trò chuyện với bạn bè"
           />

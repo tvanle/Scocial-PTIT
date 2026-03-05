@@ -28,7 +28,7 @@ const PTITTabBar = ({ state, navigation }: any) => {
 
   const tabs = [
     { name: 'Home', icon: 'home-outline', iconFocused: 'home' },
-    { name: 'Messages', icon: 'chatbubble-outline', iconFocused: 'chatbubble' },
+    { name: 'Messages', icon: 'chatbox-outline', iconFocused: 'chatbox' },
     { name: 'CreatePost', icon: 'add', iconFocused: 'add' },
     { name: 'Dating', icon: 'heart-outline', iconFocused: 'heart' },
     { name: 'Profile', icon: 'person-outline', iconFocused: 'person' },

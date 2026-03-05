@@ -180,7 +180,7 @@ const PostCard: React.FC<{
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
-            <Ionicons name="chatbubble-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
             {post.commentsCount > 0 && (
               <Text style={styles.interactionCount}>{post.commentsCount}</Text>
             )}
