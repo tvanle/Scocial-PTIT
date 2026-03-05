@@ -180,7 +180,7 @@ const PostCard: React.FC<{
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
-            <Ionicons name="chatbubble-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
             {post.commentsCount > 0 && (
               <Text style={styles.interactionCount}>{post.commentsCount}</Text>
             )}
@@ -270,7 +270,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleRepost = useCallback(() => {
     Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
       { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng lại', onPress: () => {} },
+      { text: 'Đăng lại', onPress: () => { } },
     ]);
   }, []);
 
@@ -284,9 +284,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleMore = useCallback((postId: string) => {
     Alert.alert('Tùy chọn', '', [
-      { text: 'Lưu bài viết', onPress: () => {} },
+      { text: 'Lưu bài viết', onPress: () => { } },
       { text: 'Ẩn bài viết', onPress: () => setPosts(prev => prev.filter(p => p.id !== postId)) },
-      { text: 'Báo cáo', style: 'destructive', onPress: () => {} },
+      { text: 'Báo cáo', style: 'destructive', onPress: () => { } },
       { text: 'Hủy', style: 'cancel' },
     ]);
   }, []);
@@ -305,23 +305,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.headerLeft}>
-        <Image
-          source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
-          style={styles.headerAvatar}
-        />
+      <TouchableOpacity
+        style={styles.headerIconButton}
+        onPress={() => (navigation as any).navigate('Notifications')}
+      >
+        <Ionicons name="notifications-outline" size={24} color={Colors.gray400} />
       </TouchableOpacity>
-      <View style={styles.headerRight}>
-        <TouchableOpacity style={styles.headerIconButton}>
-          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={() => navigation.navigate('Messages')}
-        >
-          <Ionicons name="paper-plane-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      <Image
+        source={require('../../../assets/logo.png')}
+        style={styles.headerLogo}
+        resizeMode="contain"
+      />
+      <TouchableOpacity
+        style={styles.headerIconButton}
+        onPress={() => (navigation as any).navigate('Search')}
+      >
+        <Ionicons name="search-outline" size={24} color={Colors.gray400} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -390,22 +390,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
-  headerLeft: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAvatar: {
-    width: Layout.avatarSize.sm,
-    height: Layout.avatarSize.sm,
-    borderRadius: Layout.avatarSize.sm / 2,
-    backgroundColor: Colors.gray200,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
+  headerLogo: {
+    width: 55,
+    height: 55,
   },
   headerIconButton: {
     width: 40,

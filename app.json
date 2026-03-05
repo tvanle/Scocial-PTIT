@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "ptit-social",
+    "name": "PTIT Social",
     "slug": "ptit-social",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,15 +16,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/logo.png",
       "bundler": "metro",
       "splash": {
-        "image": "./assets/splash-icon.png",
+        "image": "./assets/logo.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       }

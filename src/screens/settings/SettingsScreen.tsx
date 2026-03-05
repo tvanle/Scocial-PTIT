@@ -63,12 +63,12 @@ const SettingsScreen: React.FC = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Dang xuat',
-      'Ban co chac chan muon dang xuat?',
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
       [
-        { text: 'Huy', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Dang xuat',
+          text: 'Đăng xuất',
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -80,24 +80,23 @@ const SettingsScreen: React.FC = () => {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Xoa tai khoan',
-      'Hanh dong nay khong the hoan tac. Tat ca du lieu cua ban se bi xoa vinh vien.',
+      'Xóa tài khoản',
+      'Hành động này không thể hoàn tác. Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.',
       [
-        { text: 'Huy', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Xoa tai khoan',
+          text: 'Xóa tài khoản',
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Xac nhan',
-              'Ban thuc su muon xoa tai khoan? Nhap "DELETE" de xac nhan.',
+              'Xác nhận',
+              'Bạn thực sự muốn xóa tài khoản?',
               [
-                { text: 'Huy', style: 'cancel' },
+                { text: 'Hủy', style: 'cancel' },
                 {
-                  text: 'Xac nhan xoa',
+                  text: 'Xác nhận xóa',
                   style: 'destructive',
                   onPress: async () => {
-                    // TODO: Call delete account API when backend supports it
                     await logout();
                   },
                 },
@@ -111,7 +110,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleOpenUrl = (url: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert('Loi', 'Khong the mo lien ket');
+      Alert.alert('Lỗi', 'Không thể mở liên kết');
     });
   };
 
@@ -122,7 +121,7 @@ const SettingsScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cai dat</Text>
+        <Text style={styles.headerTitle}>Cài đặt</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -137,49 +136,49 @@ const SettingsScreen: React.FC = () => {
             size={60}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.fullName || 'User'}</Text>
+            <Text style={styles.profileName}>{user?.fullName || 'Người dùng'}</Text>
             <Text style={styles.profileEmail}>{user?.email || ''}</Text>
-            <Text style={styles.editProfile}>Chinh sua trang ca nhan</Text>
+            <Text style={styles.editProfile}>Chỉnh sửa trang cá nhân</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
         </TouchableOpacity>
 
         {/* Account Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tai khoan</Text>
+          <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.sectionContent}>
             <SettingItem
               icon="person-outline"
               iconColor={colors.primary}
-              title="Thong tin ca nhan"
-              subtitle="Ten, so dien thoai, email"
+              title="Thông tin cá nhân"
+              subtitle="Tên, số điện thoại, email"
               onPress={() => navigation.navigate('EditProfile')}
             />
             <SettingItem
               icon="lock-closed-outline"
               iconColor={colors.info}
-              title="Mat khau & Bao mat"
-              subtitle="Doi mat khau, xac thuc 2 buoc"
-              onPress={() => Alert.alert('Mat khau & Bao mat', 'Tinh nang dang phat trien')}
+              title="Mật khẩu & Bảo mật"
+              subtitle="Đổi mật khẩu, xác thực 2 bước"
+              onPress={() => Alert.alert('Mật khẩu & Bảo mật', 'Tính năng đang phát triển')}
             />
             <SettingItem
               icon="shield-checkmark-outline"
               iconColor={colors.success}
-              title="Quyen rieng tu"
-              subtitle="Ai co the xem noi dung cua ban"
-              onPress={() => Alert.alert('Quyen rieng tu', 'Tinh nang dang phat trien')}
+              title="Quyền riêng tư"
+              subtitle="Ai có thể xem nội dung của bạn"
+              onPress={() => Alert.alert('Quyền riêng tư', 'Tính năng đang phát triển')}
             />
           </View>
         </View>
 
         {/* Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tuy chon</Text>
+          <Text style={styles.sectionTitle}>Tùy chọn</Text>
           <View style={styles.sectionContent}>
             <SettingItem
               icon="notifications-outline"
               iconColor={colors.warning}
-              title="Thong bao"
+              title="Thông báo"
               rightElement={
                 <Switch
                   value={notifications}
@@ -193,7 +192,7 @@ const SettingsScreen: React.FC = () => {
             <SettingItem
               icon="moon-outline"
               iconColor={colors.text.secondary}
-              title="Che do toi"
+              title="Chế độ tối"
               rightElement={
                 <Switch
                   value={darkMode}
@@ -207,8 +206,8 @@ const SettingsScreen: React.FC = () => {
             <SettingItem
               icon="eye-off-outline"
               iconColor={colors.error}
-              title="Tai khoan rieng tu"
-              subtitle="Chi nguoi theo doi moi xem duoc bai viet"
+              title="Tài khoản riêng tư"
+              subtitle="Chỉ người theo dõi mới xem được bài viết"
               rightElement={
                 <Switch
                   value={privateAccount}
@@ -222,39 +221,39 @@ const SettingsScreen: React.FC = () => {
             <SettingItem
               icon="language-outline"
               iconColor={colors.info}
-              title="Ngon ngu"
-              subtitle="Tieng Viet"
-              onPress={() => Alert.alert('Ngon ngu', 'Hien tai chi ho tro Tieng Viet')}
+              title="Ngôn ngữ"
+              subtitle="Tiếng Việt"
+              onPress={() => Alert.alert('Ngôn ngữ', 'Hiện tại chỉ hỗ trợ Tiếng Việt')}
             />
           </View>
         </View>
 
         {/* Support */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ho tro</Text>
+          <Text style={styles.sectionTitle}>Hỗ trợ</Text>
           <View style={styles.sectionContent}>
             <SettingItem
               icon="help-circle-outline"
               iconColor={colors.info}
-              title="Trung tam tro giup"
+              title="Trung tâm trợ giúp"
               onPress={() => handleOpenUrl('https://ptit.edu.vn')}
             />
             <SettingItem
-              icon="chatbubble-ellipses-outline"
+              icon="chatbox-ellipses-outline"
               iconColor={colors.success}
-              title="Lien he ho tro"
+              title="Liên hệ hỗ trợ"
               onPress={() => handleOpenUrl('mailto:support@ptit.edu.vn')}
             />
             <SettingItem
               icon="document-text-outline"
               iconColor={colors.text.secondary}
-              title="Dieu khoan su dung"
+              title="Điều khoản sử dụng"
               onPress={() => handleOpenUrl('https://ptit.edu.vn/terms')}
             />
             <SettingItem
               icon="shield-outline"
               iconColor={colors.text.secondary}
-              title="Chinh sach bao mat"
+              title="Chính sách bảo mật"
               onPress={() => handleOpenUrl('https://ptit.edu.vn/privacy')}
             />
           </View>
@@ -262,20 +261,20 @@ const SettingsScreen: React.FC = () => {
 
         {/* About */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thong tin</Text>
+          <Text style={styles.sectionTitle}>Thông tin</Text>
           <View style={styles.sectionContent}>
             <SettingItem
               icon="information-circle-outline"
               iconColor={colors.primary}
-              title="Ve ung dung"
-              subtitle="Phien ban 1.0.0"
-              onPress={() => Alert.alert('PTIT Social', 'Phien ban 1.0.0\nPhat trien boi sinh vien PTIT')}
+              title="Về ứng dụng"
+              subtitle="Phiên bản 1.0.0"
+              onPress={() => Alert.alert('PTIT Social', 'Phiên bản 1.0.0\nPhát triển bởi sinh viên PTIT')}
             />
             <SettingItem
               icon="star-outline"
               iconColor={colors.warning}
-              title="Danh gia ung dung"
-              onPress={() => Alert.alert('Danh gia', 'Tinh nang se kha dung khi app len App Store')}
+              title="Đánh giá ứng dụng"
+              onPress={() => Alert.alert('Đánh giá', 'Tính năng sẽ khả dụng khi app lên App Store')}
             />
           </View>
         </View>
@@ -285,19 +284,19 @@ const SettingsScreen: React.FC = () => {
           <View style={styles.sectionContent}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={22} color={colors.primary} />
-              <Text style={styles.logoutText}>Dang xuat</Text>
+              <Text style={styles.logoutText}>Đăng xuất</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-          <Text style={styles.deleteText}>Xoa tai khoan</Text>
+          <Text style={styles.deleteText}>Xóa tài khoản</Text>
         </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>PTIT Social</Text>
-          <Text style={styles.footerText}>Phien ban 1.0.0</Text>
+          <Text style={styles.footerText}>Phiên bản 1.0.0</Text>
           <Text style={styles.footerCopyright}>© 2024 PTIT. All rights reserved.</Text>
         </View>
       </ScrollView>

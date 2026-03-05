@@ -9,29 +9,25 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 
 interface ForgotPasswordScreenProps {
   navigation: any;
 }
 
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [emailOrStudentId, setEmailOrStudentId] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  const validateEmail = (): boolean => {
-    if (!email.trim()) {
-      setError(Strings.errors.requiredField);
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError(Strings.errors.invalidEmail);
+  const validate = (): boolean => {
+    if (!emailOrStudentId.trim()) {
+      setError('Vui lòng nhập email hoặc mã sinh viên');
       return false;
     }
     setError('');
@@ -39,14 +35,14 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
   };
 
   const handleSendCode = async () => {
-    if (!validateEmail()) return;
+    if (!validate()) return;
 
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsSent(true);
     } catch (err) {
-      setError(Strings.errors.serverError);
+      setError('Thông tin không chính xác');
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +53,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
     } catch (err) {
-      setError(Strings.errors.serverError);
+      setError('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +70,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <Text style={styles.successTitle}>Kiểm tra email</Text>
             <Text style={styles.successText}>
               Chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến{'\n'}
-              <Text style={styles.emailHighlight}>{email}</Text>
+              <Text style={styles.emailHighlight}>{emailOrStudentId}</Text>
             </Text>
 
             <TouchableOpacity
@@ -88,7 +84,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
               <Text style={styles.resendText}>
                 Không nhận được email?{' '}
-                <Text style={styles.resendLink}>{Strings.auth.resendCode}</Text>
+                <Text style={styles.resendLink}>Gửi lại mã</Text>
               </Text>
             </TouchableOpacity>
 
@@ -96,7 +92,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               style={styles.backToLogin}
               onPress={() => navigation.navigate('Login')}
             >
-              <Text style={styles.backToLoginText}>Back to Login</Text>
+              <Ionicons name="arrow-back" size={16} color={Colors.primary} />
+              <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -112,33 +109,40 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
       >
         <View style={styles.content}>
           <View style={styles.headerSection}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>ptit</Text>
-            </View>
-            <Text style={styles.title}>Quên mật khẩu?</Text>
+            <Image
+              source={require('../../../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={styles.subtitle}>
-              Enter your email or student ID to reset your password
+              Nhập email hoặc mã sinh viên để đặt lại mật khẩu.
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Email hoặc Mã sinh viên</Text>
               <View style={[styles.inputContainer, error && styles.inputError]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email or StudentID"
+                  placeholder="vd. B21DCCN001"
                   placeholderTextColor={Colors.gray400}
-                  value={email}
+                  value={emailOrStudentId}
                   onChangeText={(text) => {
-                    setEmail(text);
+                    setEmailOrStudentId(text);
                     if (error) setError('');
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
+                <Ionicons name="person-outline" size={20} color={Colors.gray400} />
               </View>
-              <Text style={styles.hintText}>ie. 0970154000</Text>
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              {error ? (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -150,7 +154,10 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.sendButtonText}>Send Reset Link {'>'}</Text>
+                <View style={styles.sendButtonContent}>
+                  <Text style={styles.sendButtonText}>Gửi liên kết đặt lại</Text>
+                  <Ionicons name="send" size={16} color={Colors.white} />
+                </View>
               )}
             </TouchableOpacity>
           </View>
@@ -159,7 +166,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             style={styles.backToLogin}
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={styles.backToLoginText}>Back to Login</Text>
+            <Ionicons name="arrow-back" size={16} color={Colors.primary} />
+            <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -184,26 +192,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xxxl,
     marginBottom: Spacing.xxxl,
   },
-  logoContainer: {
+  logo: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: Spacing.lg,
-  },
-  logoText: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.white,
-    letterSpacing: 1,
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
   },
   subtitle: {
     fontSize: FontSize.md,
@@ -216,6 +208,12 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     marginBottom: Spacing.lg,
+  },
+  inputLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -236,17 +234,16 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textPrimary,
   },
-  hintText: {
-    fontSize: FontSize.xs,
-    color: Colors.textTertiary,
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
     marginTop: Spacing.xs,
     marginLeft: Spacing.lg,
   },
   errorText: {
     fontSize: FontSize.xs,
     color: Colors.error,
-    marginTop: Spacing.xs,
-    marginLeft: Spacing.lg,
   },
   sendButton: {
     height: Layout.buttonHeight,
@@ -256,15 +253,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...Shadow.red,
   },
+  sendButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
   sendButtonText: {
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
   backToLogin: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 'auto',
     paddingVertical: Spacing.lg,
+    gap: Spacing.sm,
   },
   backToLoginText: {
     fontSize: FontSize.md,

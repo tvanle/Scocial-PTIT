@@ -47,11 +47,11 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const getPrivacyIcon = () => {
     switch (post.privacy) {
-      case 'public':
+      case 'PUBLIC':
         return 'globe-outline';
-      case 'followers':
+      case 'FOLLOWERS':
         return 'people-outline';
-      case 'private':
+      case 'PRIVATE':
         return 'lock-closed-outline';
       default:
         return 'globe-outline';
@@ -259,7 +259,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
         <TouchableOpacity style={styles.actionButton} onPress={onComment}>
           <Ionicons
-            name="chatbubble-outline"
+            name="chatbox-outline"
             size={22}
             color={Colors.textSecondary}
           />

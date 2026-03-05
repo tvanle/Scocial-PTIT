@@ -114,6 +114,9 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Search Bar as primary header */}
       <View style={styles.searchContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color={Colors.textTertiary} />
           <TextInput
@@ -150,10 +153,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  backButton: {
+    padding: Spacing.xxs,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.gray50,

@@ -179,7 +179,7 @@ const PostDetailScreen: React.FC = () => {
                 />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.actionButton}>
-                <Ionicons name="chatbubble-outline" size={22} color={Colors.textPrimary} />
+                <Ionicons name="chatbox-outline" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton}>
                 <Ionicons name="repeat-outline" size={24} color={Colors.textPrimary} />

@@ -62,7 +62,7 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="GroupList" component={GroupListScreen} />
 
             {/* Chat Screens */}
-            <Stack.Screen name="Messages" component={ChatListScreen} />
+            <Stack.Screen name="ChatList" component={ChatListScreen} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
 
             {/* Detail Screens */}
