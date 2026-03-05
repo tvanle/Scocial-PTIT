@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     height: '100%',
-  },
+    outlineStyle: 'none',
+  } as any,
 });
 
 export default SearchInput;
