@@ -320,3 +320,6 @@ export type MainTabParamList = {
   Notifications: undefined;
   Profile: undefined;
 };
+
+// Dating module types
+export * from './dating';
