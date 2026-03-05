@@ -295,7 +295,7 @@ export type RootStackParamList = {
   GroupList: undefined;
   CreateGroup: undefined;
   ChatRoom: { conversationId: string };
-  Messages: undefined;
+  ChatList: undefined;
   CreatePost: { groupId?: string };
   CreatePostModal: { groupId?: string };
   ImageViewer: { images: Media[]; initialIndex: number };
@@ -315,8 +315,8 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Search: undefined;
+  Messages: undefined;
   CreatePost: undefined;
-  Notifications: undefined;
+  Dating: undefined;
   Profile: undefined;
 };

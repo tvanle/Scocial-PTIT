@@ -22,7 +22,7 @@ interface NotificationScreenProps {
   navigation: any;
 }
 
-type FilterChip = 'all' | 'follows' | 'invites' | 'edits';
+type FilterChip = 'all' | 'follows' | 'invites';
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
   const { data: notificationsData, loading, refreshing, onRefresh, setData, refetch } = useFetch(
@@ -104,9 +104,8 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   const filterChips: { key: FilterChip; label: string }[] = [
     { key: 'all', label: 'Tất cả' },
-    { key: 'follows', label: 'Lời theo dõi' },
-    { key: 'invites', label: 'Gửi lời mời mới' },
-    { key: 'edits', label: 'yêu cầu sửa' },
+    { key: 'follows', label: 'Lượt theo dõi' },
+    { key: 'invites', label: 'Cuộc trò chuyện' },
   ];
 
   const filteredNotifications = useMemo(() => {
@@ -115,7 +114,6 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       all: [],
       follows: ['follow', 'follow_back'],
       invites: ['mention', 'tag'],
-      edits: ['comment_post'],
     };
     return notifications.filter(n => typeMap[activeFilter]?.includes(n.type));
   }, [notifications, activeFilter]);
@@ -175,11 +173,9 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Hoạt động</Text>
-        {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllButton}>
-            <Ionicons name="checkmark-done-outline" size={22} color={Colors.primary} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllButton}>
+          <Ionicons name="settings-outline" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       {/* Filter Chips */}
@@ -244,7 +240,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xs,
+    paddingBottom: Spacing.md,
   },
   headerTitle: {
     fontSize: FontSize.xxl,
@@ -258,15 +254,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipsWrapper: {
-    paddingBottom: Spacing.sm,
+    paddingBottom: Spacing.md,
   },
   chipsContainer: {
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
   },
   chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.gray50,
     borderWidth: 1,
@@ -278,10 +274,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   chipText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
     color: Colors.textSecondary,
-    lineHeight: 18,
   },
   chipTextActive: {
     color: Colors.white,

@@ -305,23 +305,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.headerLeft}>
-        <Image
-          source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }}
-          style={styles.headerAvatar}
-        />
+      <TouchableOpacity style={styles.headerIconButton}>
+        <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
-      <View style={styles.headerRight}>
-        <TouchableOpacity style={styles.headerIconButton}>
-          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={() => navigation.navigate('Messages')}
-        >
-          <Ionicons name="paper-plane-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
+      <View style={styles.headerLogo}>
+        <Text style={styles.headerLogoText}>ptit</Text>
       </View>
+      <TouchableOpacity style={styles.headerIconButton}>
+        <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -390,22 +382,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
-  headerLeft: {
-    width: 40,
-    height: 40,
+  headerLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatar: {
-    width: Layout.avatarSize.sm,
-    height: Layout.avatarSize.sm,
-    borderRadius: Layout.avatarSize.sm / 2,
-    backgroundColor: Colors.gray200,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
+  headerLogoText: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: Colors.primary,
   },
   headerIconButton: {
     width: 40,
