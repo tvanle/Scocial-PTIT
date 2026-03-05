@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
+import { userService } from '../../services/user/userService';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -58,13 +59,20 @@ const EditProfileScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // TODO: Call API to update profile
-      updateUser({ fullName, bio, phone, faculty, className, avatar });
-      Alert.alert('Thanh cong', 'Da cap nhat trang ca nhan', [
+      // Upload avatar if changed
+      let avatarUrl = avatar;
+      if (avatar && avatar !== user?.avatar && avatar.startsWith('file://')) {
+        avatarUrl = await userService.uploadAvatar(avatar);
+      }
+
+      const updatedUser = await userService.updateProfile({ fullName, bio, phone });
+      updateUser({ ...updatedUser, avatar: avatarUrl });
+
+      Alert.alert('Thành công', 'Đã cập nhật trang cá nhân', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch {
-      Alert.alert('Loi', 'Khong the cap nhat. Vui long thu lai.');
+      Alert.alert('Lỗi', 'Không thể cập nhật. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

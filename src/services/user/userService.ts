@@ -8,8 +8,8 @@ class UserService {
     return response.data;
   }
 
-  async updateProfile(data: Partial<User>): Promise<User> {
-    const response = await apiClient.put(ENDPOINTS.USER.UPDATE_PROFILE, data);
+  async updateProfile(data: { fullName?: string; bio?: string; phone?: string }): Promise<User> {
+    const response = await apiClient.patch(ENDPOINTS.USER.UPDATE_PROFILE, data);
     return response.data;
   }
 
