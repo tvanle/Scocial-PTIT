@@ -7,6 +7,18 @@ import { UpdateLocationInput } from './location.schema';
 
 const EARTH_RADIUS_KM = 6371;
 
+const MY_PROFILE_SELECT = {
+  select: {
+    latitude: true,
+    longitude: true,
+    preferences: {
+      select: { gender: true, ageMin: true, ageMax: true, maxDistance: true },
+    },
+  },
+} as const;
+
+type MyProfileForNearby = Prisma.DatingProfileGetPayload<typeof MY_PROFILE_SELECT>;
+
 interface NearbyUserRow {
   user_id: string;
   full_name: string | null;
@@ -28,13 +40,13 @@ export class LocationService {
           latitude: data.latitude,
           longitude: data.longitude,
           locationUpdatedAt: new Date(),
-        },
+        } as any,
         select: {
           userId: true,
           latitude: true,
           longitude: true,
           locationUpdatedAt: true,
-        },
+        } as any,
       });
 
       return updated;
@@ -63,14 +75,8 @@ export class LocationService {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
     const myProfile = await prisma.datingProfile.findUnique({
+      ...MY_PROFILE_SELECT,
       where: { userId },
-      select: {
-        latitude: true,
-        longitude: true,
-        preferences: {
-          select: { gender: true, ageMin: true, ageMax: true, maxDistance: true },
-        },
-      },
     });
 
     if (!myProfile) {
