@@ -183,11 +183,12 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       </View>
 
       {/* Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContainer}
-      >
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContainer}
+        >
         {filterChips.map(chip => (
           <TouchableOpacity
             key={chip.key}
@@ -199,9 +200,11 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <FlatList
+        style={{ flex: 1 }}
         data={filteredNotifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id}
@@ -240,8 +243,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: Layout.headerHeight,
     paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xs,
   },
   headerTitle: {
     fontSize: FontSize.xxl,
@@ -254,10 +257,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chipsWrapper: {
+    paddingBottom: Spacing.sm,
+  },
   chipsContainer: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.md,
     alignItems: 'center',
   },
   chip: {
