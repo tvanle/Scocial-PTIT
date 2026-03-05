@@ -16,11 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
-import { colors, typography, spacing, borderRadius } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import Avatar from '../../components/common/Avatar';
 import { useAuthStore } from '../../store/slices/authSlice';
-
-type Privacy = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
 
 interface MediaItem {
   uri: string;
@@ -34,32 +32,20 @@ const CreatePostScreen: React.FC = () => {
 
   const [content, setContent] = useState('');
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [privacy, setPrivacy] = useState<Privacy>('PUBLIC');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPrivacyPicker, setShowPrivacyPicker] = useState(false);
-
-  const privacyOptions = [
-    { value: 'PUBLIC', label: 'Công khai', icon: 'globe-outline' },
-    { value: 'FOLLOWERS', label: 'Người theo dõi', icon: 'people-outline' },
-    { value: 'PRIVATE', label: 'Chỉ mình tôi', icon: 'lock-closed-outline' },
-  ];
-
-  const currentPrivacy = privacyOptions.find(p => p.value === privacy);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh để thực hiện chức năng này');
+      Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 0.8,
       selectionLimit: 10 - media.length,
     });
-
     if (!result.canceled && result.assets) {
       const newMedia = result.assets.map(asset => ({
         uri: asset.uri,
@@ -72,14 +58,10 @@ const CreatePostScreen: React.FC = () => {
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thông báo', 'Cần quyền truy cập camera để thực hiện chức năng này');
+      Alert.alert('Thông báo', 'Cần quyền truy cập camera');
       return;
     }
-
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.8,
-    });
-
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setMedia([...media, { uri: result.assets[0].uri, type: 'image' }]);
     }
@@ -96,25 +78,13 @@ const CreatePostScreen: React.FC = () => {
       Alert.alert('Thông báo', 'Vui lòng nhập nội dung hoặc thêm ảnh/video');
       return;
     }
-
     setIsLoading(true);
-
     try {
-      // TODO: Call API to create post
-      // const formData = new FormData();
-      // formData.append('content', content);
-      // formData.append('privacy', privacy);
-      // media.forEach((item, index) => {
-      //   formData.append('media', { uri: item.uri, type: 'image/jpeg', name: `media_${index}.jpg` });
-      // });
-
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-
       Alert.alert('Thành công', 'Bài viết đã được đăng', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
@@ -131,144 +101,99 @@ const CreatePostScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-            <Ionicons name="close" size={28} color={colors.text.primary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerSide}>
+            <Text style={styles.cancelText}>Hủy</Text>
           </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Tạo bài viết</Text>
-
+          <Text style={styles.headerTitle}>Thread mới</Text>
           <TouchableOpacity
-            style={[styles.postButton, !canPost && styles.postButtonDisabled]}
+            style={styles.headerSide}
             onPress={handlePost}
             disabled={!canPost || isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={colors.white} />
+              <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
-              <Text style={[styles.postButtonText, !canPost && styles.postButtonTextDisabled]}>
+              <Text style={[styles.postText, !canPost && styles.postTextDisabled]}>
                 Đăng
               </Text>
             )}
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* User Info & Privacy */}
-          <View style={styles.userSection}>
-            <Avatar
-              uri={user?.avatar || 'https://i.pravatar.cc/150?img=3'}
-              size={48}
-            />
-            <View style={styles.userInfo}>
+        <View style={styles.divider} />
+
+        {/* Content */}
+        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.threadContainer}>
+            {/* Avatar + vertical line */}
+            <View style={styles.leftColumn}>
+              <Avatar
+                uri={user?.avatar}
+                name={user?.fullName}
+                size="md"
+              />
+              <View style={styles.threadLine} />
+            </View>
+
+            {/* Right content */}
+            <View style={styles.rightColumn}>
               <Text style={styles.userName}>{user?.fullName || 'Người dùng'}</Text>
-              <TouchableOpacity
-                style={styles.privacyButton}
-                onPress={() => setShowPrivacyPicker(!showPrivacyPicker)}
-              >
-                <Ionicons
-                  name={currentPrivacy?.icon as any}
-                  size={14}
-                  color={colors.text.secondary}
-                />
-                <Text style={styles.privacyText}>{currentPrivacy?.label}</Text>
-                <Ionicons name="chevron-down" size={14} color={colors.text.secondary} />
-              </TouchableOpacity>
+              <TextInput
+                ref={inputRef}
+                style={styles.textInput}
+                placeholder="Có gì mới?"
+                placeholderTextColor={Colors.textTertiary}
+                multiline
+                value={content}
+                onChangeText={setContent}
+                autoFocus
+              />
+
+              {/* Media Preview */}
+              {media.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaScroll}>
+                  {media.map((item, index) => (
+                    <View key={index} style={styles.mediaItem}>
+                      <Image source={{ uri: item.uri }} style={styles.mediaImage} />
+                      <TouchableOpacity
+                        style={styles.removeMediaButton}
+                        onPress={() => removeMedia(index)}
+                      >
+                        <Ionicons name="close-circle" size={22} color={Colors.white} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+
+              {/* Media action icons */}
+              <View style={styles.mediaActions}>
+                <TouchableOpacity onPress={pickImage} style={styles.mediaActionBtn}>
+                  <Ionicons name="images-outline" size={20} color={Colors.textTertiary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={takePhoto} style={styles.mediaActionBtn}>
+                  <Ionicons name="camera-outline" size={20} color={Colors.textTertiary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.mediaActionBtn}>
+                  <Text style={styles.gifText}>GIF</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.mediaActionBtn}>
+                  <Ionicons name="bar-chart-outline" size={20} color={Colors.textTertiary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.mediaActionBtn}>
+                  <Ionicons name="list-outline" size={20} color={Colors.textTertiary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.mediaActionBtn}>
+                  <Ionicons name="location-outline" size={20} color={Colors.textTertiary} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-
-          {/* Privacy Picker */}
-          {showPrivacyPicker && (
-            <View style={styles.privacyPicker}>
-              {privacyOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.privacyOption,
-                    privacy === option.value && styles.privacyOptionActive,
-                  ]}
-                  onPress={() => {
-                    setPrivacy(option.value as Privacy);
-                    setShowPrivacyPicker(false);
-                  }}
-                >
-                  <Ionicons
-                    name={option.icon as any}
-                    size={20}
-                    color={privacy === option.value ? colors.primary : colors.text.secondary}
-                  />
-                  <Text
-                    style={[
-                      styles.privacyOptionText,
-                      privacy === option.value && styles.privacyOptionTextActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  {privacy === option.value && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Text Input */}
-          <TextInput
-            ref={inputRef}
-            style={styles.textInput}
-            placeholder="Bạn đang nghĩ gì?"
-            placeholderTextColor={colors.text.placeholder}
-            multiline
-            value={content}
-            onChangeText={setContent}
-            autoFocus
-          />
-
-          {/* Media Preview */}
-          {media.length > 0 && (
-            <View style={styles.mediaContainer}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {media.map((item, index) => (
-                  <View key={index} style={styles.mediaItem}>
-                    <Image source={{ uri: item.uri }} style={styles.mediaImage} />
-                    <TouchableOpacity
-                      style={styles.removeMediaButton}
-                      onPress={() => removeMedia(index)}
-                    >
-                      <Ionicons name="close-circle" size={24} color={colors.white} />
-                    </TouchableOpacity>
-                    {item.type === 'video' && (
-                      <View style={styles.videoOverlay}>
-                        <Ionicons name="play-circle" size={40} color={colors.white} />
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
         </ScrollView>
 
-        {/* Bottom Actions */}
-        <View style={styles.bottomActions}>
-          <Text style={styles.addText}>Thêm vào bài viết</Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton} onPress={pickImage}>
-              <Ionicons name="images" size={24} color={colors.success} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={takePhoto}>
-              <Ionicons name="camera" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Vi tri', 'Tinh nang check-in vi tri dang phat trien')}>
-              <Ionicons name="location" size={24} color={colors.error} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Gan the', 'Tinh nang gan the nguoi khac dang phat trien')}>
-              <Ionicons name="person-add" size={24} color={colors.info} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Cam xuc', 'Tinh nang them cam xuc dang phat trien')}>
-              <Ionicons name="happy" size={24} color={colors.warning} />
-            </TouchableOpacity>
-          </View>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Bất kỳ ai cũng có thể trả lời và trích dẫn</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -278,167 +203,125 @@ const CreatePostScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: Spacing.lg,
+    height: 48,
   },
-  headerButton: {
-    padding: spacing.xs,
+  headerSide: {
+    minWidth: 50,
+  },
+  cancelText: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.text.primary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
   },
-  postButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    minWidth: 70,
-    alignItems: 'center',
+  postText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.primary,
+    textAlign: 'right',
   },
-  postButtonDisabled: {
-    backgroundColor: colors.gray[300],
+  postTextDisabled: {
+    color: Colors.gray300,
   },
-  postButtonText: {
-    ...typography.body,
-    color: colors.white,
-    fontWeight: '600',
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
   },
-  postButtonTextDisabled: {
-    color: colors.gray[500],
-  },
-  content: {
+  scrollContent: {
     flex: 1,
   },
-  userSection: {
+  threadContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
   },
-  userInfo: {
-    marginLeft: spacing.sm,
+  leftColumn: {
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  threadLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: Colors.borderLight,
+    marginTop: Spacing.sm,
+    borderRadius: 1,
+  },
+  rightColumn: {
+    flex: 1,
+    paddingBottom: Spacing.xl,
   },
   userName: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  privacyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.gray[100],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    marginTop: spacing.xs,
-    gap: 4,
-  },
-  privacyText: {
-    ...typography.caption,
-    color: colors.text.secondary,
-  },
-  privacyPicker: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  privacyOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: spacing.sm,
-  },
-  privacyOptionActive: {
-    backgroundColor: colors.primary + '10',
-  },
-  privacyOptionText: {
-    ...typography.body,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  privacyOptionTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xxs,
   },
   textInput: {
-    ...typography.body,
-    color: colors.text.primary,
-    padding: spacing.md,
-    minHeight: 150,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    minHeight: 80,
     textAlignVertical: 'top',
-  },
-  mediaContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    paddingVertical: Spacing.xs,
+    outlineStyle: 'none',
+  } as any,
+  mediaScroll: {
+    marginTop: Spacing.sm,
   },
   mediaItem: {
     position: 'relative',
-    marginRight: spacing.sm,
+    marginRight: Spacing.sm,
   },
   mediaImage: {
-    width: 150,
-    height: 150,
-    borderRadius: borderRadius.md,
+    width: 140,
+    height: 140,
+    borderRadius: BorderRadius.md,
   },
   removeMediaButton: {
     position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
+    top: 6,
+    right: 6,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 12,
+    borderRadius: 11,
   },
-  videoOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: borderRadius.md,
-  },
-  bottomActions: {
+  mediaActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    marginTop: Spacing.md,
+    gap: Spacing.md,
+  },
+  mediaActionBtn: {
+    padding: Spacing.xxs,
+  },
+  gifText: {
+    fontSize: 13,
+    fontWeight: FontWeight.bold,
+    color: Colors.textTertiary,
+    borderWidth: 1.5,
+    borderColor: Colors.textTertiary,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    overflow: 'hidden',
+  },
+  footer: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.white,
+    borderTopColor: Colors.borderLight,
   },
-  addText: {
-    ...typography.body,
-    color: colors.text.secondary,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    padding: spacing.xs,
+  footerText: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
   },
 });
 
