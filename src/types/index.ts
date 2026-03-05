@@ -180,7 +180,7 @@ export interface SendMessageData {
 export interface Notification {
   id: string;
   type: NotificationType;
-  actor: User;
+  actor: User | null;
   title: string;
   body: string;
   data?: Record<string, any>;

@@ -15,8 +15,17 @@ interface NotificationSettings {
 
 class NotificationService {
   async getNotifications(params?: PaginationParams): Promise<PaginatedResponse<Notification>> {
-    const response = await apiClient.get(ENDPOINTS.NOTIFICATION.LIST, { params });
-    return response.data;
+    const response = await apiClient.get<PaginatedResponse<Notification & { sender?: Notification['actor'] }>>(
+      ENDPOINTS.NOTIFICATION.LIST,
+      { params },
+    );
+    return {
+      ...response.data,
+      data: response.data.data.map(({ sender, ...rest }) => ({
+        ...rest,
+        actor: rest.actor ?? sender ?? null,
+      })),
+    };
   }
 
   async markAsRead(notificationId: string): Promise<void> {

@@ -51,7 +51,6 @@ export const ENDPOINTS = {
     UPDATE: (id: string) => `/posts/${id}`,
     DELETE: (id: string) => `/posts/${id}`,
     LIKE: (id: string) => `/posts/${id}/like`,
-    UNLIKE: (id: string) => `/posts/${id}/unlike`,
     COMMENTS: (id: string) => `/posts/${id}/comments`,
     ADD_COMMENT: (id: string) => `/posts/${id}/comments`,
     DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comments/${commentId}`,

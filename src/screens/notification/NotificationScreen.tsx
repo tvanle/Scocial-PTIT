@@ -56,7 +56,9 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         break;
       case 'follow':
       case 'follow_back':
-        navigation.navigate('UserProfile', { userId: notification.actor.id });
+        if (notification.actor?.id) {
+          navigation.navigate('UserProfile', { userId: notification.actor.id });
+        }
         break;
       case 'mention':
       case 'tag':
@@ -130,7 +132,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
-          <Avatar uri={item.actor.avatar} name={item.actor.fullName} size="md" />
+          <Avatar uri={item.actor?.avatar} name={item.actor?.fullName} size="md" />
           <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
             <Ionicons name={icon.name} size={10} color={Colors.white} />
           </View>
@@ -138,7 +140,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
         <View style={styles.content}>
           <Text style={styles.notificationText}>
-            <Text style={styles.actorName}>{item.actor.fullName}</Text>
+            <Text style={styles.actorName}>{item.actor?.fullName}</Text>
             {' '}{item.body}
           </Text>
           <Text style={styles.timeText}>{formatTimeAgo(item.createdAt)}</Text>
