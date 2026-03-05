@@ -270,7 +270,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleRepost = useCallback(() => {
     Alert.alert('Đăng lại', 'Bạn muốn đăng lại bài viết này?', [
       { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng lại', onPress: () => {} },
+      { text: 'Đăng lại', onPress: () => { } },
     ]);
   }, []);
 
@@ -284,9 +284,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleMore = useCallback((postId: string) => {
     Alert.alert('Tùy chọn', '', [
-      { text: 'Lưu bài viết', onPress: () => {} },
+      { text: 'Lưu bài viết', onPress: () => { } },
       { text: 'Ẩn bài viết', onPress: () => setPosts(prev => prev.filter(p => p.id !== postId)) },
-      { text: 'Báo cáo', style: 'destructive', onPress: () => {} },
+      { text: 'Báo cáo', style: 'destructive', onPress: () => { } },
       { text: 'Hủy', style: 'cancel' },
     ]);
   }, []);
@@ -309,7 +309,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         style={styles.headerIconButton}
         onPress={() => (navigation as any).navigate('Notifications')}
       >
-        <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+        <Ionicons name="notifications-outline" size={24} color={Colors.gray400} />
       </TouchableOpacity>
       <Image
         source={require('../../../assets/logo.png')}
@@ -320,7 +320,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         style={styles.headerIconButton}
         onPress={() => (navigation as any).navigate('Search')}
       >
-        <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
+        <Ionicons name="search-outline" size={24} color={Colors.gray400} />
       </TouchableOpacity>
     </View>
   );
@@ -391,8 +391,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
   },
   headerLogo: {
-    width: 32,
-    height: 32,
+    width: 55,
+    height: 55,
   },
   headerIconButton: {
     width: 40,
