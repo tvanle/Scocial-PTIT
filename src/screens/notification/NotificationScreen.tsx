@@ -256,12 +256,12 @@ const styles = StyleSheet.create({
   },
   chipsContainer: {
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.md,
-    gap: Spacing.sm,
     alignItems: 'center',
   },
   chip: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.gray50,
@@ -277,6 +277,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
     color: Colors.textSecondary,
+    lineHeight: 18,
   },
   chipTextActive: {
     color: Colors.white,
