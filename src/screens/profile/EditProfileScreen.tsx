@@ -35,7 +35,7 @@ const EditProfileScreen: React.FC = () => {
   const pickAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thong bao', 'Can quyen truy cap thu vien anh');
+      Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
       return;
     }
 
@@ -53,7 +53,7 @@ const EditProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Loi', 'Ten khong duoc de trong');
+      Alert.alert('Lỗi', 'Tên không được để trống');
       return;
     }
 
@@ -65,7 +65,7 @@ const EditProfileScreen: React.FC = () => {
         avatarUrl = await userService.uploadAvatar(avatar);
       }
 
-      const updatedUser = await userService.updateProfile({ fullName, bio, phone });
+      const updatedUser = await userService.updateProfile({ fullName, bio, phone, faculty, className });
       updateUser({ ...updatedUser, avatar: avatarUrl });
 
       Alert.alert('Thành công', 'Đã cập nhật trang cá nhân', [
@@ -85,7 +85,7 @@ const EditProfileScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
           <Ionicons name="close" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chinh sua trang ca nhan</Text>
+        <Text style={styles.headerTitle}>Chỉnh sửa trang cá nhân</Text>
         <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading}
@@ -94,7 +94,7 @@ const EditProfileScreen: React.FC = () => {
           {isLoading ? (
             <ActivityIndicator size="small" color={Colors.textPrimary} />
           ) : (
-            <Text style={styles.saveText}>Luu</Text>
+            <Text style={styles.saveText}>Lưu</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -118,26 +118,26 @@ const EditProfileScreen: React.FC = () => {
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.field}>
-              <Text style={styles.label}>Ten</Text>
+              <Text style={styles.label}>Tên</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={fullName}
                   onChangeText={setFullName}
-                  placeholder="Nhap ten cua ban"
+                  placeholder="Nhập tên của bạn"
                   placeholderTextColor={Colors.gray400}
                 />
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Tieu su</Text>
+              <Text style={styles.label}>Tiểu sử</Text>
               <View style={[styles.inputContainer, styles.bioInputContainer]}>
                 <TextInput
                   style={[styles.input, styles.bioInput]}
                   value={bio}
                   onChangeText={setBio}
-                  placeholder="Viet gi do ve ban than..."
+                  placeholder="Viết gì đó về bản thân..."
                   placeholderTextColor={Colors.gray400}
                   multiline
                   maxLength={150}
@@ -147,13 +147,13 @@ const EditProfileScreen: React.FC = () => {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>So dien thoai</Text>
+              <Text style={styles.label}>Số điện thoại</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={phone}
                   onChangeText={setPhone}
-                  placeholder="Nhap so dien thoai"
+                  placeholder="Nhập số điện thoại"
                   placeholderTextColor={Colors.gray400}
                   keyboardType="phone-pad"
                 />
@@ -167,14 +167,14 @@ const EditProfileScreen: React.FC = () => {
                   style={styles.input}
                   value={faculty}
                   onChangeText={setFaculty}
-                  placeholder="VD: Cong nghe thong tin"
+                  placeholder="VD: Công nghệ Thông tin"
                   placeholderTextColor={Colors.gray400}
                 />
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Lop</Text>
+              <Text style={styles.label}>Lớp</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
