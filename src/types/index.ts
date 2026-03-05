@@ -320,4 +320,6 @@ export type MainTabParamList = {
   CreatePost: undefined;
   Dating: undefined;
   Profile: undefined;
+  Search: undefined;
+  Notifications: undefined;
 };

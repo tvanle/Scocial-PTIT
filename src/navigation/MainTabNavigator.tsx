@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeScreen } from '../screens/home';
 import { ProfileScreen } from '../screens/profile';
 import { ChatListScreen } from '../screens/chat';
+import { SearchScreen } from '../screens/search';
+import { NotificationScreen } from '../screens/notification';
 import { Colors, Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
 import { MainTabParamList } from '../types';
 
@@ -94,6 +96,8 @@ const MainTabNavigator: React.FC = () => {
       <Tab.Screen name="CreatePost" component={CreatePostScreen} />
       <Tab.Screen name="Dating" component={DatingPlaceholder} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Notifications" component={NotificationScreen} />
     </Tab.Navigator>
   );
 };

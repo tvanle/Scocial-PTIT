@@ -307,7 +307,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     <View style={styles.header}>
       <TouchableOpacity
         style={styles.headerIconButton}
-        onPress={() => navigation.navigate('Notifications')}
+        onPress={() => (navigation as any).navigate('Notifications')}
       >
         <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
@@ -316,7 +316,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       </View>
       <TouchableOpacity
         style={styles.headerIconButton}
-        onPress={() => navigation.navigate('Search')}
+        onPress={() => (navigation as any).navigate('Search')}
       >
         <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
