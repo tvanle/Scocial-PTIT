@@ -11,15 +11,12 @@ import { FullScreenLoading } from '../components/common';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
 import PostDetailScreen from '../screens/home/PostDetailScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
-import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
-import GroupListScreen from '../screens/groups/GroupListScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Placeholder screens (low priority)
-const CreateGroupScreen = () => null;
 const ImageViewerScreen = () => null;
 const FollowersScreen = () => null;
 const FollowingScreen = () => null;
@@ -58,9 +55,6 @@ const RootNavigator: React.FC = () => {
               }}
             />
 
-            {/* Groups */}
-            <Stack.Screen name="GroupList" component={GroupListScreen} />
-
             {/* Chat Screens */}
             <Stack.Screen name="ChatList" component={ChatListScreen} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
@@ -69,8 +63,6 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="PostDetail" component={PostDetailScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
-            <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
             <Stack.Screen
               name="ImageViewer"
               component={ImageViewerScreen}

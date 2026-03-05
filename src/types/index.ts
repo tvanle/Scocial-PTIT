@@ -85,8 +85,6 @@ export interface Post {
   isSaved: boolean;
   isShared: boolean;
   sharedPost?: Post;
-  groupId?: string;
-  group?: Group;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,7 +98,6 @@ export interface CreatePostData {
   location?: string;
   taggedUserIds?: string[];
   privacy: PostPrivacy;
-  groupId?: string;
 }
 
 export interface Media {
@@ -196,52 +193,13 @@ export type NotificationType =
   | 'follow_back'
   | 'mention'
   | 'tag'
-  | 'group_invite'
-  | 'group_post'
   | 'message'
   | 'system';
-
-// Group Types
-export interface Group {
-  id: string;
-  name: string;
-  description?: string;
-  avatar?: string;
-  coverPhoto?: string;
-  privacy: GroupPrivacy;
-  membersCount: number;
-  postsCount: number;
-  admins: User[];
-  moderators: User[];
-  isJoined: boolean;
-  isPendingApproval: boolean;
-  rules?: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type GroupPrivacy = 'public' | 'private';
-
-export interface GroupMember {
-  user: User;
-  role: GroupRole;
-  joinedAt: string;
-}
-
-export type GroupRole = 'admin' | 'moderator' | 'member';
-
-export interface CreateGroupData {
-  name: string;
-  description?: string;
-  privacy: GroupPrivacy;
-  rules?: string[];
-}
 
 // Search Types
 export interface SearchResult {
   users: User[];
   posts: Post[];
-  groups: Group[];
 }
 
 // Pagination Types
@@ -291,13 +249,10 @@ export type RootStackParamList = {
   PostDetail: { postId: string };
   UserProfile: { userId: string };
   EditProfile: undefined;
-  GroupDetail: { groupId: string };
-  GroupList: undefined;
-  CreateGroup: undefined;
   ChatRoom: { conversationId: string };
   ChatList: undefined;
-  CreatePost: { groupId?: string };
-  CreatePostModal: { groupId?: string };
+  CreatePost: undefined;
+  CreatePostModal: undefined;
   ImageViewer: { images: Media[]; initialIndex: number };
   Settings: undefined;
   Search: undefined;

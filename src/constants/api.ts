@@ -95,27 +95,6 @@ export const ENDPOINTS = {
     UNREGISTER_DEVICE: '/notifications/device',
   },
 
-  // Group Service
-  GROUP: {
-    LIST: '/groups',
-    CREATE: '/groups',
-    GET: (id: string) => `/groups/${id}`,
-    UPDATE: (id: string) => `/groups/${id}`,
-    DELETE: (id: string) => `/groups/${id}`,
-    JOIN: (id: string) => `/groups/${id}/join`,
-    LEAVE: (id: string) => `/groups/${id}/leave`,
-    MEMBERS: (id: string) => `/groups/${id}/members`,
-    ADD_MEMBER: (id: string) => `/groups/${id}/members`,
-    REMOVE_MEMBER: (groupId: string, memberId: string) => `/groups/${groupId}/members/${memberId}`,
-    POSTS: (id: string) => `/groups/${id}/posts`,
-    PENDING_POSTS: (id: string) => `/groups/${id}/posts/pending`,
-    APPROVE_POST: (groupId: string, postId: string) => `/groups/${groupId}/posts/${postId}/approve`,
-    REJECT_POST: (groupId: string, postId: string) => `/groups/${groupId}/posts/${postId}/reject`,
-    SEARCH: '/groups/search',
-    MY_GROUPS: '/groups/my-groups',
-    DISCOVER: '/groups/discover',
-  },
-
   // Media Service
   MEDIA: {
     UPLOAD: '/media/upload',
