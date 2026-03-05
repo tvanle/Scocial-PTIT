@@ -8,7 +8,7 @@ class UserService {
     return response.data;
   }
 
-  async updateProfile(data: { fullName?: string; bio?: string; phone?: string }): Promise<User> {
+  async updateProfile(data: { fullName?: string; bio?: string; phone?: string; faculty?: string; className?: string }): Promise<User> {
     const response = await apiClient.patch(ENDPOINTS.USER.UPDATE_PROFILE, data);
     return response.data;
   }
@@ -30,7 +30,7 @@ class UserService {
   }
 
   async unfollow(userId: string): Promise<void> {
-    await apiClient.post(ENDPOINTS.USER.UNFOLLOW(userId));
+    await apiClient.delete(ENDPOINTS.USER.UNFOLLOW(userId));
   }
 
   async getFollowers(userId: string, params?: PaginationParams): Promise<PaginatedResponse<User>> {

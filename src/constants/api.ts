@@ -31,7 +31,7 @@ export const ENDPOINTS = {
     GET_USER: (id: string) => `/users/${id}`,
     SEARCH: '/users/search',
     FOLLOW: (id: string) => `/users/${id}/follow`,
-    UNFOLLOW: (id: string) => `/users/${id}/unfollow`,
+    UNFOLLOW: (id: string) => `/users/${id}/follow`,
     FOLLOWERS: (id: string) => `/users/${id}/followers`,
     FOLLOWING: (id: string) => `/users/${id}/following`,
     BLOCK: (id: string) => `/users/${id}/block`,
