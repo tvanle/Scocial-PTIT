@@ -188,7 +188,11 @@ const PostCard: React.FC<{
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onRepost} style={styles.interactionButton}>
-            <Ionicons name="repeat-outline" size={22} color={Colors.textSecondary} />
+            <Ionicons
+              name="repeat-outline"
+              size={22}
+              color={post.isShared ? Colors.repost : Colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onShare} style={styles.interactionButton}>
@@ -282,7 +286,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       post={item}
       onLike={() => handleLike(item.id)}
       onComment={() => handleComment(item.id)}
-      onRepost={() => handleRepost(item)}
+      onRepost={() => handleRepost(item, () => {
+        setPosts(prev => prev.map(p => p.id === item.id ? { ...p, isShared: true } : p));
+      })}
       onShare={() => handleShare(item.author.fullName)}
       onProfile={() => handleProfile(item.author.id)}
       onMore={() => handleMore(item.id)}

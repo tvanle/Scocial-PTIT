@@ -176,8 +176,14 @@ const PostDetailScreen: React.FC = () => {
               <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.actionButton}>
                 <Ionicons name="chatbox-outline" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleRepost(post)}>
-                <Ionicons name="repeat-outline" size={24} color={Colors.textPrimary} />
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleRepost(post, () => {
+                setPost({ ...post, isShared: true });
+              })}>
+                <Ionicons
+                  name="repeat-outline"
+                  size={24}
+                  color={post.isShared ? Colors.repost : Colors.textPrimary}
+                />
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={() => handleShare(post.author.fullName)}>
                 <Ionicons name="paper-plane-outline" size={22} color={Colors.textPrimary} />
