@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,13 +9,19 @@ import Animated, {
   withSpring,
   withDelay,
 } from 'react-native-reanimated';
-import { DATING_COLORS } from '../../../constants/dating/theme';
-import { AnimatedLogo } from './components/AnimatedLogo';
-import { AnimatedHeader } from './components/AnimatedHeader';
-import { AnimatedFooter } from './components/AnimatedFooter';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
+import { AnimatedLogo } from '../components/AnimatedLogo';
+import { AnimatedHeader } from '../components/AnimatedHeader';
+import { AnimatedFooter } from '../components/AnimatedFooter';
+import { RootStackParamList } from '../../../types';
+
+type DatingSplashNavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingSplash'>;
+
+const { animation } = DATING_LAYOUT.splash;
 
 export const DatingSplashScreen: React.FC = () => {
   const theme = DATING_COLORS.light;
+  const navigation = useNavigation<DatingSplashNavigationProp>();
 
   const logoOpacity = useSharedValue(0);
   const logoTranslateY = useSharedValue(50);
@@ -23,15 +31,29 @@ export const DatingSplashScreen: React.FC = () => {
   const buttonTranslateY = useSharedValue(40);
 
   useEffect(() => {
-    logoOpacity.value = withTiming(1, { duration: 800 });
-    logoTranslateY.value = withSpring(0, { damping: 12, stiffness: 90 });
+    const springConfig = { damping: animation.springDamping, stiffness: animation.springStiffness };
 
-    textOpacity.value = withDelay(300, withTiming(1, { duration: 800 }));
-    textTranslateY.value = withDelay(300, withSpring(0, { damping: 12, stiffness: 90 }));
+    logoOpacity.value = withTiming(1, { duration: animation.duration });
+    logoTranslateY.value = withSpring(0, springConfig);
 
-    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 800 }));
-    buttonTranslateY.value = withDelay(600, withSpring(0, { damping: 12, stiffness: 90 }));
-  }, [buttonOpacity, buttonTranslateY, logoOpacity, logoTranslateY, textOpacity, textTranslateY]);
+    textOpacity.value = withDelay(animation.delayText, withTiming(1, { duration: animation.duration }));
+    textTranslateY.value = withDelay(animation.delayText, withSpring(0, springConfig));
+
+    buttonOpacity.value = withDelay(animation.delayButton, withTiming(1, { duration: animation.duration }));
+    buttonTranslateY.value = withDelay(animation.delayButton, withSpring(0, springConfig));
+  }, [
+    animation.delayButton,
+    animation.delayText,
+    animation.duration,
+    animation.springDamping,
+    animation.springStiffness,
+    buttonOpacity,
+    buttonTranslateY,
+    logoOpacity,
+    logoTranslateY,
+    textOpacity,
+    textTranslateY,
+  ]);
 
   const animatedLogoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
@@ -50,7 +72,7 @@ export const DatingSplashScreen: React.FC = () => {
   }));
 
   const handleStartPress = () => {
-    // TODO: Navigate into dating flow when implemented
+    navigation.navigate('DatingOnboardingIntro');
   };
 
   return (
@@ -60,7 +82,7 @@ export const DatingSplashScreen: React.FC = () => {
           <AnimatedLogo
             animatedStyle={animatedLogoStyle}
             surfaceColor={theme.surface}
-            glowColor="rgba(250, 78, 87, 0.08)"
+            glowColor={DATING_COLORS.splash.glowColor}
           />
 
           <AnimatedHeader animatedStyle={animatedTextStyle} textColor={theme.textPrimary} />
@@ -76,6 +98,8 @@ export const DatingSplashScreen: React.FC = () => {
   );
 };
 
+const { container, centerContent } = DATING_LAYOUT.splash;
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -84,15 +108,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 40,
-    paddingHorizontal: 24,
+    paddingVertical: container.paddingVertical,
+    paddingHorizontal: container.paddingHorizontal,
   },
   centerContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 80,
+    marginBottom: centerContent.marginBottom,
   },
 });
 

@@ -1,0 +1,4 @@
+export const DATING_ASSETS = {
+  onboardingStep1Illustration:
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCQiqooDmlLkcrq3kpp8xOfuBKMkorWuzp6v6WT7yWC90MAP_dRoKIFADeUfz7ZnZ_beuiBcoPfwVObdaU9j72RrkmGCGBLaw3AyL-sUK6xmyuPFHceezIXnozi720OgisQyA3dH5UhkWYiJZiVHW-pyo67wxPW_PTLoZMkwdTHUjQYkFzWXD4iKAR-YXrwIigci8nNSm1n-CAB2wd-NLRt4-U5J6Nd4ienwnLLcpFtPVIoqtQyMsNFhMZirs7ol-rwlsJ0m8hRcnA',
+} as const;

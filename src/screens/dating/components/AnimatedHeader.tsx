@@ -1,8 +1,10 @@
 import React from 'react';
 import { Text, StyleSheet, type ViewStyle } from 'react-native';
 import Animated, { type AnimatedStyle } from 'react-native-reanimated';
-import { DATING_COLORS } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../constants/dating/strings';
+
+const headerLayout = DATING_LAYOUT.splash.header;
 
 interface AnimatedHeaderProps {
   animatedStyle: AnimatedStyle<ViewStyle>;
@@ -23,13 +25,13 @@ export const AnimatedHeader: React.FC<AnimatedHeaderProps> = ({ animatedStyle, t
 const styles = StyleSheet.create({
   textContainer: {
     alignItems: 'center',
-    maxWidth: 320,
+    maxWidth: headerLayout.titleMaxWidth,
   },
   title: {
-    fontSize: 48,
+    fontSize: headerLayout.titleFontSize,
     fontWeight: '900',
     textAlign: 'center',
-    letterSpacing: -1.5,
+    letterSpacing: headerLayout.titleLetterSpacing,
   },
   titleHighlight: {
     color: DATING_COLORS.primary,
