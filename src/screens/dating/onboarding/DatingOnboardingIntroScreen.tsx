@@ -8,10 +8,13 @@ import {
   Pressable,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
 import { DATING_ASSETS } from '../../../constants/dating/assets';
+import { RootStackParamList } from '../../../types';
 import { useFadeSlideIn, usePressScale } from '../hooks';
 
 const DatingOnboardingIntroScreen: React.FC = () => {
@@ -21,9 +24,12 @@ const DatingOnboardingIntroScreen: React.FC = () => {
   const animatedFooterStyle = useFadeSlideIn({ delay: 500, initialTranslateY: 40 });
   const { animatedStyle: animatedButtonStyle, handlePressIn, handlePressOut } = usePressScale();
 
+  const navigation = useNavigation<
+    NativeStackNavigationProp<RootStackParamList, 'DatingOnboardingIntro'>
+  >();
   const handleNextPress = useCallback(() => {
-    // TODO: Navigate to step 2 or next screen
-  }, []);
+    navigation.navigate('DatingProfileSetup');
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

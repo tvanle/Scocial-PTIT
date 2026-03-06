@@ -16,7 +16,10 @@ import GroupListScreen from '../screens/groups/GroupListScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
 import { DatingSplashScreen } from '../screens/dating/splash/DatingSplashScreen';
-import DatingOnboardingIntroScreen from '../screens/dating/onboarding/DatingOnboardingIntroScreen';
+import {
+  DatingOnboardingIntroScreen,
+  DatingProfileSetupScreen,
+} from '../screens/dating/onboarding';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -86,6 +89,7 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="Following" component={FollowingScreen} />
             <Stack.Screen name="DatingSplash" component={DatingSplashScreen} />
             <Stack.Screen name="DatingOnboardingIntro" component={DatingOnboardingIntroScreen} />
+            <Stack.Screen name="DatingProfileSetup" component={DatingProfileSetupScreen} />
           </>
         )}
       </Stack.Navigator>
