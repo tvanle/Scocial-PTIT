@@ -13,7 +13,7 @@ import PostDetailScreen from '../screens/home/PostDetailScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
-import { DatingSplashScreen } from '../screens/dating/DatingSplashScreen';
+import { DatingSplashScreen } from '../screens/dating/splash/DatingSplashScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
