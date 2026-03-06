@@ -6,7 +6,7 @@ export const API_CONFIG = {
 };
 
 // Gateway URL
-export const GATEWAY_URL = `${API_CONFIG.BASE_URL}/api/${API_CONFIG.API_VERSION}`;
+export const GATEWAY_URL = `${API_CONFIG.BASE_URL.replace(/\/$/, '')}/api/${API_CONFIG.API_VERSION}`;
 
 // Microservices Endpoints
 export const ENDPOINTS = {

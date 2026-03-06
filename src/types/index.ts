@@ -304,6 +304,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Followers: { userId: string };
   Following: { userId: string };
+  DatingSplash: undefined;
 };
 
 export type AuthStackParamList = {
