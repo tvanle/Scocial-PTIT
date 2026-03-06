@@ -52,8 +52,8 @@ const DatingProfileSetupScreen: React.FC = () => {
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleContinue = useCallback(() => {
-    // TODO: Validate and navigate to step 3
-  }, []);
+    navigation.navigate('DatingPreferencesSetup');
+  }, [navigation]);
 
   const layout = DATING_LAYOUT.profileSetup;
 
