@@ -33,18 +33,21 @@ const UserProfileScreen: React.FC = () => {
 
   const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [sharedPosts, setSharedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
 
   const fetchData = async () => {
     try {
-      const [userData, postsData] = await Promise.all([
+      const [userData, postsData, sharesData] = await Promise.all([
         userService.getUser(userId),
         postService.getUserPosts(userId, { page: 1, limit: 20 }),
+        postService.getSharedPosts(userId, { page: 1, limit: 20 }),
       ]);
       setProfileUser(userData);
       setPosts(postsData.data);
+      setSharedPosts(sharesData.data);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
       Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
@@ -234,9 +237,29 @@ const UserProfileScreen: React.FC = () => {
               </View>
             )
           ) : activeTab === 'reposts' ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
-            </View>
+            sharedPosts.length > 0 ? (
+              sharedPosts.map(post => (
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.postItem}
+                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                >
+                  <View style={styles.postContent}>
+                    <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
+                    <Text style={styles.postMeta}>
+                      {post.commentsCount} tra loi · {post.likesCount} luot thich
+                    </Text>
+                  </View>
+                  {post.media && post.media.length > 0 && (
+                    <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
+              </View>
+            )
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>Chua co tra loi nao</Text>

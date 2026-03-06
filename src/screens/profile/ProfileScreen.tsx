@@ -53,13 +53,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [sharedPosts, setSharedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isOwnProfile = !route?.params?.userId || route?.params?.userId === currentUser?.id;
   const user = currentUser;
   const userId = route?.params?.userId || currentUser?.id;
 
-  const fetchUserPosts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
@@ -67,25 +68,29 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      const response = await postService.getUserPosts(userId, { page: 1, limit: 20 });
-      const postsData = response?.data || [];
-      setPosts(postsData);
+      const [postsRes, sharesRes] = await Promise.all([
+        postService.getUserPosts(userId, { page: 1, limit: 20 }),
+        postService.getSharedPosts(userId, { page: 1, limit: 20 }),
+      ]);
+      setPosts(postsRes?.data || []);
+      setSharedPosts(sharesRes?.data || []);
     } catch (error) {
       setPosts([]);
+      setSharedPosts([]);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    fetchUserPosts();
-  }, [fetchUserPosts]);
+    fetchData();
+  }, [fetchData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchUserPosts();
+    await fetchData();
     setRefreshing(false);
-  }, [fetchUserPosts]);
+  }, [fetchData]);
 
   const tabs = [
     { key: 'posts' as const, label: 'Bài đăng' },
@@ -199,16 +204,25 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
                 <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
               </View>
             )
+          ) : activeTab === 'reposts' ? (
+            sharedPosts.length > 0 ? (
+              sharedPosts.map(post => (
+                <ProfilePost
+                  key={post.id}
+                  post={post}
+                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="repeat-outline" size={48} color={Colors.gray300} />
+                <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
+              </View>
+            )
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons
-                name={activeTab === 'replies' ? 'chatbox-outline' : 'repeat-outline'}
-                size={48}
-                color={Colors.gray300}
-              />
-              <Text style={styles.emptyText}>
-                {activeTab === 'replies' ? 'Chưa có trả lời nào' : 'Chưa có bài đăng lại nào'}
-              </Text>
+              <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
+              <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
             </View>
           )}
         </View>

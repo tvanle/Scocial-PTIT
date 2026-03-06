@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Media, RootStackParamList } from '../../types';
@@ -217,7 +218,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { handleShare, handleRepost, handleToggleLike } = usePostActions();
+  const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
+  const needsRefresh = useRef(false);
 
   const fetchPosts = async () => {
     try {
@@ -237,6 +239,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       fetchPosts();
     }
   }, [accessToken]);
+
+  // Re-fetch when coming back from PostDetail to sync data
+  useFocusEffect(
+    useCallback(() => {
+      if (needsRefresh.current) {
+        needsRefresh.current = false;
+        fetchPosts();
+      }
+    }, [])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -264,7 +276,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [posts, handleToggleLike]);
 
+  const handleRepostToggle = useCallback(async (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const wasShared = post.isShared;
+    setPosts(prev => prev.map(p =>
+      p.id === postId
+        ? { ...p, isShared: !wasShared, sharesCount: wasShared ? p.sharesCount - 1 : p.sharesCount + 1 }
+        : p
+    ));
+
+    const success = await handleToggleRepost(postId, wasShared);
+    if (!success) {
+      setPosts(prev => prev.map(p =>
+        p.id === postId
+          ? { ...p, isShared: wasShared, sharesCount: wasShared ? p.sharesCount + 1 : p.sharesCount - 1 }
+          : p
+      ));
+    }
+  }, [posts, handleToggleRepost]);
+
   const handleComment = useCallback((postId: string) => {
+    needsRefresh.current = true;
     navigation.navigate('PostDetail', { postId });
   }, [navigation]);
 
@@ -286,14 +320,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       post={item}
       onLike={() => handleLike(item.id)}
       onComment={() => handleComment(item.id)}
-      onRepost={() => handleRepost(item, () => {
-        setPosts(prev => prev.map(p => p.id === item.id ? { ...p, isShared: true } : p));
-      })}
+      onRepost={() => handleRepostToggle(item.id)}
       onShare={() => handleShare(item.author.fullName)}
       onProfile={() => handleProfile(item.author.id)}
       onMore={() => handleMore(item.id)}
     />
-  ), [handleLike, handleComment, handleRepost, handleShare, handleProfile, handleMore]);
+  ), [handleLike, handleComment, handleRepostToggle, handleShare, handleProfile, handleMore]);
 
   const renderHeader = () => (
     <View style={styles.header}>

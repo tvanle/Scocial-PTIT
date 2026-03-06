@@ -49,8 +49,16 @@ class PostService {
     await apiClient.delete(ENDPOINTS.POST.DELETE_COMMENT(postId, commentId));
   }
 
-  async sharePost(postId: string, content?: string): Promise<Post> {
-    const response = await apiClient.post(ENDPOINTS.POST.SHARE(postId), { content });
+  async sharePost(postId: string): Promise<void> {
+    await apiClient.post(ENDPOINTS.POST.SHARE(postId));
+  }
+
+  async unsharePost(postId: string): Promise<void> {
+    await apiClient.delete(ENDPOINTS.POST.UNSHARE(postId));
+  }
+
+  async getSharedPosts(userId: string, params?: PaginationParams): Promise<PaginatedResponse<Post>> {
+    const response = await apiClient.get(ENDPOINTS.POST.USER_SHARES(userId), { params });
     return response.data;
   }
 

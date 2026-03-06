@@ -11,6 +11,9 @@ router.get('/feed', authenticate, postController.getFeed);
 // User posts (optional auth)
 router.get('/user/:userId', optionalAuth, postController.getUserPosts);
 
+// User shared posts (optional auth)
+router.get('/user/:userId/shares', optionalAuth, postController.getSharedPosts);
+
 // CRUD posts
 router.post('/', authenticate, validateBody(createPostSchema), postController.createPost);
 router.get('/:postId', optionalAuth, postController.getPost);
@@ -20,6 +23,10 @@ router.delete('/:postId', authenticate, postController.deletePost);
 // Likes
 router.post('/:postId/like', authenticate, postController.likePost);
 router.delete('/:postId/like', authenticate, postController.unlikePost);
+
+// Shares (repost)
+router.post('/:postId/share', authenticate, postController.sharePost);
+router.delete('/:postId/share', authenticate, postController.unsharePost);
 
 // Comments
 router.get('/:postId/comments', postController.getComments);

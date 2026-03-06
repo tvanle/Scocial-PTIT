@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { Share } from 'react-native';
-import { Post } from '../types';
 import { postService } from '../services/post/postService';
 
 export const usePostActions = () => {
@@ -8,11 +7,17 @@ export const usePostActions = () => {
     Share.share({ message: `Xem bài viết của ${authorName} trên PTIT Social!` });
   }, []);
 
-  const handleRepost = useCallback(async (post: Post, onSuccess?: () => void) => {
+  const handleToggleRepost = useCallback(async (postId: string, isCurrentlyShared: boolean) => {
     try {
-      await postService.createPost({ content: post.content, privacy: 'PUBLIC' });
-      onSuccess?.();
-    } catch {}
+      if (isCurrentlyShared) {
+        await postService.unsharePost(postId);
+      } else {
+        await postService.sharePost(postId);
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   const handleToggleLike = useCallback(async (postId: string, isCurrentlyLiked: boolean) => {
@@ -28,5 +33,5 @@ export const usePostActions = () => {
     }
   }, []);
 
-  return { handleShare, handleRepost, handleToggleLike };
+  return { handleShare, handleToggleRepost, handleToggleLike };
 };

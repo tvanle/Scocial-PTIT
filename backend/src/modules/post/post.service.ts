@@ -4,16 +4,39 @@ import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constants';
 import { parsePagination, paginate } from '../../shared/utils';
 import { CreatePostInput, UpdatePostInput, CreateCommentInput } from './post.validator';
 
+const authorSelect = {
+  id: true,
+  fullName: true,
+  avatar: true,
+  studentId: true,
+  isVerified: true,
+};
+
+const postInclude = {
+  author: { select: authorSelect },
+  media: true,
+  _count: {
+    select: {
+      comments: true,
+      likes: true,
+      shares: true,
+    },
+  },
+};
+
 export class PostService {
-  // Transform post to flatten _count into likesCount/commentsCount
-  private transformPost(post: any) {
+  // Transform post to flatten _count into likesCount/commentsCount/sharesCount
+  private transformPost(post: any, extra?: Record<string, any>) {
     const { _count, ...rest } = post;
     return {
       ...rest,
       likesCount: _count?.likes ?? 0,
       commentsCount: _count?.comments ?? 0,
+      sharesCount: _count?.shares ?? 0,
+      ...extra,
     };
   }
+
   // Create post
   async createPost(authorId: string, data: CreatePostInput, mediaIds?: string[]) {
     const post = await prisma.post.create({
@@ -27,24 +50,7 @@ export class PostService {
           }
           : undefined,
       },
-      include: {
-        author: {
-          select: {
-            id: true,
-            fullName: true,
-            avatar: true,
-            studentId: true,
-            isVerified: true,
-          },
-        },
-        media: true,
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
+      include: postInclude,
     });
 
     return this.transformPost(post);
@@ -54,45 +60,29 @@ export class PostService {
   async getPost(postId: string, userId?: string) {
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      include: {
-        author: {
-          select: {
-            id: true,
-            fullName: true,
-            avatar: true,
-            studentId: true,
-            isVerified: true,
-          },
-        },
-        media: true,
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
+      include: postInclude,
     });
 
     if (!post) {
       throw new AppError(ERROR_MESSAGES.POST_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    // Check if user liked this post
     let isLiked = false;
+    let isShared = false;
     if (userId) {
-      const like = await prisma.like.findUnique({
-        where: {
-          userId_postId: {
-            userId,
-            postId,
-          },
-        },
-      });
+      const [like, share] = await Promise.all([
+        prisma.like.findUnique({
+          where: { userId_postId: { userId, postId } },
+        }),
+        prisma.share.findUnique({
+          where: { userId_postId: { userId, postId } },
+        }),
+      ]);
       isLiked = !!like;
+      isShared = !!share;
     }
 
-    return { ...this.transformPost(post), isLiked };
+    return this.transformPost(post, { isLiked, isShared });
   }
 
   // Update post
@@ -112,24 +102,7 @@ export class PostService {
     const updated = await prisma.post.update({
       where: { id: postId },
       data,
-      include: {
-        author: {
-          select: {
-            id: true,
-            fullName: true,
-            avatar: true,
-            studentId: true,
-            isVerified: true,
-          },
-        },
-        media: true,
-        _count: {
-          select: {
-            comments: true,
-            likes: true,
-          },
-        },
-      },
+      include: postInclude,
     });
 
     return this.transformPost(updated);
@@ -154,11 +127,10 @@ export class PostService {
     });
   }
 
-  // Get feed - all posts are public, followed users' posts prioritized first (Threads-style)
+  // Get feed
   async getFeed(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
-    // Get followed user IDs for priority sorting
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
@@ -166,27 +138,9 @@ export class PostService {
 
     const followingIds = new Set(following.map((f) => f.followingId));
 
-    // All posts are public - show everything
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
-        include: {
-          author: {
-            select: {
-              id: true,
-              fullName: true,
-              avatar: true,
-              studentId: true,
-              isVerified: true,
-            },
-          },
-          media: true,
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: postInclude,
         skip,
         take: l,
         orderBy: { createdAt: 'desc' },
@@ -194,64 +148,50 @@ export class PostService {
       prisma.post.count(),
     ]);
 
-    // Check liked status for each post
-    const likedPosts = await prisma.like.findMany({
-      where: {
-        userId,
-        postId: { in: posts.map((p) => p.id) },
-      },
-      select: { postId: true },
-    });
+    // Check liked + shared status
+    const postIds = posts.map((p) => p.id);
+    const [likedPosts, sharedPosts] = await Promise.all([
+      prisma.like.findMany({
+        where: { userId, postId: { in: postIds } },
+        select: { postId: true },
+      }),
+      prisma.share.findMany({
+        where: { userId, postId: { in: postIds } },
+        select: { postId: true },
+      }),
+    ]);
 
     const likedPostIds = new Set(likedPosts.map((l) => l.postId));
+    const sharedPostIds = new Set(sharedPosts.map((s) => s.postId));
 
-    // Transform and mark followed authors' posts
     const postsWithStatus = posts.map((post) => ({
-      ...this.transformPost(post),
-      isLiked: likedPostIds.has(post.id),
+      ...this.transformPost(post, {
+        isLiked: likedPostIds.has(post.id),
+        isShared: sharedPostIds.has(post.id),
+      }),
       isFollowing: followingIds.has(post.authorId),
     }));
 
-    // Sort: followed users' posts first, then by recency (already sorted by createdAt desc)
     postsWithStatus.sort((a, b) => {
       const aIsFollowed = a.isFollowing || a.author.id === userId ? 1 : 0;
       const bIsFollowed = b.isFollowing || b.author.id === userId ? 1 : 0;
       if (aIsFollowed !== bIsFollowed) return bIsFollowed - aIsFollowed;
-      return 0; // Keep existing createdAt desc order
+      return 0;
     });
 
     return paginate(postsWithStatus, total, p, l);
   }
 
-  // Get user posts (all posts are public)
+  // Get user posts
   async getUserPosts(userId: string, currentUserId?: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
-    const where = {
-      authorId: userId,
-    };
+    const where = { authorId: userId };
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where,
-        include: {
-          author: {
-            select: {
-              id: true,
-              fullName: true,
-              avatar: true,
-              studentId: true,
-              isVerified: true,
-            },
-          },
-          media: true,
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-            },
-          },
-        },
+        include: postInclude,
         skip,
         take: l,
         orderBy: { createdAt: 'desc' },
@@ -259,7 +199,117 @@ export class PostService {
       prisma.post.count({ where }),
     ]);
 
-    return paginate(posts.map((p) => this.transformPost(p)), total, p, l);
+    let likedPostIds = new Set<string>();
+    let sharedPostIds = new Set<string>();
+    if (currentUserId) {
+      const postIds = posts.map((p) => p.id);
+      const [liked, shared] = await Promise.all([
+        prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+        prisma.share.findMany({
+          where: { userId: currentUserId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+      ]);
+      likedPostIds = new Set(liked.map((l) => l.postId));
+      sharedPostIds = new Set(shared.map((s) => s.postId));
+    }
+
+    return paginate(
+      posts.map((post) =>
+        this.transformPost(post, {
+          isLiked: likedPostIds.has(post.id),
+          isShared: sharedPostIds.has(post.id),
+        })
+      ),
+      total,
+      p,
+      l
+    );
+  }
+
+  // Share post (repost)
+  async sharePost(userId: string, postId: string) {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      throw new AppError(ERROR_MESSAGES.POST_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const existing = await prisma.share.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+
+    if (existing) {
+      throw new AppError(ERROR_MESSAGES.ALREADY_SHARED, HTTP_STATUS.CONFLICT);
+    }
+
+    await prisma.share.create({
+      data: { userId, postId },
+    });
+  }
+
+  // Unshare post (unrepost)
+  async unsharePost(userId: string, postId: string) {
+    const share = await prisma.share.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+
+    if (!share) {
+      throw new AppError(ERROR_MESSAGES.NOT_SHARED, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    await prisma.share.delete({
+      where: { id: share.id },
+    });
+  }
+
+  // Get shared posts by user
+  async getSharedPosts(userId: string, currentUserId?: string, page?: string, limit?: string) {
+    const { page: p, limit: l, skip } = parsePagination(page, limit);
+
+    const [shares, total] = await Promise.all([
+      prisma.share.findMany({
+        where: { userId },
+        include: {
+          post: {
+            include: postInclude,
+          },
+        },
+        skip,
+        take: l,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.share.count({ where: { userId } }),
+    ]);
+
+    const posts = shares.map((s) => s.post);
+
+    let likedPostIds = new Set<string>();
+    if (currentUserId) {
+      const postIds = posts.map((p) => p.id);
+      const liked = await prisma.like.findMany({
+        where: { userId: currentUserId, postId: { in: postIds } },
+        select: { postId: true },
+      });
+      likedPostIds = new Set(liked.map((l) => l.postId));
+    }
+
+    return paginate(
+      posts.map((post) =>
+        this.transformPost(post, {
+          isLiked: likedPostIds.has(post.id),
+          isShared: true,
+        })
+      ),
+      total,
+      p,
+      l
+    );
   }
 
   // Like post

@@ -39,7 +39,7 @@ const PostDetailScreen: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
-  const { handleShare, handleRepost, handleToggleLike } = usePostActions();
+  const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
 
   const fetchData = async () => {
     try {
@@ -82,6 +82,26 @@ const PostDetailScreen: React.FC = () => {
       Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
   }, [post, postId, handleToggleLike]);
+
+  const handleRepost = useCallback(async () => {
+    if (!post) return;
+
+    const wasShared = post.isShared;
+    setPost({
+      ...post,
+      isShared: !wasShared,
+      sharesCount: wasShared ? post.sharesCount - 1 : post.sharesCount + 1,
+    });
+
+    const success = await handleToggleRepost(postId, wasShared);
+    if (!success) {
+      setPost({
+        ...post,
+        isShared: wasShared,
+        sharesCount: wasShared ? post.sharesCount + 1 : post.sharesCount - 1,
+      });
+    }
+  }, [post, postId, handleToggleRepost]);
 
   const handleCommentLike = (commentId: string) => {
     // Comment likes not implemented in API yet
@@ -176,9 +196,7 @@ const PostDetailScreen: React.FC = () => {
               <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.actionButton}>
                 <Ionicons name="chatbox-outline" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleRepost(post, () => {
-                setPost({ ...post, isShared: true });
-              })}>
+              <TouchableOpacity style={styles.actionButton} onPress={handleRepost}>
                 <Ionicons
                   name="repeat-outline"
                   size={24}

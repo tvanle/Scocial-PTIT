@@ -94,6 +94,42 @@ export class PostController {
     }
   }
 
+  async sharePost(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const postId = req.params.postId as string;
+      await postService.sharePost(req.user!.userId, postId);
+      sendSuccess(res, null, SUCCESS_MESSAGES.POST_SHARED);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unsharePost(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const postId = req.params.postId as string;
+      await postService.unsharePost(req.user!.userId, postId);
+      sendSuccess(res, null, SUCCESS_MESSAGES.POST_UNSHARED);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSharedPosts(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.params.userId as string;
+      const { page, limit } = req.query;
+      const result = await postService.getSharedPosts(
+        userId,
+        req.user?.userId,
+        page as string,
+        limit as string
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async createComment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId as string;

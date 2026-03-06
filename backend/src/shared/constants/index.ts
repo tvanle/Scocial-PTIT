@@ -52,6 +52,8 @@ export const ERROR_MESSAGES = {
   COMMENT_NOT_FOUND: 'Không tìm thấy bình luận',
   ALREADY_LIKED: 'Đã like bài viết này',
   NOT_LIKED: 'Chưa like bài viết này',
+  ALREADY_SHARED: 'Đã đăng lại bài viết này',
+  NOT_SHARED: 'Chưa đăng lại bài viết này',
 
 
 
@@ -114,6 +116,8 @@ export const SUCCESS_MESSAGES = {
   POST_DELETED: 'Xóa bài viết thành công',
   COMMENT_CREATED: 'Bình luận thành công',
   COMMENT_DELETED: 'Xóa bình luận thành công',
+  POST_SHARED: 'Đăng lại bài viết thành công',
+  POST_UNSHARED: 'Hủy đăng lại thành công',
 
 
 
