@@ -10,7 +10,11 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { type AnimatedStyle } from 'react-native-reanimated';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../constants/dating/strings';
+
+const { primary } = DATING_COLORS;
+const footerLayout = DATING_LAYOUT.splash.footer;
 
 interface AnimatedFooterProps {
   animatedStyle: AnimatedStyle<ViewStyle | TextStyle>;
@@ -31,7 +35,7 @@ export const AnimatedFooter: React.FC<AnimatedFooterProps> = ({
           <MaterialIcons
             name="arrow-forward"
             size={22}
-            color="#ffffff"
+            color={DATING_COLORS.splash.buttonText}
             style={styles.buttonIcon}
           />
         </TouchableOpacity>
@@ -48,46 +52,46 @@ const styles = StyleSheet.create({
   footer: {
     width: '100%',
     alignItems: 'center',
-    paddingBottom: 20,
+    paddingBottom: footerLayout.paddingBottom,
   },
   button: {
     flexDirection: 'row',
     width: '100%',
-    height: 60,
-    backgroundColor: '#FA4E57',
-    borderRadius: 30,
+    height: footerLayout.buttonHeight,
+    backgroundColor: primary,
+    borderRadius: footerLayout.buttonBorderRadius,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#FA4E57',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
+        shadowColor: primary,
+        shadowOffset: { width: 0, height: footerLayout.shadowOffsetY },
+        shadowOpacity: footerLayout.shadowOpacity,
+        shadowRadius: footerLayout.shadowRadius,
       },
       android: {
-        elevation: 6,
-        shadowColor: '#FA4E57',
+        elevation: footerLayout.elevation,
+        shadowColor: primary,
       },
     }),
   },
   buttonText: {
-    color: '#ffffff',
-    fontSize: 18,
+    color: DATING_COLORS.splash.buttonText,
+    fontSize: footerLayout.buttonFontSize,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: footerLayout.buttonLetterSpacing,
   },
   buttonIcon: {
-    marginLeft: 8,
-    marginTop: 2,
+    marginLeft: footerLayout.iconMarginLeft,
+    marginTop: footerLayout.iconMarginTop,
   },
   footerText: {
-    marginTop: 28,
-    fontSize: 14,
+    marginTop: footerLayout.footerTextMarginTop,
+    fontSize: footerLayout.footerTextFontSize,
     fontWeight: '400',
     textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 16,
+    lineHeight: footerLayout.footerTextLineHeight,
+    paddingHorizontal: footerLayout.footerTextPaddingHorizontal,
   },
 });
 
