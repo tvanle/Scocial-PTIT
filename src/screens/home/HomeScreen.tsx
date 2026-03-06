@@ -7,6 +7,7 @@ import {
   RefreshControl,
   StatusBar,
   TouchableOpacity,
+  Pressable,
   Image,
   Alert,
   ActivityIndicator,
@@ -125,7 +126,7 @@ const PostCard: React.FC<{
   const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
-    <TouchableOpacity activeOpacity={0.8} onPress={onComment} style={styles.postCard}>
+    <Pressable onPress={onComment} style={({ pressed }) => [styles.postCard, pressed && { opacity: 0.8 }]}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
@@ -209,7 +210,7 @@ const PostCard: React.FC<{
           />
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 });
 
