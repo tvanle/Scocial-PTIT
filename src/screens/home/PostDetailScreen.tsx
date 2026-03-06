@@ -103,6 +103,53 @@ const PostDetailScreen: React.FC = () => {
     }
   }, [post, postId, handleToggleRepost]);
 
+  const handleMore = useCallback(() => {
+    if (!post) return;
+    const isOwnPost = post.author.id === user?.id;
+
+    const options: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+
+    if (isOwnPost) {
+      options.push({
+        text: 'Xóa bài viết',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert('Xóa bài viết', 'Bạn có chắc muốn xóa bài viết này?', [
+            { text: 'Hủy', style: 'cancel' },
+            {
+              text: 'Xóa',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await postService.deletePost(postId);
+                  navigation.goBack();
+                } catch {
+                  Alert.alert('Lỗi', 'Không thể xóa bài viết');
+                }
+              },
+            },
+          ]);
+        },
+      });
+    } else {
+      options.push({
+        text: 'Báo cáo',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await postService.reportPost(postId, 'Nội dung không phù hợp');
+            Alert.alert('Đã báo cáo', 'Cảm ơn bạn đã báo cáo bài viết này');
+          } catch {
+            Alert.alert('Lỗi', 'Không thể báo cáo bài viết');
+          }
+        },
+      });
+    }
+
+    options.push({ text: 'Hủy', style: 'cancel' });
+    Alert.alert('Tùy chọn', '', options);
+  }, [post, user, postId, navigation]);
+
   const handleCommentLike = (commentId: string) => {
     // Comment likes not implemented in API yet
     Alert.alert('Thông báo', 'Tính năng đang phát triển');
@@ -166,7 +213,7 @@ const PostDetailScreen: React.FC = () => {
                   <Text style={styles.timeText}>{formatTimeAgo(post.createdAt)}</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleMore}>
                 <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>

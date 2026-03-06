@@ -40,14 +40,15 @@ const UserProfileScreen: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [userData, postsData, sharesData] = await Promise.all([
-        userService.getUser(userId),
+      const userData = await userService.getUser(userId);
+      setProfileUser(userData);
+
+      const results = await Promise.allSettled([
         postService.getUserPosts(userId, { page: 1, limit: 20 }),
         postService.getSharedPosts(userId, { page: 1, limit: 20 }),
       ]);
-      setProfileUser(userData);
-      setPosts(postsData.data);
-      setSharedPosts(sharesData.data);
+      setPosts(results[0].status === 'fulfilled' ? results[0].value?.data || [] : []);
+      setSharedPosts(results[1].status === 'fulfilled' ? results[1].value?.data || [] : []);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
       Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');

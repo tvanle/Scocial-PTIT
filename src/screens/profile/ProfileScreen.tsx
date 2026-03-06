@@ -68,13 +68,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      const [postsRes, sharesRes] = await Promise.all([
+      const results = await Promise.allSettled([
         postService.getUserPosts(userId, { page: 1, limit: 20 }),
         postService.getSharedPosts(userId, { page: 1, limit: 20 }),
       ]);
-      setPosts(postsRes?.data || []);
-      setSharedPosts(sharesRes?.data || []);
-    } catch (error) {
+      setPosts(results[0].status === 'fulfilled' ? results[0].value?.data || [] : []);
+      setSharedPosts(results[1].status === 'fulfilled' ? results[1].value?.data || [] : []);
+    } catch {
       setPosts([]);
       setSharedPosts([]);
     } finally {
