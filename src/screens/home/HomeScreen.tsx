@@ -7,9 +7,7 @@ import {
   RefreshControl,
   StatusBar,
   TouchableOpacity,
-  Pressable,
   Image,
-  Alert,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
@@ -22,7 +20,8 @@ import { Post, Media, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { formatTimeAgo } from '../../utils/dateUtils';
-import { EmptyState } from '../../components/common';
+import { EmptyState, BottomMenu } from '../../components/common';
+import type { BottomMenuItem } from '../../components/common';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
 
@@ -126,7 +125,7 @@ const PostCard: React.FC<{
   const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
-    <Pressable onPress={onComment} style={({ pressed }) => [styles.postCard, pressed && { opacity: 0.8 }]}>
+    <View style={styles.postCard}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
@@ -149,22 +148,24 @@ const PostCard: React.FC<{
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      <Text style={styles.postContent}>{post.content}</Text>
+      {/* Content - tappable to navigate */}
+      <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
+        <Text style={styles.postContent}>{post.content}</Text>
 
-      {/* Media */}
-      {post.media && post.media.length > 0 && (
-        <PostImages media={post.media} />
-      )}
+        {/* Media */}
+        {post.media && post.media.length > 0 && (
+          <PostImages media={post.media} />
+        )}
 
-      {/* Stats Text Line */}
-      {(post.likesCount > 0 || post.commentsCount > 0) && (
-        <Text style={styles.statsText}>
-          {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
-          {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
-          {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
-        </Text>
-      )}
+        {/* Stats Text Line */}
+        {(post.likesCount > 0 || post.commentsCount > 0) && (
+          <Text style={styles.statsText}>
+            {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
+            {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
+            {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
+          </Text>
+        )}
+      </TouchableOpacity>
 
       {/* Interaction Bar */}
       <View style={styles.interactionBar}>
@@ -210,7 +211,7 @@ const PostCard: React.FC<{
           />
         </TouchableOpacity>
       </View>
-    </Pressable>
+    </View>
   );
 });
 
@@ -221,14 +222,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
   const needsRefresh = useRef(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuItems, setMenuItems] = useState<BottomMenuItem[]>([]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const response = await postService.getFeed({ page: 1, limit: 20 });
       setPosts(response.data);
-    } catch (error) {
-      console.error('Failed to fetch posts:', error);
+    } catch {
+      // silently fail
     } finally {
       setLoading(false);
     }
@@ -307,55 +310,62 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('UserProfile', { userId });
   }, [navigation]);
 
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
+
   const handleMore = useCallback((postId: string) => {
     const post = posts.find(p => p.id === postId);
     const isOwnPost = post?.author.id === user?.id;
 
-    const options: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+    const items: BottomMenuItem[] = [];
 
     if (isOwnPost) {
-      options.push({
-        text: 'Xóa bài viết',
-        style: 'destructive',
+      items.push({
+        label: 'Xóa bài viết',
+        icon: 'trash-outline',
+        destructive: true,
         onPress: () => {
-          Alert.alert('Xóa bài viết', 'Bạn có chắc muốn xóa bài viết này?', [
-            { text: 'Hủy', style: 'cancel' },
-            {
-              text: 'Xóa',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await postService.deletePost(postId);
-                  setPosts(prev => prev.filter(p => p.id !== postId));
-                } catch {
-                  Alert.alert('Lỗi', 'Không thể xóa bài viết');
-                }
-              },
-            },
-          ]);
+          setDeletePostId(postId);
+          setDeleteConfirmVisible(true);
         },
       });
     } else {
-      options.push(
-        { text: 'Ẩn bài viết', onPress: () => setPosts(prev => prev.filter(p => p.id !== postId)) },
+      items.push(
         {
-          text: 'Báo cáo',
-          style: 'destructive',
+          label: 'Ẩn bài viết',
+          icon: 'eye-off-outline',
+          onPress: () => setPosts(prev => prev.filter(p => p.id !== postId)),
+        },
+        {
+          label: 'Báo cáo',
+          icon: 'flag-outline',
+          destructive: true,
           onPress: async () => {
             try {
               await postService.reportPost(postId, 'Nội dung không phù hợp');
-              Alert.alert('Đã báo cáo', 'Cảm ơn bạn đã báo cáo bài viết này');
             } catch {
-              Alert.alert('Lỗi', 'Không thể báo cáo bài viết');
+              // silently fail
             }
           },
         },
       );
     }
 
-    options.push({ text: 'Hủy', style: 'cancel' });
-    Alert.alert('Tùy chọn', '', options);
+    setMenuItems(items);
+    setMenuVisible(true);
   }, [posts, user]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deletePostId) return;
+    try {
+      await postService.deletePost(deletePostId);
+      setPosts(prev => prev.filter(p => p.id !== deletePostId));
+    } catch {
+      // silently fail
+    }
+    setDeleteConfirmVisible(false);
+    setDeletePostId(null);
+  }, [deletePostId]);
 
   const renderPost = useCallback(({ item }: { item: Post }) => (
     <PostCard
@@ -436,6 +446,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         maxToRenderPerBatch={10}
         initialNumToRender={5}
         windowSize={5}
+      />
+
+      <BottomMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        items={menuItems}
+      />
+
+      <BottomMenu
+        visible={deleteConfirmVisible}
+        onClose={() => setDeleteConfirmVisible(false)}
+        title="Bạn có chắc muốn xóa bài viết này?"
+        items={[
+          {
+            label: 'Xóa',
+            icon: 'trash-outline',
+            destructive: true,
+            onPress: handleConfirmDelete,
+          },
+        ]}
       />
     </SafeAreaView>
   );

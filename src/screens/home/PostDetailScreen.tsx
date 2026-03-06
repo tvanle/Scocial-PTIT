@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +20,8 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Comment, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { formatTimeAgo } from '../../utils/dateUtils';
-import { ScreenHeader } from '../../components/common';
+import { ScreenHeader, BottomMenu } from '../../components/common';
+import type { BottomMenuItem } from '../../components/common';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
 
@@ -40,6 +40,9 @@ const PostDetailScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuItems, setMenuItems] = useState<BottomMenuItem[]>([]);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -49,9 +52,7 @@ const PostDetailScreen: React.FC = () => {
       ]);
       setPost(postData);
       setComments(commentsData.data);
-    } catch (error) {
-      console.error('Failed to fetch post data:', error);
-      Alert.alert('Lỗi', 'Không thể tải bài viết. Vui lòng thử lại.');
+    } catch {
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -79,7 +80,6 @@ const PostDetailScreen: React.FC = () => {
         isLiked: wasLiked,
         likesCount: wasLiked ? post.likesCount + 1 : post.likesCount - 1,
       });
-      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
   }, [post, postId, handleToggleLike]);
 
@@ -107,52 +107,48 @@ const PostDetailScreen: React.FC = () => {
     if (!post) return;
     const isOwnPost = post.author.id === user?.id;
 
-    const options: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+    const items: BottomMenuItem[] = [];
 
     if (isOwnPost) {
-      options.push({
-        text: 'Xóa bài viết',
-        style: 'destructive',
+      items.push({
+        label: 'Xóa bài viết',
+        icon: 'trash-outline',
+        destructive: true,
         onPress: () => {
-          Alert.alert('Xóa bài viết', 'Bạn có chắc muốn xóa bài viết này?', [
-            { text: 'Hủy', style: 'cancel' },
-            {
-              text: 'Xóa',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await postService.deletePost(postId);
-                  navigation.goBack();
-                } catch {
-                  Alert.alert('Lỗi', 'Không thể xóa bài viết');
-                }
-              },
-            },
-          ]);
+          setDeleteConfirmVisible(true);
         },
       });
     } else {
-      options.push({
-        text: 'Báo cáo',
-        style: 'destructive',
+      items.push({
+        label: 'Báo cáo',
+        icon: 'flag-outline',
+        destructive: true,
         onPress: async () => {
           try {
             await postService.reportPost(postId, 'Nội dung không phù hợp');
-            Alert.alert('Đã báo cáo', 'Cảm ơn bạn đã báo cáo bài viết này');
           } catch {
-            Alert.alert('Lỗi', 'Không thể báo cáo bài viết');
+            // silently fail
           }
         },
       });
     }
 
-    options.push({ text: 'Hủy', style: 'cancel' });
-    Alert.alert('Tùy chọn', '', options);
-  }, [post, user, postId, navigation]);
+    setMenuItems(items);
+    setMenuVisible(true);
+  }, [post, user, postId]);
 
-  const handleCommentLike = (commentId: string) => {
+  const handleConfirmDelete = useCallback(async () => {
+    try {
+      await postService.deletePost(postId);
+      navigation.goBack();
+    } catch {
+      // silently fail
+    }
+    setDeleteConfirmVisible(false);
+  }, [postId, navigation]);
+
+  const handleCommentLike = (_commentId: string) => {
     // Comment likes not implemented in API yet
-    Alert.alert('Thông báo', 'Tính năng đang phát triển');
   };
 
   const handleSendComment = useCallback(async () => {
@@ -165,9 +161,8 @@ const PostDetailScreen: React.FC = () => {
       setComments([...comments, newComment]);
       setCommentText('');
       setPost({ ...post, commentsCount: post.commentsCount + 1 });
-    } catch (error) {
-      console.error('Failed to send comment:', error);
-      Alert.alert('Lỗi', 'Không thể gửi bình luận. Vui lòng thử lại.');
+    } catch {
+      // silently fail
     }
   }, [commentText, post, postId, comments]);
 
@@ -213,7 +208,7 @@ const PostDetailScreen: React.FC = () => {
                   <Text style={styles.timeText}>{formatTimeAgo(post.createdAt)}</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleMore}>
+              <TouchableOpacity onPress={handleMore} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: 8 }}>
                 <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -325,6 +320,26 @@ const PostDetailScreen: React.FC = () => {
           )}
         </View>
       </KeyboardAvoidingView>
+
+      <BottomMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        items={menuItems}
+      />
+
+      <BottomMenu
+        visible={deleteConfirmVisible}
+        onClose={() => setDeleteConfirmVisible(false)}
+        title="Bạn có chắc muốn xóa bài viết này?"
+        items={[
+          {
+            label: 'Xóa',
+            icon: 'trash-outline',
+            destructive: true,
+            onPress: handleConfirmDelete,
+          },
+        ]}
+      />
     </SafeAreaView>
   );
 };
