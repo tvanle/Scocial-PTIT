@@ -21,4 +21,23 @@ export const DATING_STRINGS = {
   profileSetupBioCounter: (current: number, max: number) => `${current} / ${max}`,
   profileSetupInterests: 'Interests',
   profileSetupContinue: 'Continue',
+
+  preferencesStep3Of3: 'Step 3 of 3',
+  preferencesTitle: 'Dating Preferences',
+  preferencesFindMatch: 'Find your match',
+  preferencesFindMatchHint: "Fine-tune who you'd like to meet on PTIT Connect.",
+  preferencesAgeRange: 'Age Range',
+  preferencesAgeDisplay: (min: number, max: number) =>
+    max >= 30 ? `${min} - 30+` : `${min} - ${max}`,
+  preferencesPreferredMajors: 'Preferred Major(s)',
+  preferencesSelectMajor: 'Select major',
+  preferencesAllMajorsSelected: 'All majors selected',
+  preferencesSameYearOnly: 'Same Year Only',
+  preferencesSameYearHint:
+    'Only show people from your own academic year (e.g., K21).',
+  preferencesPrivacyTitle: 'Privacy Note:',
+  preferencesPrivacyBody:
+    'Your preferences are private and used solely to provide better matches. Other users cannot see your specific filters.',
+  preferencesFinish: 'Finish',
+  preferencesRemoveMajor: (major: string) => `Remove ${major}`,
 };
