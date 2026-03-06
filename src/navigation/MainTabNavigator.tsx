@@ -44,6 +44,8 @@ const PTITTabBar = ({ state, navigation }: any) => {
           const onPress = () => {
             if (tab.name === 'CreatePost') {
               navigation.navigate('CreatePostModal', {});
+            } else if (tab.name === 'Dating') {
+              navigation.navigate('DatingSplash');
             } else if (!isFocused) {
               navigation.navigate(tab.name);
             }
