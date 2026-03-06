@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../../constants/dating/strings';
 
 const layout = DATING_LAYOUT.profileSetup.photos;
 const colors = DATING_COLORS.profileSetup;

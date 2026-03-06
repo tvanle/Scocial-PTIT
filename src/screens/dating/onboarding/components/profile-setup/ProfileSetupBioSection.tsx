@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, Platform } from 'react-native';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../../constants/dating/strings';
 
 interface ProfileSetupBioSectionProps {
   value: string;

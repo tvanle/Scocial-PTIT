@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../../constants/dating/strings';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 interface ProfileSetupBottomBarProps {

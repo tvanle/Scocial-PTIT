@@ -1,6 +1,18 @@
-export { ProfileSetupHeader } from './ProfileSetupHeader';
-export { ProfileSetupProgress } from './ProfileSetupProgress';
-export { ProfileSetupPhotosSection } from './ProfileSetupPhotosSection';
-export { ProfileSetupBioSection } from './ProfileSetupBioSection';
-export { ProfileSetupInterestsSection } from './ProfileSetupInterestsSection';
-export { ProfileSetupBottomBar } from './ProfileSetupBottomBar';
+export {
+  ProfileSetupHeader,
+  ProfileSetupProgress,
+  ProfileSetupPhotosSection,
+  ProfileSetupBioSection,
+  ProfileSetupInterestsSection,
+  ProfileSetupBottomBar,
+} from './profile-setup';
+
+export {
+  PreferencesHeader,
+  PreferencesAgeRangeSection,
+  PreferencesMajorSection,
+  PreferencesSameYearSection,
+  PreferencesPrivacyNote,
+  PreferencesBottomBar,
+  type AgeRangeValue,
+} from './preferences';

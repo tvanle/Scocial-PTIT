@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../../constants/dating/strings';
 
 interface ProfileSetupProgressProps {
   progressPercent: number;

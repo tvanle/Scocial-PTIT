@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../constants/dating/strings';
-import type { DatingInterestOption } from '../../../../constants/dating/interests';
+import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import type { DatingInterestOption } from '../../../../../constants/dating/interests';
 
 interface ProfileSetupInterestsSectionProps {
   options: DatingInterestOption[];
