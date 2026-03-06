@@ -1,0 +1,122 @@
+---
+alwaysApply: true
+---
+
+You are an expert in TypeScript, React Native, Expo, and Mobile App Development.
+
+Code Style and Structure:
+- Write concise, type-safe TypeScript code.
+- Use functional components and hooks over class components.
+- Ensure components are modular, reusable, and maintainable.
+- Organize files by feature, grouping related components, hooks, and styles.
+- Components should not exceed 200 lines of code; extract complex logic into smaller components.
+
+Naming Conventions:
+- Use camelCase for variable and function names (e.g., `isFetchingData`, `handleUserInput`).
+- Use PascalCase for component names (e.g., `UserProfile`, `ChatScreen`).
+- Directory names should be lowercase and hyphenated (e.g., `user-profile`, `chat-screen`).
+
+TypeScript Usage:
+- Use TypeScript for all components.
+- Favor interfaces for props and state.
+- Enable strict typing in `tsconfig.json`.
+- Avoid using `any`; strive for precise types.
+- Utilize `React.FC` for defining functional components with props.
+
+Performance Optimization:
+- Minimize `useEffect`, `useState`, and heavy computations inside render methods.
+- Use `React.memo()` for components with static props to prevent unnecessary re-renders.
+- Avoid unnecessary component re-renders by using memoization techniques.
+- Use `useCallback` for event handlers passed to child components.
+- Use `useMemo` for expensive computations or derived state.
+- Avoid inline functions inside JSX.
+
+FlatList Optimization:
+- Use `FlatList` or `SectionList` instead of mapping large arrays.
+- Provide a stable `keyExtractor`.
+- Use `getItemLayout` when items have a fixed height.
+- Configure performance props:
+  - `removeClippedSubviews`
+  - `maxToRenderPerBatch`
+  - `windowSize`
+  - `initialNumToRender`
+- Avoid nesting multiple scroll views.
+- Avoid rendering more than 30 items at once in large lists.
+
+UI and Styling:
+- Use consistent styling with `StyleSheet.create()` or Styled Components.
+- Ensure responsive design for different screen sizes and orientations.
+- Avoid inline style objects inside JSX.
+- Prefer reusable UI components.
+- Keep render trees shallow to reduce layout calculation cost.
+
+Image Optimization:
+- Use optimized image libraries such as `expo-image` or `react-native-fast-image`.
+- Always specify width and height for images.
+- Lazy-load images in long lists.
+
+Animation Performance:
+- Prefer `react-native-reanimated` for animations.
+- Avoid JS-thread heavy animations.
+- Use native-driven animations whenever possible.
+
+Interaction Performance:
+- Avoid blocking the JS thread during user interactions.
+- Use `InteractionManager.runAfterInteractions` for non-urgent tasks.
+- Use throttling or debouncing for scroll, resize, and input handlers.
+
+State Management:
+- Use local component state for UI-specific state.
+- Use global state (Zustand or Redux) only for shared app-wide state.
+- Access global state using selectors to avoid unnecessary re-renders.
+- Keep stores modular and split into slices when they grow large.
+
+API and Data Fetching:
+- Use React Query for API calls and caching.
+- Define consistent loading, error, and empty states.
+- Configure proper `staleTime`, `cacheTime`, and invalidation strategies.
+- Implement retry strategies for unstable network requests.
+- Support offline scenarios when applicable.
+
+Error Handling:
+- Use `try/catch` for async operations.
+- Implement Error Boundaries to prevent the entire app from crashing.
+- Provide user-friendly error messages.
+- Log errors through a centralized logging system.
+
+Security:
+- Do not store sensitive data in AsyncStorage.
+- Use Expo SecureStore or encrypted storage for sensitive information.
+- Validate and sanitize user input.
+- Be cautious with deep links and user-generated content.
+
+Accessibility:
+- Use `accessibilityLabel`, `accessibilityHint`, and `accessibilityRole`.
+- Ensure compatibility with screen readers.
+- Support font scaling and proper color contrast.
+- Ensure all interactive elements are reachable via accessibility tools.
+
+Testing:
+- Use Jest for unit testing.
+- Use React Native Testing Library for component testing.
+- Use Detox or Maestro for end-to-end testing of critical user flows.
+- Write tests for hooks, services, and complex UI logic.
+
+Code Quality:
+- Use ESLint and Prettier for consistent formatting.
+- Avoid magic numbers and strings; use constants instead.
+- Keep functions small and focused.
+- Limit cyclomatic complexity in functions.
+
+Observability:
+- Implement structured logging instead of random console logs.
+- Track crashes and errors using Sentry or similar tools.
+- Monitor important metrics such as screen load time and critical user actions.
+
+Best Practices:
+- Follow React Native's threading model to maintain smooth UI performance.
+- Ensure UI updates complete within 16ms to maintain 60 FPS.
+- Use Expo EAS Build and Updates for CI/CD and OTA updates.
+- Use React Navigation for navigation and deep linking.
+- Prefetch important data before navigating to new screens.
+- Avoid blank screens during loading; use skeleton loaders when possible.

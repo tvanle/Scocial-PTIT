@@ -259,6 +259,9 @@ export type RootStackParamList = {
   Notifications: undefined;
   Followers: { userId: string };
   Following: { userId: string };
+  DatingSplash: undefined;
+  DatingOnboardingIntro: undefined;
+  DatingProfileSetup: undefined;
 };
 
 export type AuthStackParamList = {
@@ -278,3 +281,6 @@ export type MainTabParamList = {
   Search: undefined;
   Notifications: undefined;
 };
+
+// Dating module types
+export * from './dating';
