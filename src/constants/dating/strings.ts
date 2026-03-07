@@ -96,6 +96,19 @@ export const DATING_STRINGS = {
     removeMajor: (major: string) => `Remove ${major}`,
     majorOptions: MAJOR_OPTIONS,
   },
+  profileDetail: {
+    major: 'MAJOR',
+    year: 'YEAR',
+    aboutMe: 'About Me',
+    interests: 'Interests',
+    campusStatus: 'Campus Status',
+    campusActive: (dept: string) => `Currently active in the ${dept} Department.`,
+    unknownName: 'Unknown',
+    yearLabel: (y: number) => {
+      const suffix = y === 1 ? 'st' : y === 2 ? 'nd' : y === 3 ? 'rd' : 'th';
+      return `${y}${suffix} Year`;
+    },
+  },
   discovery: {
     emptyTitle: 'Hết người rồi!',
     emptySubtitle: 'Quay lại sau hoặc mở rộng tùy chọn tìm kiếm',

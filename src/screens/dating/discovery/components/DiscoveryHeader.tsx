@@ -6,7 +6,7 @@ import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme
 const colors = DATING_COLORS.discovery;
 const layout = DATING_LAYOUT.discovery.header;
 
-export const DiscoveryHeader: React.FC = () => (
+export const DiscoveryHeader = React.memo(() => (
   <View
     style={[
       styles.container,
@@ -20,6 +20,8 @@ export const DiscoveryHeader: React.FC = () => (
     <TouchableOpacity
       style={[styles.iconBtn, { width: layout.iconSize, height: layout.iconSize, backgroundColor: colors.headerIconBg }]}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel="My profile"
     >
       <MaterialIcons name="person" size={layout.iconSize / 2} color={colors.subtitleColor} />
     </TouchableOpacity>
@@ -41,11 +43,13 @@ export const DiscoveryHeader: React.FC = () => (
     <TouchableOpacity
       style={[styles.iconBtn, { width: layout.iconSize, height: layout.iconSize, backgroundColor: colors.headerIconBg }]}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel="Filter preferences"
     >
       <MaterialIcons name="tune" size={layout.iconSize / 2} color={colors.subtitleColor} />
     </TouchableOpacity>
   </View>
-);
+));
 
 const styles = StyleSheet.create({
   container: {

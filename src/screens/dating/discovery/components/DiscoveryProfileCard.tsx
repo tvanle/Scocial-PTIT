@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
@@ -19,10 +19,17 @@ interface ProfileData {
 
 interface DiscoveryProfileCardProps {
   profile: ProfileData;
+  onPress?: () => void;
 }
 
-export const DiscoveryProfileCard: React.FC<DiscoveryProfileCardProps> = ({ profile }) => (
-  <View style={[styles.card, { borderRadius: card.borderRadius, borderColor: colors.cardBorder }]}>
+export const DiscoveryProfileCard = React.memo<DiscoveryProfileCardProps>(({ profile, onPress }) => (
+  <Pressable
+    style={[styles.card, { borderRadius: card.borderRadius, borderColor: colors.cardBorder }]}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={`View ${profile.name}'s profile`}
+    accessibilityHint="Opens full profile detail"
+  >
     <ImageBackground
       source={{ uri: profile.imageUrl }}
       style={styles.image}
@@ -97,8 +104,8 @@ export const DiscoveryProfileCard: React.FC<DiscoveryProfileCardProps> = ({ prof
         </View>
       </LinearGradient>
     </ImageBackground>
-  </View>
-);
+  </Pressable>
+));
 
 const styles = StyleSheet.create({
   card: {

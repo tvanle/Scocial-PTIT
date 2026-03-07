@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_SPACING } from '../../../constants/dating/tokens';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
@@ -10,12 +12,14 @@ import {
   DiscoveryActions,
   DiscoveryBottomNav,
 } from './components';
-import datingService from '../../../services/dating/datingService';
-import type { DiscoveryCard } from '../../../types';
+import { useDiscoveryFeed } from './hooks/useDiscoveryFeed';
+import type { RootStackParamList } from '../../../types';
 
 const colors = DATING_COLORS.discovery;
 const layout = DATING_LAYOUT.discovery;
 const strings = DATING_STRINGS.discovery;
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function calculateAge(dob: string | null | undefined): number {
   if (!dob) return 0;
@@ -27,94 +31,51 @@ function calculateAge(dob: string | null | undefined): number {
   return age;
 }
 
-function toProfileData(card: DiscoveryCard) {
-  return {
-    userId: card.userId,
-    name: card.user.fullName ?? strings.unknownName,
-    age: calculateAge(card.user.dateOfBirth),
-    major: card.lifestyle?.education ?? '',
-    bio: card.bio ?? '',
-    imageUrl: card.photos[0]?.url ?? '',
-    interests: [] as { icon: string; label: string }[],
-  };
-}
-
 const DatingScreen: React.FC = () => {
-  const [cards, setCards] = useState<DiscoveryCard[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [swiping, setSwiping] = useState(false);
-  const [matchAlert, setMatchAlert] = useState(false);
-  const pageRef = useRef(1);
-  const hasMoreRef = useRef(true);
-
-  const fetchCandidates = useCallback(async (page: number, append = false) => {
-    try {
-      setLoading(true);
-      const res = await datingService.getDiscovery({
-        page: String(page),
-        limit: String(layout.feed.pageSize),
-      });
-      const newCards = res.data ?? [];
-      if (append) {
-        setCards((prev) => [...prev, ...newCards]);
-      } else {
-        setCards(newCards);
-        setCurrentIdx(0);
-      }
-      hasMoreRef.current = page < (res.pagination?.totalPages ?? 1);
-    } catch (err) {
-      console.error('[Discovery] fetch error', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const navigation = useNavigation<Nav>();
+  const {
+    currentCard,
+    isLoading,
+    isEmpty,
+    swipe,
+    isSwiping,
+    isMatched,
+    resetMatch,
+  } = useDiscoveryFeed();
 
   useEffect(() => {
-    fetchCandidates(1);
-  }, [fetchCandidates]);
+    if (!isMatched) return;
+    const timer = setTimeout(resetMatch, layout.match.durationMs);
+    return () => clearTimeout(timer);
+  }, [isMatched, resetMatch]);
 
-  const loadMore = useCallback(() => {
-    if (!hasMoreRef.current) return;
-    pageRef.current += 1;
-    fetchCandidates(pageRef.current, true);
-  }, [fetchCandidates]);
+  const profileData = useMemo(() => {
+    if (!currentCard) return null;
+    return {
+      userId: currentCard.userId,
+      name: currentCard.user.fullName ?? strings.unknownName,
+      age: calculateAge(currentCard.user.dateOfBirth),
+      major: currentCard.lifestyle?.education ?? '',
+      bio: currentCard.bio ?? '',
+      imageUrl: currentCard.photos[0]?.url ?? '',
+      interests: [] as { icon: string; label: string }[],
+    };
+  }, [currentCard]);
 
-  const handleSwipe = useCallback(
-    async (action: 'LIKE' | 'PASS') => {
-      const card = cards[currentIdx];
-      if (!card || swiping) return;
+  const handleSkip = useCallback(() => {
+    if (!currentCard || isSwiping) return;
+    swipe({ targetUserId: currentCard.userId, action: 'UNLIKE' });
+  }, [currentCard, isSwiping, swipe]);
 
-      setSwiping(true);
-      try {
-        const res = await datingService.swipe({
-          targetUserId: card.userId,
-          action,
-        });
-        if (res.matched) {
-          setMatchAlert(true);
-          setTimeout(() => setMatchAlert(false), layout.match.durationMs);
-        }
-      } catch (err: any) {
-        console.error('[Swipe] error', err?.message);
-      } finally {
-        setSwiping(false);
-      }
+  const handleLike = useCallback(() => {
+    if (!currentCard || isSwiping) return;
+    swipe({ targetUserId: currentCard.userId, action: 'LIKE' });
+  }, [currentCard, isSwiping, swipe]);
 
-      const nextIdx = currentIdx + 1;
-      if (nextIdx >= cards.length - layout.feed.prefetchThreshold && hasMoreRef.current) {
-        loadMore();
-      }
-      setCurrentIdx(nextIdx);
-    },
-    [cards, currentIdx, swiping, loadMore],
-  );
-
-  const handleSkip = useCallback(() => handleSwipe('PASS'), [handleSwipe]);
-  const handleLike = useCallback(() => handleSwipe('LIKE'), [handleSwipe]);
-
-  const currentCard = cards[currentIdx];
-  const isEmpty = !loading && !currentCard;
+  const handleCardPress = useCallback(() => {
+    if (!currentCard) return;
+    navigation.navigate('DatingProfileDetail', { profile: currentCard });
+  }, [currentCard, navigation]);
 
   return (
     <View style={[styles.wrapper, { backgroundColor: colors.background }]}>
@@ -122,18 +83,13 @@ const DatingScreen: React.FC = () => {
         <DiscoveryHeader />
 
         <View style={styles.cardContainer}>
-          {loading && !currentCard ? (
+          {isLoading && !currentCard ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={colors.nameText} />
             </View>
           ) : isEmpty ? (
             <View style={styles.center}>
-              <Text
-                style={[
-                  styles.emptyTitle,
-                  { fontSize: layout.empty.titleSize, color: colors.emptyTitle },
-                ]}
-              >
+              <Text style={[styles.emptyTitle, { fontSize: layout.empty.titleSize, color: colors.emptyTitle }]}>
                 {strings.emptyTitle}
               </Text>
               <Text
@@ -150,8 +106,8 @@ const DatingScreen: React.FC = () => {
                 {strings.emptySubtitle}
               </Text>
             </View>
-          ) : currentCard ? (
-            <DiscoveryProfileCard profile={toProfileData(currentCard)} />
+          ) : profileData ? (
+            <DiscoveryProfileCard profile={profileData} onPress={handleCardPress} />
           ) : null}
         </View>
 
@@ -159,7 +115,7 @@ const DatingScreen: React.FC = () => {
           <DiscoveryActions onSkip={handleSkip} onLike={handleLike} />
         )}
 
-        {matchAlert && (
+        {isMatched && (
           <View style={[styles.matchOverlay, { backgroundColor: colors.matchOverlayBg }]}>
             <Text style={[styles.matchText, { fontSize: layout.match.textSize, color: colors.matchText }]}>
               {strings.matchTitle}
@@ -173,28 +129,16 @@ const DatingScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  wrapper: { flex: 1 },
+  safeArea: { flex: 1 },
   cardContainer: {
     flex: 1,
     paddingHorizontal: DATING_SPACING.lg,
     paddingVertical: DATING_SPACING.lg,
   },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: {
-    fontWeight: '700',
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-  },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyTitle: { fontWeight: '700' },
+  emptySubtitle: { textAlign: 'center' },
   matchOverlay: {
     position: 'absolute',
     top: 0,
@@ -204,9 +148,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  matchText: {
-    fontWeight: '800',
-  },
+  matchText: { fontWeight: '800' },
 });
 
 export default DatingScreen;

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, SwipeAction } from '@prisma/client';
 import { prisma } from '../../../config/database';
 import { AppError } from '../../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../../shared/constants';
@@ -25,7 +25,7 @@ const MATCH_SELECT: Prisma.DatingMatchSelect = {
 };
 
 export class SwipeService {
-  async swipe(userId: string, targetUserId: string, action: 'LIKE' | 'PASS') {
+  async swipe(userId: string, targetUserId: string, action: 'LIKE' | 'UNLIKE') {
     if (userId === targetUserId) {
       throw new AppError(ERROR_MESSAGES.CANNOT_SWIPE_SELF, HTTP_STATUS.BAD_REQUEST);
     }
@@ -67,37 +67,28 @@ export class SwipeService {
       return this.swipeWithMatchCheck(userId, targetUserId);
     }
 
-    // PASS — attempt create, catch duplicate via P2002
-    try {
-      const swipe = await prisma.datingSwipe.create({
-        data: { fromUserId: userId, toUserId: targetUserId, action: 'PASS' },
-        select: SWIPE_SELECT,
-      });
+    const swipe = await prisma.datingSwipe.upsert({
+      where: {
+        fromUserId_toUserId: { fromUserId: userId, toUserId: targetUserId },
+      },
+      update: { action: SwipeAction.UNLIKE },
+      create: { fromUserId: userId, toUserId: targetUserId, action: SwipeAction.UNLIKE },
+      select: SWIPE_SELECT,
+    });
 
-      return { swipe, matched: false, match: null };
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
-      }
-      throw error;
-    }
+    return { swipe, matched: false, match: null };
   }
 
   private async swipeWithMatchCheck(userId: string, targetUserId: string) {
     return prisma.$transaction(async (tx) => {
-      // Create LIKE swipe — catch P2002 (duplicate) inside transaction
-      let swipe;
-      try {
-        swipe = await tx.datingSwipe.create({
-          data: { fromUserId: userId, toUserId: targetUserId, action: 'LIKE' },
-          select: SWIPE_SELECT,
-        });
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
-        }
-        throw error;
-      }
+      const swipe = await tx.datingSwipe.upsert({
+        where: {
+          fromUserId_toUserId: { fromUserId: userId, toUserId: targetUserId },
+        },
+        update: { action: SwipeAction.LIKE },
+        create: { fromUserId: userId, toUserId: targetUserId, action: SwipeAction.LIKE },
+        select: SWIPE_SELECT,
+      });
 
       // Check reciprocal LIKE
       const reciprocal = await tx.datingSwipe.findFirst({

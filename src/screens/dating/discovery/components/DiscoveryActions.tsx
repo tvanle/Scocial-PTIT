@@ -11,7 +11,7 @@ interface DiscoveryActionsProps {
   onLike?: () => void;
 }
 
-export const DiscoveryActions: React.FC<DiscoveryActionsProps> = ({ onSkip, onLike }) => (
+export const DiscoveryActions = React.memo<DiscoveryActionsProps>(({ onSkip, onLike }) => (
   <View
     style={[
       styles.container,
@@ -31,6 +31,8 @@ export const DiscoveryActions: React.FC<DiscoveryActionsProps> = ({ onSkip, onLi
       ]}
       activeOpacity={0.8}
       onPress={onSkip}
+      accessibilityRole="button"
+      accessibilityLabel="Skip profile"
     >
       <MaterialIcons name="close" size={layout.skipIconSize} color={colors.skipIcon} />
     </TouchableOpacity>
@@ -47,11 +49,13 @@ export const DiscoveryActions: React.FC<DiscoveryActionsProps> = ({ onSkip, onLi
       ]}
       activeOpacity={0.85}
       onPress={onLike}
+      accessibilityRole="button"
+      accessibilityLabel="Like profile"
     >
       <MaterialIcons name="favorite" size={layout.starIconSize} color={colors.starIcon} />
     </TouchableOpacity>
   </View>
-);
+));
 
 const styles = StyleSheet.create({
   container: {
