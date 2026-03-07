@@ -20,6 +20,8 @@ import {
   DatingPreferencesSetupScreen,
 } from '../screens/dating/onboarding';
 import { DatingScreen } from '../screens/dating/discovery';
+import { DatingEditProfileScreen } from '../screens/dating/edit-profile';
+import { DatingProfileScreen } from '../screens/dating/profile';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -86,6 +88,8 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="DatingProfileSetup" component={DatingProfileSetupScreen} />
             <Stack.Screen name="DatingPreferencesSetup" component={DatingPreferencesSetupScreen} />
             <Stack.Screen name="DatingDiscovery" component={DatingScreen} />
+            <Stack.Screen name="DatingEditProfile" component={DatingEditProfileScreen} />
+            <Stack.Screen name="DatingProfile" component={DatingProfileScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -1,0 +1,1 @@
+export { DatingEditProfileScreen } from './DatingEditProfileScreen';
