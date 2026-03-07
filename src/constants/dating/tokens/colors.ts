@@ -61,4 +61,26 @@ export const DATING_COLORS_SEMANTIC = {
   bottomBarBorder: '#f3f4f6',
 
   shadow: '#1a1a1a',
+
+  // Discovery screen
+  cardOverlayTop: 'rgba(0,0,0,0)',
+  cardOverlayMid: 'rgba(0,0,0,0.4)',
+  cardOverlayBottom: 'rgba(0,0,0,0.8)',
+  cardNameText: '#ffffff',
+  cardMajorText: 'rgba(255,255,255,0.9)',
+  cardBioText: 'rgba(255,255,255,0.8)',
+  tagBg: 'rgba(255,255,255,0.2)',
+  tagText: '#ffffff',
+  infoBtnBg: 'rgba(0,0,0,0.2)',
+  infoBtnBorder: 'rgba(255,255,255,0.2)',
+  skipBtnBg: '#ffffff',
+  skipIconColor: '#9ca3af',
+  boltIconColor: '#eab308',
+  primaryShadow: 'rgba(236,19,19,0.4)',
+  navActive: '#ec1313',
+  navInactive: '#9ca3af',
+  emptyTitleColor: '#333333',
+  emptySubtitleColor: '#888888',
+  matchOverlayBg: 'rgba(196, 30, 58, 0.85)',
+  matchText: '#ffffff',
 } as const;

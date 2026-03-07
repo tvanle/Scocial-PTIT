@@ -96,4 +96,10 @@ export const DATING_STRINGS = {
     removeMajor: (major: string) => `Remove ${major}`,
     majorOptions: MAJOR_OPTIONS,
   },
+  discovery: {
+    emptyTitle: 'Hết người rồi!',
+    emptySubtitle: 'Quay lại sau hoặc mở rộng tùy chọn tìm kiếm',
+    matchTitle: "It's a Match! 🎉",
+    unknownName: 'Unknown',
+  },
 } as const;

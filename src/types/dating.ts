@@ -115,8 +115,12 @@ export interface UpdatePreferencesInput {
 export interface DiscoveryCard {
   userId: string;
   bio: string;
-  photos: Array<{ url: string }>;
-  user: DatingUserSnippet;
+  photos: Array<{ url: string; order?: number }>;
+  user: DatingUserSnippet & {
+    studentId?: string | null;
+    lastActiveAt?: string | null;
+  };
+  lifestyle?: { education: string | null } | null;
 }
 
 export interface DiscoveryQuery {

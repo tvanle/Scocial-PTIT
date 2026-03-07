@@ -263,7 +263,7 @@ export type RootStackParamList = {
   DatingOnboardingIntro: undefined;
   DatingProfileSetup: undefined;
   DatingPreferencesSetup: undefined;
-  DatingIncoming: undefined;
+  DatingDiscovery: undefined;
 };
 
 export type AuthStackParamList = {

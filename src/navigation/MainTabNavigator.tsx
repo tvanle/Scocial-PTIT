@@ -33,7 +33,7 @@ const PTITTabBar = ({ state, navigation }: any) => {
     checkingRef.current = true;
     try {
       await datingService.getMyProfile();
-      navigation.navigate('DatingIncoming');
+      navigation.navigate('DatingDiscovery');
     } catch {
       navigation.navigate('DatingSplash');
     } finally {
