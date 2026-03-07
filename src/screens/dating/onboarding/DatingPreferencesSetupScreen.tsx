@@ -1,15 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../constants/dating/strings';
+import { DATING_STRINGS } from '../../../constants/dating';
 import { RootStackParamList } from '../../../types';
-import { useFadeSlideIn } from '../hooks';
 import {
-  PreferencesHeader,
+  OnboardingStepHeader,
   PreferencesAgeRangeSection,
   PreferencesMajorSection,
   PreferencesSameYearSection,
@@ -22,7 +20,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingPrefe
 
 const layoutContent = DATING_LAYOUT.preferences.content;
 const layoutAge = DATING_LAYOUT.preferences.ageRange;
-const layoutAnim = DATING_LAYOUT.preferences.animation;
 const colors = DATING_COLORS.preferences;
 
 const DatingPreferencesSetupScreen: React.FC = () => {
@@ -34,32 +31,6 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   const [selectedMajors, setSelectedMajors] = useState<string[]>([]);
   const [pickerValue, setPickerValue] = useState('');
   const [sameYearOnly, setSameYearOnly] = useState(true);
-
-  const introStyle = useFadeSlideIn({
-    delay: 0,
-    initialTranslateY: layoutAnim.entranceTranslateY,
-    duration: layoutAnim.entranceDuration,
-  });
-  const ageStyle = useFadeSlideIn({
-    delay: layoutAnim.entranceStagger,
-    initialTranslateY: layoutAnim.entranceTranslateY,
-    duration: layoutAnim.entranceDuration,
-  });
-  const majorStyle = useFadeSlideIn({
-    delay: layoutAnim.entranceStagger * 2,
-    initialTranslateY: layoutAnim.entranceTranslateY,
-    duration: layoutAnim.entranceDuration,
-  });
-  const sameYearStyle = useFadeSlideIn({
-    delay: layoutAnim.entranceStagger * 3,
-    initialTranslateY: layoutAnim.entranceTranslateY,
-    duration: layoutAnim.entranceDuration,
-  });
-  const privacyStyle = useFadeSlideIn({
-    delay: layoutAnim.entranceStagger * 4,
-    initialTranslateY: layoutAnim.entranceTranslateY,
-    duration: layoutAnim.entranceDuration,
-  });
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleAddMajor = useCallback((major: string) => {
@@ -78,7 +49,13 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <PreferencesHeader onBack={handleBack} />
+        <OnboardingStepHeader
+          stepIndex={3}
+          totalSteps={3}
+          title={DATING_STRINGS.preferences.title}
+          showBackButton
+          onBack={handleBack}
+        />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
@@ -92,20 +69,20 @@ const DatingPreferencesSetupScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View style={[styles.intro, { marginBottom: layoutContent.sectionMarginBottom }, introStyle]}>
+          <View style={[styles.intro, { marginBottom: layoutContent.sectionMarginBottom }]}>
             <Text style={[styles.introTitle, { color: colors.sectionTitle }]}>
-              {DATING_STRINGS.preferencesFindMatch}
+              {DATING_STRINGS.preferences.findMatch}
             </Text>
             <Text style={[styles.introHint, { color: colors.sectionHint }]}>
-              {DATING_STRINGS.preferencesFindMatchHint}
+              {DATING_STRINGS.preferences.findMatchHint}
             </Text>
-          </Animated.View>
+          </View>
 
-          <Animated.View style={ageStyle}>
+          <View>
             <PreferencesAgeRangeSection value={ageRange} onChange={setAgeRange} />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={majorStyle}>
+          <View>
             <PreferencesMajorSection
               selectedMajors={selectedMajors}
               onAddMajor={handleAddMajor}
@@ -113,15 +90,15 @@ const DatingPreferencesSetupScreen: React.FC = () => {
               pickerValue={pickerValue}
               onPickerChange={setPickerValue}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={sameYearStyle}>
+          <View>
             <PreferencesSameYearSection value={sameYearOnly} onValueChange={setSameYearOnly} />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={privacyStyle}>
+          <View>
             <PreferencesPrivacyNote />
-          </Animated.View>
+          </View>
         </ScrollView>
       </SafeAreaView>
       <PreferencesBottomBar onFinish={handleFinish} />

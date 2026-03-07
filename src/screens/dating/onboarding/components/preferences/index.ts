@@ -1,4 +1,3 @@
-export { PreferencesHeader } from './PreferencesHeader';
 export {
   PreferencesAgeRangeSection,
   type AgeRangeValue,

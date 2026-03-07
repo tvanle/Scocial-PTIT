@@ -15,8 +15,8 @@ export const AnimatedHeader: React.FC<AnimatedHeaderProps> = ({ animatedStyle, t
   return (
     <Animated.View style={[styles.textContainer, animatedStyle]}>
       <Text style={[styles.title, { color: textColor }]}>
-        {DATING_STRINGS.titleStart}
-        <Text style={styles.titleHighlight}>{DATING_STRINGS.titleHighlight}</Text>
+        {DATING_STRINGS.splash.titleStart}
+        <Text style={styles.titleHighlight}>{DATING_STRINGS.splash.titleHighlight}</Text>
       </Text>
     </Animated.View>
   );

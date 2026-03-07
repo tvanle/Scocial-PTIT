@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
-import type { DatingInterestOption } from '../../../../../constants/dating/interests';
+import type { DatingInterestOption } from '../../../../../constants/dating';
 
 interface ProfileSetupInterestsSectionProps {
   options: DatingInterestOption[];
@@ -21,7 +21,7 @@ export const ProfileSetupInterestsSection: React.FC<ProfileSetupInterestsSection
 }) => (
   <View style={[styles.section, { gap: layout.sectionGap }]}>
     <Text style={[styles.sectionTitle, { color: colors.sectionTitle }]}>
-      {DATING_STRINGS.profileSetupInterests}
+      {DATING_STRINGS.profileSetup.interests}
     </Text>
     <View style={[styles.chipRow, { gap: layout.chipGap }]}>
       {options.map((item) => {

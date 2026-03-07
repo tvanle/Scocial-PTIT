@@ -21,8 +21,8 @@ export const PreferencesPrivacyNote: React.FC = () => (
   >
     <MaterialIcons name="shield" size={layout.iconSize} color={colors.privacyIcon} style={styles.icon} />
     <Text style={[styles.text, { fontSize: layout.textFontSize, color: colors.privacyText }]}>
-      <Text style={styles.bold}>{DATING_STRINGS.preferencesPrivacyTitle}</Text>{' '}
-      {DATING_STRINGS.preferencesPrivacyBody}
+      <Text style={styles.bold}>{DATING_STRINGS.preferences.privacyTitle}</Text>{' '}
+      {DATING_STRINGS.preferences.privacyBody}
     </Text>
   </View>
 );

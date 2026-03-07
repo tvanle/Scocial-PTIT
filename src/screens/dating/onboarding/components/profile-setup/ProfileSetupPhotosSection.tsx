@@ -11,10 +11,10 @@ export const ProfileSetupPhotosSection: React.FC = () => (
   <View style={styles.section}>
     <View style={[styles.sectionHeader, { marginBottom: layout.sectionMarginBottom }]}>
       <Text style={[styles.sectionTitle, { color: colors.sectionTitle }]}>
-        {DATING_STRINGS.profileSetupPhotos}
+        {DATING_STRINGS.profileSetup.photos}
       </Text>
       <Text style={[styles.sectionHint, { color: colors.sectionHint }]}>
-        {DATING_STRINGS.profileSetupPhotosHint}
+        {DATING_STRINGS.profileSetup.photosHint}
       </Text>
     </View>
     <View style={[styles.photoGrid, { gap: layout.gridGap }]}>
@@ -49,7 +49,7 @@ export const ProfileSetupPhotosSection: React.FC = () => (
             { color: colors.mainPhotoLabel, fontSize: layout.mainLabelFontSize },
           ]}
         >
-          {DATING_STRINGS.profileSetupMainPhoto}
+          {DATING_STRINGS.profileSetup.mainPhoto}
         </Text>
       </TouchableOpacity>
       <View style={[styles.smallSlotsColumn, { gap: layout.gridGap }]}>

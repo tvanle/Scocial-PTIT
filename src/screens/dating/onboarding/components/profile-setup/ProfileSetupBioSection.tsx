@@ -20,7 +20,7 @@ export const ProfileSetupBioSection: React.FC<ProfileSetupBioSectionProps> = ({
   <View style={[styles.section, { gap: layout.bio.sectionGap }]}>
     <View style={styles.bioLabelRow}>
       <Text style={[styles.sectionTitle, { color: colors.sectionTitle }]}>
-        {DATING_STRINGS.profileSetupBio}
+        {DATING_STRINGS.profileSetup.bio}
       </Text>
       <Text
         style={[
@@ -42,7 +42,7 @@ export const ProfileSetupBioSection: React.FC<ProfileSetupBioSectionProps> = ({
           borderRadius: layout.photos.slotBorderRadius,
         },
       ]}
-      placeholder={DATING_STRINGS.profileSetupBioPlaceholder}
+      placeholder={DATING_STRINGS.profileSetup.bioPlaceholder}
       placeholderTextColor={colors.inputPlaceholder}
       value={value}
       onChangeText={onChangeText}

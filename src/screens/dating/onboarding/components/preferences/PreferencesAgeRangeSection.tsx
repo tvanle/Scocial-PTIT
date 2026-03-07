@@ -135,11 +135,11 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
     <View style={[styles.section, { marginBottom: DATING_LAYOUT.preferences.content.sectionMarginBottom }]}>
       <View style={styles.labelRow}>
         <Text style={[styles.label, { fontSize: layout.labelFontSize, color: colors.sectionTitle }]}>
-          {DATING_STRINGS.preferencesAgeRange}
+          {DATING_STRINGS.preferences.ageRange}
         </Text>
         <View style={[styles.pill, { backgroundColor: colors.agePillBg }]}>
           <Text style={styles.pillText}>
-            {DATING_STRINGS.preferencesAgeDisplay(value.min, value.max)}
+            {DATING_STRINGS.preferences.ageDisplay(value.min, value.max)}
           </Text>
         </View>
       </View>

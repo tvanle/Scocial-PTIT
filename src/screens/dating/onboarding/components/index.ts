@@ -1,6 +1,9 @@
 export {
-  ProfileSetupHeader,
-  ProfileSetupProgress,
+  OnboardingStepHeader,
+  type OnboardingStepHeaderProps,
+} from './OnboardingStepHeader';
+
+export {
   ProfileSetupPhotosSection,
   ProfileSetupBioSection,
   ProfileSetupInterestsSection,
@@ -8,7 +11,6 @@ export {
 } from './profile-setup';
 
 export {
-  PreferencesHeader,
   PreferencesAgeRangeSection,
   PreferencesMajorSection,
   PreferencesSameYearSection,

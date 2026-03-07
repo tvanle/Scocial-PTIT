@@ -4,9 +4,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../../../constants/dating';
 
 const layout = DATING_LAYOUT.preferences.bottomBar;
-const springConfig = { damping: layout.springDamping, stiffness: layout.springStiffness };
 
 interface PreferencesBottomBarProps {
   onFinish: () => void;
@@ -22,11 +22,11 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFi
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(layout.pressScaleDown, springConfig);
+    scale.value = withSpring(PRESS_SCALE_DOWN, SPRING_BUTTON);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    scale.value = withSpring(1, SPRING_BUTTON);
   };
 
   return (
@@ -38,9 +38,9 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFi
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           accessibilityRole="button"
-          accessibilityLabel={DATING_STRINGS.preferencesFinish}
+          accessibilityLabel={DATING_STRINGS.preferences.finish}
         >
-          <Text style={styles.buttonText}>{DATING_STRINGS.preferencesFinish}</Text>
+          <Text style={styles.buttonText}>{DATING_STRINGS.preferences.finish}</Text>
           <MaterialIcons
             name="check-circle"
             size={layout.buttonIconSize}

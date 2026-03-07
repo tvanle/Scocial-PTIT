@@ -16,9 +16,9 @@ import { DATING_STRINGS } from '../../../constants/dating/strings';
 import { DATING_ASSETS } from '../../../constants/dating/assets';
 import { RootStackParamList } from '../../../types';
 import { useFadeSlideIn, usePressScale } from '../hooks';
+import { OnboardingStepHeader } from './components';
 
 const DatingOnboardingIntroScreen: React.FC = () => {
-  const animatedProgressStyle = useFadeSlideIn({ delay: 0, initialTranslateY: 20 });
   const animatedIllustrationStyle = useFadeSlideIn({ delay: 150, initialTranslateY: 40 });
   const animatedTextStyle = useFadeSlideIn({ delay: 350, initialTranslateY: 30 });
   const animatedFooterStyle = useFadeSlideIn({ delay: 500, initialTranslateY: 40 });
@@ -33,17 +33,13 @@ const DatingOnboardingIntroScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <OnboardingStepHeader
+        stepIndex={1}
+        totalSteps={3}
+        title=""
+        showBackButton={false}
+      />
       <View style={styles.container}>
-        {/* Progress: label trên, dots dưới, padding đều */}
-        <Animated.View style={[styles.progressSection, animatedProgressStyle]}>
-          <Text style={styles.stepLabel}>{DATING_STRINGS.onboardingStep1Of3}</Text>
-          <View style={styles.progressBars}>
-            <View style={[styles.progressBar, styles.progressBarActive]} />
-            <View style={styles.progressBar} />
-            <View style={styles.progressBar} />
-          </View>
-        </Animated.View>
-
         <View style={styles.contentContainer}>
           <Animated.View style={[styles.illustrationCard, animatedIllustrationStyle]}>
             <View style={styles.illustrationBackground}>
@@ -58,8 +54,8 @@ const DatingOnboardingIntroScreen: React.FC = () => {
           </Animated.View>
 
           <Animated.View style={[styles.textBlock, animatedTextStyle]}>
-            <Text style={styles.title}>{DATING_STRINGS.onboardingStep1Title}</Text>
-            <Text style={styles.description}>{DATING_STRINGS.onboardingStep1Description}</Text>
+            <Text style={styles.title}>{DATING_STRINGS.onboarding.step1Title}</Text>
+            <Text style={styles.description}>{DATING_STRINGS.onboarding.step1Description}</Text>
           </Animated.View>
         </View>
 
@@ -70,7 +66,7 @@ const DatingOnboardingIntroScreen: React.FC = () => {
             onPressOut={handlePressOut}
           >
             <Animated.View style={[styles.nextButton, animatedButtonStyle]}>
-              <Text style={styles.nextButtonText}>{DATING_STRINGS.onboardingNext}</Text>
+              <Text style={styles.nextButtonText}>{DATING_STRINGS.onboarding.next}</Text>
               <MaterialIcons
                 name="arrow-forward"
                 size={22}
@@ -89,7 +85,7 @@ const DatingOnboardingIntroScreen: React.FC = () => {
   );
 };
 
-const { spacing, progressBar, illustration, handle, nextButton, typography } = DATING_LAYOUT;
+const { spacing, illustration, handle, nextButton, typography } = DATING_LAYOUT;
 const colors = DATING_COLORS.onboarding;
 
 const styles = StyleSheet.create({
@@ -103,35 +99,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     justifyContent: 'space-between',
-  },
-  progressSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-  },
-  stepLabel: {
-    fontSize: typography.stepLabelFontSize,
-    fontWeight: '700',
-    letterSpacing: typography.stepLabelLetterSpacing,
-    textTransform: 'uppercase',
-    color: colors.stepLabel,
-    marginBottom: spacing.sm,
-  },
-  progressBars: {
-    flexDirection: 'row',
-    gap: progressBar.gap,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressBar: {
-    width: progressBar.width,
-    height: progressBar.height,
-    borderRadius: progressBar.height / 2,
-    backgroundColor: colors.progressBarInactive,
-  },
-  progressBarActive: {
-    backgroundColor: DATING_COLORS.primary,
   },
   contentContainer: {
     flex: 1,

@@ -49,7 +49,7 @@ export const ProfileSetupBottomBar: React.FC<ProfileSetupBottomBarProps> = ({
         ]}
       >
         <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-          {DATING_STRINGS.profileSetupContinue}
+          {DATING_STRINGS.profileSetup.continue}
         </Text>
       </Animated.View>
     </Pressable>

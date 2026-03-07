@@ -29,10 +29,10 @@ export const PreferencesSameYearSection: React.FC<PreferencesSameYearSectionProp
     <View style={styles.row}>
       <View style={styles.textWrap}>
         <Text style={[styles.title, { fontSize: layout.titleFontSize, color: colors.sectionTitle }]}>
-          {DATING_STRINGS.preferencesSameYearOnly}
+          {DATING_STRINGS.preferences.sameYearOnly}
         </Text>
         <Text style={[styles.hint, { fontSize: layout.hintFontSize, color: colors.sectionHint }]}>
-          {DATING_STRINGS.preferencesSameYearHint}
+          {DATING_STRINGS.preferences.sameYearHint}
         </Text>
       </View>
       <Switch
@@ -40,7 +40,7 @@ export const PreferencesSameYearSection: React.FC<PreferencesSameYearSectionProp
         onValueChange={onValueChange}
         trackColor={{ false: colors.toggleTrack, true: DATING_COLORS.primary }}
         thumbColor={colors.toggleThumb}
-        accessibilityLabel={DATING_STRINGS.preferencesSameYearOnly}
+        accessibilityLabel={DATING_STRINGS.preferences.sameYearOnly}
       />
     </View>
   </View>
