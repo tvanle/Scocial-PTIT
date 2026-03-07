@@ -60,6 +60,13 @@ export const DATING_STRINGS = {
     bioCounter: (current: number, max: number) => `${current} / ${max}`,
     interests: 'Interests',
     continue: 'Continue',
+    photoRequired: 'Thêm ít nhất 2 ảnh để tiếp tục',
+    bioRequired: 'Vui lòng nhập bio (ít nhất 10 ký tự)',
+    uploading: 'Đang tải ảnh...',
+    creating: 'Đang tạo hồ sơ...',
+    uploadFailed: 'Tải ảnh thất bại, vui lòng thử lại',
+    createFailed: 'Tạo hồ sơ thất bại, vui lòng thử lại',
+    permissionRequired: 'Cần quyền truy cập thư viện ảnh',
     defaults: {
       defaultSelectedInterestIds: ['music', 'gaming'] as const,
       progressPercentStep2: 66,
@@ -84,6 +91,8 @@ export const DATING_STRINGS = {
     privacyBody:
       'Your preferences are private and used solely to provide better matches. Other users cannot see your specific filters.',
     finish: 'Finish',
+    saving: 'Đang lưu...',
+    saveFailed: 'Lưu thất bại, vui lòng thử lại',
     removeMajor: (major: string) => `Remove ${major}`,
     majorOptions: MAJOR_OPTIONS,
   },

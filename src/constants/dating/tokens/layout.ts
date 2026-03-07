@@ -62,4 +62,16 @@ export const DATING_LAYOUT_TOKENS = {
   elevationStrongBar: 8,
   thumbShadowOffsetY: 2,
   thumbElevation: 4,
+
+  photoGrid: {
+    totalSlots: 6,
+    columns: 3,
+    screenPadding: 24,
+    cameraIconSize: 20,
+    starIconSize: 10,
+    badgeSize: 18,
+    badgeOffset: 6,
+    labelMarginTop: 6,
+    overlayOpacity: 0.4,
+  },
 } as const;

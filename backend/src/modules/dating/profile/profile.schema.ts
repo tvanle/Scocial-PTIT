@@ -60,6 +60,8 @@ export const updatePreferencesSchema = z
     ageMax: z.number().int().min(18).max(99),
     maxDistance: z.number().int().min(1).max(500, 'Khoảng cách tối đa 500 km').optional(),
     gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+    preferredMajors: z.array(z.string()).optional(),
+    sameYearOnly: z.boolean().optional(),
   })
   .refine((data) => data.ageMin <= data.ageMax, {
     message: 'Độ tuổi tối thiểu phải nhỏ hơn hoặc bằng độ tuổi tối đa',

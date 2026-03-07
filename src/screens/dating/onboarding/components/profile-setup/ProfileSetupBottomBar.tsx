@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { DATING_STRINGS } from '../../../../../constants/dating';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 interface ProfileSetupBottomBarProps {
@@ -10,6 +10,9 @@ interface ProfileSetupBottomBarProps {
   onPressIn: () => void;
   onPressOut: () => void;
   animatedButtonStyle: StyleProp<ViewStyle>;
+  loading?: boolean;
+  disabled?: boolean;
+  hint?: string | null;
 }
 
 const layout = DATING_LAYOUT.profileSetup.bottomBar;
@@ -20,41 +23,60 @@ export const ProfileSetupBottomBar: React.FC<ProfileSetupBottomBarProps> = ({
   onPressIn,
   onPressOut,
   animatedButtonStyle,
-}) => (
-  <View
-    style={[
-      styles.bottomBar,
-      {
-        paddingHorizontal: layout.paddingHorizontal,
-        paddingTop: layout.paddingTop,
-        paddingBottom: layout.paddingBottom + layout.safeAreaBottom,
-        backgroundColor: colors.bottomBarBg,
-        borderTopColor: colors.bottomBarBorder,
-      },
-    ]}
-  >
-    <Pressable onPress={onContinue} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View
-        style={[
-          styles.continueButton,
-          animatedButtonStyle,
-          {
-            height: layout.buttonHeight,
-            borderRadius: layout.buttonBorderRadius,
-            shadowOpacity: layout.shadowOpacity,
-            shadowRadius: layout.shadowRadius,
-            elevation: layout.elevation,
-            backgroundColor: DATING_COLORS.primary,
-          },
-        ]}
+  loading = false,
+  disabled = false,
+  hint = null,
+}) => {
+  const isInactive = loading || disabled;
+
+  return (
+    <View
+      style={[
+        styles.bottomBar,
+        {
+          paddingHorizontal: layout.paddingHorizontal,
+          paddingTop: layout.paddingTop,
+          paddingBottom: layout.paddingBottom + layout.safeAreaBottom,
+          backgroundColor: colors.bottomBarBg,
+          borderTopColor: colors.bottomBarBorder,
+        },
+      ]}
+    >
+      {hint && (
+        <Text style={styles.hint}>{hint}</Text>
+      )}
+      <Pressable
+        onPress={onContinue}
+        onPressIn={isInactive ? undefined : onPressIn}
+        onPressOut={isInactive ? undefined : onPressOut}
+        disabled={isInactive}
       >
-        <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-          {DATING_STRINGS.profileSetup.continue}
-        </Text>
-      </Animated.View>
-    </Pressable>
-  </View>
-);
+        <Animated.View
+          style={[
+            styles.continueButton,
+            animatedButtonStyle,
+            {
+              height: layout.buttonHeight,
+              borderRadius: layout.buttonBorderRadius,
+              shadowOpacity: isInactive ? 0 : layout.shadowOpacity,
+              shadowRadius: layout.shadowRadius,
+              elevation: isInactive ? 0 : layout.elevation,
+              backgroundColor: isInactive ? '#ccc' : DATING_COLORS.primary,
+            },
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.buttonText} />
+          ) : (
+            <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
+              {DATING_STRINGS.profileSetup.continue}
+            </Text>
+          )}
+        </Animated.View>
+      </Pressable>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   bottomBar: {
@@ -65,6 +87,13 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
       },
     }),
+  },
+  hint: {
+    fontSize: 13,
+    color: DATING_COLORS.primary,
+    textAlign: 'center',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   continueButton: {
     width: '100%',

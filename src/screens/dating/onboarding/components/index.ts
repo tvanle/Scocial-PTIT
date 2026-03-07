@@ -8,6 +8,7 @@ export {
   ProfileSetupBioSection,
   ProfileSetupInterestsSection,
   ProfileSetupBottomBar,
+  type PhotoSlot,
 } from './profile-setup';
 
 export {

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import apiClient from '../api/apiClient';
 import { ENDPOINTS } from '../../constants/api';
 import type {
@@ -51,6 +52,27 @@ class DatingService {
   async addPhoto(data: AddPhotoInput): Promise<DatingPhoto> {
     const response = await apiClient.post(ENDPOINTS.DATING.ADD_PHOTO, data);
     return response.data;
+  }
+
+  async uploadMedia(uri: string): Promise<string> {
+    const formData = new FormData();
+
+    if (Platform.OS === 'web') {
+      const blob = await fetch(uri).then((r) => r.blob());
+      formData.append('file', blob, 'photo.jpg');
+    } else {
+      formData.append('file', {
+        uri,
+        type: 'image/jpeg',
+        name: 'photo.jpg',
+      } as any);
+    }
+
+    const response = await apiClient.post(ENDPOINTS.MEDIA.UPLOAD, formData, {
+      headers: { 'Content-Type': undefined },
+      transformRequest: (data: FormData) => data,
+    });
+    return response.data.url;
   }
 
   async deletePhoto(photoId: string): Promise<void> {

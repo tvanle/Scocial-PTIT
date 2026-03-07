@@ -5,6 +5,7 @@ dotenv.config();
 export const config = {
   // Server
   port: parseInt(process.env.PORT || '3001', 10),
+  baseUrl: process.env.BASE_URL || `http://localhost:${process.env.PORT || '3001'}`,
   nodeEnv: process.env.NODE_ENV || 'development',
   isDev: process.env.NODE_ENV === 'development',
   isProd: process.env.NODE_ENV === 'production',

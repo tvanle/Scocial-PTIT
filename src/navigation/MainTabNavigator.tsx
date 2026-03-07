@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { SearchScreen } from '../screens/search';
 import { NotificationScreen } from '../screens/notification';
 import { Colors, Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
 import { MainTabParamList } from '../types';
+import datingService from '../services/dating/datingService';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -25,6 +26,20 @@ const DatingPlaceholder = () => (
 // PTIT-style Tab Bar with floating red FAB
 const PTITTabBar = ({ state, navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const checkingRef = useRef(false);
+
+  const handleDatingPress = useCallback(async () => {
+    if (checkingRef.current) return;
+    checkingRef.current = true;
+    try {
+      await datingService.getMyProfile();
+      navigation.navigate('DatingIncoming');
+    } catch {
+      navigation.navigate('DatingSplash');
+    } finally {
+      checkingRef.current = false;
+    }
+  }, [navigation]);
 
   const tabs = [
     { name: 'Home', icon: 'home-outline', iconFocused: 'home' },
@@ -45,7 +60,7 @@ const PTITTabBar = ({ state, navigation }: any) => {
             if (tab.name === 'CreatePost') {
               navigation.navigate('CreatePostModal', {});
             } else if (tab.name === 'Dating') {
-              navigation.navigate('DatingSplash');
+              handleDatingPress();
             } else if (!isFocused) {
               navigation.navigate(tab.name);
             }

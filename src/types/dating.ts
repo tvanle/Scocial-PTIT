@@ -106,6 +106,8 @@ export interface UpdatePreferencesInput {
   ageMax: number;
   maxDistance?: number;
   gender?: DatingGenderPreference;
+  preferredMajors?: string[];
+  sameYearOnly?: boolean;
 }
 
 // --- Discovery ---

@@ -55,6 +55,8 @@ const PREFERENCES_SELECT = {
   ageMax: true,
   maxDistance: true,
   gender: true,
+  preferredMajors: true,
+  sameYearOnly: true,
   updatedAt: true,
 } as const;
 
@@ -66,8 +68,15 @@ export class ProfileService {
       select: { dateOfBirth: true },
     });
 
-    if (!user || !user.dateOfBirth) {
-      throw new AppError(ERROR_MESSAGES.AGE_TOO_YOUNG, HTTP_STATUS.BAD_REQUEST);
+    if (!user) {
+      throw new AppError('Không tìm thấy người dùng', HTTP_STATUS.BAD_REQUEST);
+    }
+
+    if (!user.dateOfBirth) {
+      throw new AppError(
+        'Vui lòng cập nhật ngày sinh trước khi sử dụng tính năng hẹn hò',
+        HTTP_STATUS.BAD_REQUEST,
+      );
     }
 
     if (!validateAge(user.dateOfBirth)) {

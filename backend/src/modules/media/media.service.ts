@@ -43,10 +43,12 @@ export class MediaService {
       await fs.writeFile(uploadPath, file.buffer);
     }
 
-    // Save to database
+    const relativeUrl = `/uploads/${filename}`;
+    const fullUrl = `${config.baseUrl}${relativeUrl}`;
+
     const media = await prisma.media.create({
       data: {
-        url: `/uploads/${filename}`,
+        url: fullUrl,
         type: this.getMediaType(file.mimetype),
         filename,
         mimeType: file.mimetype,

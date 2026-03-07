@@ -1,20 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../../constants/dating/strings';
-import { SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../../../constants/dating';
+import { DATING_STRINGS, SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../../../constants/dating';
 
 const layout = DATING_LAYOUT.preferences.bottomBar;
 
 interface PreferencesBottomBarProps {
   onFinish: () => void;
+  loading?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFinish }) => {
+export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFinish, loading = false }) => {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -33,19 +33,26 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFi
     <View style={[styles.wrapper, { paddingHorizontal: layout.paddingHorizontal }]}>
       <View style={[styles.gradient, { paddingTop: layout.paddingTop, paddingBottom: layout.paddingBottom }]}>
         <AnimatedPressable
-          style={[styles.button, animatedStyle]}
+          style={[styles.button, animatedStyle, loading && { opacity: 0.7 }]}
           onPress={onFinish}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          disabled={loading}
           accessibilityRole="button"
           accessibilityLabel={DATING_STRINGS.preferences.finish}
         >
-          <Text style={styles.buttonText}>{DATING_STRINGS.preferences.finish}</Text>
-          <MaterialIcons
-            name="check-circle"
-            size={layout.buttonIconSize}
-            color={DATING_COLORS.preferences.buttonText}
-          />
+          {loading ? (
+            <ActivityIndicator color={DATING_COLORS.preferences.buttonText} />
+          ) : (
+            <>
+              <Text style={styles.buttonText}>{DATING_STRINGS.preferences.finish}</Text>
+              <MaterialIcons
+                name="check-circle"
+                size={layout.buttonIconSize}
+                color={DATING_COLORS.preferences.buttonText}
+              />
+            </>
+          )}
         </AnimatedPressable>
       </View>
     </View>

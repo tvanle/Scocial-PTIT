@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating';
 import { RootStackParamList } from '../../../types';
+import datingService from '../../../services/dating/datingService';
 import {
   OnboardingStepHeader,
   PreferencesAgeRangeSection,
@@ -31,6 +32,7 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   const [selectedMajors, setSelectedMajors] = useState<string[]>([]);
   const [pickerValue, setPickerValue] = useState('');
   const [sameYearOnly, setSameYearOnly] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleAddMajor = useCallback((major: string) => {
@@ -41,10 +43,24 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   const handleRemoveMajor = useCallback((major: string) => {
     setSelectedMajors((prev) => prev.filter((m) => m !== major));
   }, []);
-  const handleFinish = useCallback(() => {
-    // TODO: Call API updatePreferences(ageMin, ageMax, ...) then navigate to Main or Dating home
-    navigation.getParent()?.navigate('Main');
-  }, [navigation]);
+  const handleFinish = useCallback(async () => {
+    setLoading(true);
+    try {
+      await datingService.updatePreferences({
+        ageMin: ageRange.min,
+        ageMax: ageRange.max,
+        preferredMajors: selectedMajors,
+        sameYearOnly,
+      });
+      navigation.navigate('DatingIncoming');
+    } catch (err: any) {
+      const msg =
+        err?.message || DATING_STRINGS.preferences.saveFailed;
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [ageRange, selectedMajors, sameYearOnly, navigation]);
 
   return (
     <View style={styles.wrapper}>
@@ -101,7 +117,7 @@ const DatingPreferencesSetupScreen: React.FC = () => {
           </View>
         </ScrollView>
       </SafeAreaView>
-      <PreferencesBottomBar onFinish={handleFinish} />
+      <PreferencesBottomBar onFinish={handleFinish} loading={loading} />
     </View>
   );
 };
