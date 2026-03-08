@@ -13,6 +13,8 @@ export {
 
 export {
   PreferencesAgeRangeSection,
+  PreferencesGenderSection,
+  PreferencesDistanceSection,
   PreferencesMajorSection,
   PreferencesSameYearSection,
   PreferencesPrivacyNote,

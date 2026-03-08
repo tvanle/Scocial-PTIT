@@ -10,11 +10,16 @@ const layout = DATING_LAYOUT.preferences.bottomBar;
 interface PreferencesBottomBarProps {
   onFinish: () => void;
   loading?: boolean;
+  buttonLabel?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFinish, loading = false }) => {
+export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
+  onFinish,
+  loading = false,
+  buttonLabel = DATING_STRINGS.preferences.finish,
+}) => {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -39,13 +44,13 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({ onFi
           onPressOut={handlePressOut}
           disabled={loading}
           accessibilityRole="button"
-          accessibilityLabel={DATING_STRINGS.preferences.finish}
+          accessibilityLabel={buttonLabel}
         >
           {loading ? (
             <ActivityIndicator color={DATING_COLORS.preferences.buttonText} />
           ) : (
             <>
-              <Text style={styles.buttonText}>{DATING_STRINGS.preferences.finish}</Text>
+              <Text style={styles.buttonText}>{buttonLabel}</Text>
               <MaterialIcons
                 name="check-circle"
                 size={layout.buttonIconSize}

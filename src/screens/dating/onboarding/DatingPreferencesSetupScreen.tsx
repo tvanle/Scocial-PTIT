@@ -10,12 +10,15 @@ import datingService from '../../../services/dating/datingService';
 import {
   OnboardingStepHeader,
   PreferencesAgeRangeSection,
+  PreferencesGenderSection,
+  PreferencesDistanceSection,
   PreferencesMajorSection,
   PreferencesSameYearSection,
   PreferencesPrivacyNote,
   PreferencesBottomBar,
   type AgeRangeValue,
 } from './components';
+import type { DatingGenderPreference } from '../../../types/dating';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingPreferencesSetup'>;
 
@@ -25,6 +28,8 @@ const colors = DATING_COLORS.preferences;
 
 const DatingPreferencesSetupScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const [preferredGender, setPreferredGender] = useState<DatingGenderPreference | null>(null);
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
   const [ageRange, setAgeRange] = useState<AgeRangeValue>({
     min: layoutAge.ageMinDefault,
     max: layoutAge.ageMaxDefault,
@@ -49,6 +54,8 @@ const DatingPreferencesSetupScreen: React.FC = () => {
       await datingService.updatePreferences({
         ageMin: ageRange.min,
         ageMax: ageRange.max,
+        gender: preferredGender ?? undefined,
+        maxDistance: maxDistanceKm,
         preferredMajors: selectedMajors,
         sameYearOnly,
       });
@@ -60,7 +67,7 @@ const DatingPreferencesSetupScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [ageRange, selectedMajors, sameYearOnly, navigation]);
+  }, [ageRange, preferredGender, maxDistanceKm, selectedMajors, sameYearOnly, navigation]);
 
   return (
     <View style={styles.wrapper}>
@@ -92,6 +99,14 @@ const DatingPreferencesSetupScreen: React.FC = () => {
             <Text style={[styles.introHint, { color: colors.sectionHint }]}>
               {DATING_STRINGS.preferences.findMatchHint}
             </Text>
+          </View>
+
+          <View>
+            <PreferencesGenderSection value={preferredGender} onChange={setPreferredGender} />
+          </View>
+
+          <View>
+            <PreferencesDistanceSection value={maxDistanceKm} onChange={setMaxDistanceKm} />
           </View>
 
           <View>
