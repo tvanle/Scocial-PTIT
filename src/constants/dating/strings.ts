@@ -141,6 +141,10 @@ export const DATING_STRINGS = {
     filterSectionSameYear: 'Cùng năm học',
     emptyTitle: 'Hết người rồi!',
     emptySubtitle: 'Quay lại sau hoặc mở rộng tùy chọn tìm kiếm',
+    emptyStateTitle: "You've explored all profiles for today!",
+    emptyStateSubtitle:
+      'Check back later or expand your search filters to find more connections in the community.',
+    emptyStateRefinePreferences: 'Refine Preferences',
     profileMissingTitle: 'Cần hoàn thành hồ sơ',
     profileMissingSubtitle: 'Hoàn thành hồ sơ hẹn hò để bắt đầu khám phá',
     matchTitle: "It's a Match! 🎉",

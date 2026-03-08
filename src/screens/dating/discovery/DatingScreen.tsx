@@ -14,6 +14,7 @@ import {
   DiscoveryActions,
   DiscoveryBottomNav,
   DiscoveryFilterSheet,
+  DiscoveryEmptyState,
 } from './components';
 import { useDiscoveryFeed } from './hooks/useDiscoveryFeed';
 import { useDatingLocation } from './hooks/useDatingLocation';
@@ -80,6 +81,10 @@ const DatingScreen: React.FC = React.memo(() => {
     setFilterVisible(true);
   }, []);
 
+  const handleCloseFilter = useCallback(() => {
+    setFilterVisible(false);
+  }, []);
+
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -96,10 +101,7 @@ const DatingScreen: React.FC = React.memo(() => {
               <Text style={styles.emptySubtitle}>{strings.profileMissingSubtitle}</Text>
             </View>
           ) : isEmpty ? (
-            <View style={styles.center}>
-              <Text style={styles.emptyTitle}>{strings.emptyTitle}</Text>
-              <Text style={styles.emptySubtitle}>{strings.emptySubtitle}</Text>
-            </View>
+            <DiscoveryEmptyState onRefinePreferences={handleFilterPress} />
           ) : profileData ? (
             <DiscoverySwipeableCard
               key={profileData.userId}
@@ -130,7 +132,7 @@ const DatingScreen: React.FC = React.memo(() => {
       <DiscoveryBottomNav />
       <DiscoveryFilterSheet
         visible={filterVisible}
-        onClose={() => setFilterVisible(false)}
+        onClose={handleCloseFilter}
         onFilterApplied={refresh}
       />
     </View>
