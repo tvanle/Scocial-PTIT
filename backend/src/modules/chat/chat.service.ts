@@ -181,6 +181,9 @@ export class ChatService {
       skip: skip,
       take: l,
       include: {
+        sender: {
+          select: { id: true, fullName: true, avatar: true },
+        },
         readBy: true,
       },
     });
@@ -226,6 +229,9 @@ export class ChatService {
           mediaUrl,
         },
         include: {
+          sender: {
+            select: { id: true, fullName: true, avatar: true },
+          },
           readBy: true,
         },
       });
@@ -253,6 +259,9 @@ export class ChatService {
       return tx.message.findUnique({
         where: { id: message.id },
         include: {
+          sender: {
+            select: { id: true, fullName: true, avatar: true },
+          },
           readBy: true,
         },
       });
