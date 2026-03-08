@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,288 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, RootStackParamList, UserProfile } from '../../types';
+import { Post, Media, RootStackParamList, UserProfile } from '../../types';
 import { userService } from '../../services/user/userService';
 import { postService } from '../../services/post/postService';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import { DEFAULT_AVATAR } from '../../constants/strings';
+import { usePostActions } from '../../hooks/usePostActions';
+import { BottomMenu } from '../../components/common';
+import type { BottomMenuItem } from '../../components/common';
 
 type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Image layout component (same as HomeScreen)
+const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
+  if (!media || media.length === 0) return null;
+
+  if (media.length === 1) {
+    return (
+      <View style={imgStyles.singleContainer}>
+        <Image source={{ uri: media[0].url }} style={imgStyles.singleImage} resizeMode="cover" />
+      </View>
+    );
+  }
+
+  if (media.length === 2) {
+    return (
+      <View style={imgStyles.doubleContainer}>
+        <Image source={{ uri: media[0].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={imgStyles.tripleContainer}>
+      <Image source={{ uri: media[0].url }} style={imgStyles.tripleLeft} resizeMode="cover" />
+      <View style={imgStyles.tripleRight}>
+        <Image source={{ uri: media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+        <Image source={{ uri: media[2]?.url || media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+      </View>
+    </View>
+  );
+});
+
+const imgStyles = StyleSheet.create({
+  singleContainer: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+  },
+  singleImage: {
+    width: '100%',
+    height: 280,
+    backgroundColor: Colors.gray100,
+  },
+  doubleContainer: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+  },
+  doubleImage: {
+    flex: 1,
+    height: 220,
+    backgroundColor: Colors.gray100,
+  },
+  tripleContainer: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+    height: 300,
+  },
+  tripleLeft: {
+    flex: 1,
+    backgroundColor: Colors.gray100,
+  },
+  tripleRight: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  tripleRightImage: {
+    flex: 1,
+    backgroundColor: Colors.gray100,
+  },
+});
+
+// Full PostCard component (same style as HomeScreen)
+const UserProfilePostCard: React.FC<{
+  post: Post;
+  onLike: () => void;
+  onComment: () => void;
+  onRepost: () => void;
+  onShare: () => void;
+  onProfile: () => void;
+  onMore: () => void;
+}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  const timeAgo = formatTimeAgo(post.createdAt);
+
+  return (
+    <View style={cardStyles.postCard}>
+      {/* User Header */}
+      <View style={cardStyles.postHeader}>
+        <TouchableOpacity onPress={onProfile} style={cardStyles.postHeaderLeft}>
+          <Image
+            source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
+            style={cardStyles.postAvatar}
+          />
+          <View style={cardStyles.postHeaderInfo}>
+            <View style={cardStyles.usernameRow}>
+              <Text style={cardStyles.username}>{post.author.fullName}</Text>
+              {post.author.isVerified && (
+                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
+              )}
+            </View>
+            <Text style={cardStyles.timeAgo}>{timeAgo}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onMore} style={cardStyles.moreButton}>
+          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
+        <Text style={cardStyles.postContent}>{post.content}</Text>
+
+        {post.media && post.media.length > 0 && (
+          <PostImages media={post.media} />
+        )}
+
+        {(post.likesCount > 0 || post.commentsCount > 0) && (
+          <Text style={cardStyles.statsText}>
+            {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
+            {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
+            {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      {/* Interaction Bar */}
+      <View style={cardStyles.interactionBar}>
+        <View style={cardStyles.interactionLeft}>
+          <TouchableOpacity onPress={onLike} style={cardStyles.interactionButton}>
+            <Ionicons
+              name={post.isLiked ? 'heart' : 'heart-outline'}
+              size={22}
+              color={post.isLiked ? Colors.like : Colors.textSecondary}
+            />
+            {post.likesCount > 0 && (
+              <Text style={[cardStyles.interactionCount, post.isLiked && { color: Colors.like }]}>
+                {post.likesCount}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onComment} style={cardStyles.interactionButton}>
+            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
+            {post.commentsCount > 0 && (
+              <Text style={cardStyles.interactionCount}>{post.commentsCount}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onRepost} style={cardStyles.interactionButton}>
+            <Ionicons
+              name="repeat-outline"
+              size={22}
+              color={post.isShared ? Colors.repost : Colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onShare} style={cardStyles.interactionButton}>
+            <Ionicons name="paper-plane-outline" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity>
+          <Ionicons
+            name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
+            size={20}
+            color={post.isSaved ? Colors.primary : Colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+});
+
+const cardStyles = StyleSheet.create({
+  postCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    ...Shadow.sm,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  postHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  postAvatar: {
+    width: Layout.avatarSize.md,
+    height: Layout.avatarSize.md,
+    borderRadius: Layout.avatarSize.md / 2,
+    backgroundColor: Colors.gray200,
+  },
+  postHeaderInfo: {
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  username: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  timeAgo: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  moreButton: {
+    padding: Spacing.sm,
+  },
+  postContent: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    lineHeight: 22,
+    marginTop: Spacing.md,
+  },
+  statsText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
+  },
+  interactionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  interactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xl,
+  },
+  interactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  interactionCount: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
+  },
+});
 
 const UserProfileScreen: React.FC = () => {
   const navigation = useNavigation<UserProfileNavigationProp>();
@@ -37,6 +305,10 @@ const UserProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
+  const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
+  const needsRefresh = useRef(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuItems, setMenuItems] = useState<BottomMenuItem[]>([]);
 
   const fetchData = async () => {
     try {
@@ -62,6 +334,15 @@ const UserProfileScreen: React.FC = () => {
     fetchData();
   }, [userId]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (needsRefresh.current) {
+        needsRefresh.current = false;
+        fetchData();
+      }
+    }, [userId])
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchData();
@@ -74,7 +355,6 @@ const UserProfileScreen: React.FC = () => {
     const wasFollowing = profileUser.isFollowing;
     const currentFollowersCount = profileUser.followersCount || 0;
 
-    // Optimistic update
     setProfileUser({
       ...profileUser,
       isFollowing: !wasFollowing,
@@ -89,7 +369,6 @@ const UserProfileScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to follow/unfollow:', error);
-      // Revert on error
       setProfileUser({
         ...profileUser,
         isFollowing: wasFollowing,
@@ -103,6 +382,130 @@ const UserProfileScreen: React.FC = () => {
     if (!profileUser) return;
     navigation.navigate('ChatRoom', { conversationId: userId });
   }, [profileUser, navigation, userId]);
+
+  // Post action handlers
+  const updatePostInList = useCallback((postId: string, updater: (post: Post) => Post) => {
+    setPosts(prev => prev.map(p => p.id === postId ? updater(p) : p));
+    setSharedPosts(prev => prev.map(p => p.id === postId ? updater(p) : p));
+  }, []);
+
+  const handleLike = useCallback(async (postId: string) => {
+    const allPosts = [...posts, ...sharedPosts];
+    const post = allPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    updatePostInList(postId, p => ({
+      ...p,
+      isLiked: !p.isLiked,
+      likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
+    }));
+
+    const success = await handleToggleLike(postId, post.isLiked);
+    if (!success) {
+      updatePostInList(postId, p => ({
+        ...p,
+        isLiked: !p.isLiked,
+        likesCount: p.isLiked ? p.likesCount + 1 : p.likesCount - 1,
+      }));
+    }
+  }, [posts, sharedPosts, handleToggleLike, updatePostInList]);
+
+  const handleRepostToggle = useCallback(async (postId: string) => {
+    const allPosts = [...posts, ...sharedPosts];
+    const post = allPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const wasShared = post.isShared;
+    updatePostInList(postId, p => ({
+      ...p,
+      isShared: !wasShared,
+      sharesCount: wasShared ? p.sharesCount - 1 : p.sharesCount + 1,
+    }));
+
+    const success = await handleToggleRepost(postId, wasShared);
+    if (!success) {
+      updatePostInList(postId, p => ({
+        ...p,
+        isShared: wasShared,
+        sharesCount: wasShared ? p.sharesCount + 1 : p.sharesCount - 1,
+      }));
+    }
+  }, [posts, sharedPosts, handleToggleRepost, updatePostInList]);
+
+  const handleComment = useCallback((postId: string) => {
+    needsRefresh.current = true;
+    navigation.navigate('PostDetail', { postId });
+  }, [navigation]);
+
+  const handleProfile = useCallback((authorId: string) => {
+    if (authorId !== userId) {
+      navigation.push('UserProfile', { userId: authorId });
+    }
+  }, [navigation, userId]);
+
+  const handleMore = useCallback((postId: string) => {
+    const allPosts = [...posts, ...sharedPosts];
+    const post = allPosts.find(p => p.id === postId);
+    const isOwnPost = post?.author.id === currentUser?.id;
+
+    const items: BottomMenuItem[] = [];
+
+    if (isOwnPost) {
+      items.push({
+        label: 'Xóa bài viết',
+        icon: 'trash-outline',
+        destructive: true,
+        onPress: async () => {
+          try {
+            await postService.deletePost(postId);
+            setPosts(prev => prev.filter(p => p.id !== postId));
+            setSharedPosts(prev => prev.filter(p => p.id !== postId));
+          } catch {
+            // silently fail
+          }
+        },
+      });
+    } else {
+      items.push(
+        {
+          label: 'Ẩn bài viết',
+          icon: 'eye-off-outline',
+          onPress: () => {
+            setPosts(prev => prev.filter(p => p.id !== postId));
+            setSharedPosts(prev => prev.filter(p => p.id !== postId));
+          },
+        },
+        {
+          label: 'Báo cáo',
+          icon: 'flag-outline',
+          destructive: true,
+          onPress: async () => {
+            try {
+              await postService.reportPost(postId, 'Nội dung không phù hợp');
+            } catch {
+              // silently fail
+            }
+          },
+        },
+      );
+    }
+
+    setMenuItems(items);
+    setMenuVisible(true);
+  }, [posts, sharedPosts, currentUser]);
+
+  const renderPostCard = (post: Post) => (
+    <UserProfilePostCard
+      key={post.id}
+      post={post}
+      onLike={() => handleLike(post.id)}
+      onComment={() => handleComment(post.id)}
+      onRepost={() => handleRepostToggle(post.id)}
+      onShare={() => handleShare(post.author.fullName)}
+      onProfile={() => handleProfile(post.author.id)}
+      onMore={() => handleMore(post.id)}
+    />
+  );
 
   if (loading || !profileUser) {
     return (
@@ -148,8 +551,8 @@ const UserProfileScreen: React.FC = () => {
           <View style={styles.profileTop}>
             <View style={styles.profileInfo}>
               <Text style={styles.fullName}>{profileUser.fullName}</Text>
-              <View style={styles.usernameRow}>
-                <Text style={styles.username}>{profileUser.studentId}</Text>
+              <View style={styles.profileUsernameRow}>
+                <Text style={styles.profileUsername}>{profileUser.studentId}</Text>
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>ptit.edu.vn</Text>
                 </View>
@@ -164,7 +567,7 @@ const UserProfileScreen: React.FC = () => {
           {profileUser.bio && <Text style={styles.bio}>{profileUser.bio}</Text>}
 
           <Text style={styles.followers}>
-            {profileUser.followersCount || 0} nguoi theo doi
+            {profileUser.followersCount || 0} người theo dõi
           </Text>
 
           {/* Action Buttons */}
@@ -174,11 +577,11 @@ const UserProfileScreen: React.FC = () => {
               onPress={handleFollow}
             >
               <Text style={profileUser.isFollowing ? styles.followingButtonText : styles.followButtonText}>
-                {profileUser.isFollowing ? 'Dang theo doi' : 'Theo doi'}
+                {profileUser.isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleMessage}>
-              <Text style={styles.actionButtonText}>Nhan tin</Text>
+              <Text style={styles.actionButtonText}>Nhắn tin</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -198,7 +601,7 @@ const UserProfileScreen: React.FC = () => {
             onPress={() => setActiveTab('replies')}
           >
             <Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>
-              Tra loi
+              Trả lời
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -215,61 +618,38 @@ const UserProfileScreen: React.FC = () => {
         <View style={styles.postsSection}>
           {activeTab === 'posts' ? (
             posts.length > 0 ? (
-              posts.map(post => (
-                <TouchableOpacity
-                  key={post.id}
-                  style={styles.postItem}
-                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-                >
-                  <View style={styles.postContent}>
-                    <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-                    <Text style={styles.postMeta}>
-                      {post.commentsCount} tra loi · {post.likesCount} luot thich
-                    </Text>
-                  </View>
-                  {post.media && post.media.length > 0 && (
-                    <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
-                  )}
-                </TouchableOpacity>
-              ))
+              posts.map(renderPostCard)
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Chua co bai viet nao</Text>
+                <Ionicons name="document-text-outline" size={48} color={Colors.gray300} />
+                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
               </View>
             )
           ) : activeTab === 'reposts' ? (
             sharedPosts.length > 0 ? (
-              sharedPosts.map(post => (
-                <TouchableOpacity
-                  key={post.id}
-                  style={styles.postItem}
-                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-                >
-                  <View style={styles.postContent}>
-                    <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-                    <Text style={styles.postMeta}>
-                      {post.commentsCount} tra loi · {post.likesCount} luot thich
-                    </Text>
-                  </View>
-                  {post.media && post.media.length > 0 && (
-                    <Image source={{ uri: post.media[0].url }} style={styles.postThumbnail} />
-                  )}
-                </TouchableOpacity>
-              ))
+              sharedPosts.map(renderPostCard)
             ) : (
               <View style={styles.emptyState}>
+                <Ionicons name="repeat-outline" size={48} color={Colors.gray300} />
                 <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
               </View>
             )
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Chua co tra loi nao</Text>
+              <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
+              <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
             </View>
           )}
         </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <BottomMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        items={menuItems}
+      />
     </SafeAreaView>
   );
 };
@@ -307,11 +687,11 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
-  usernameRow: {
+  profileUsernameRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  username: {
+  profileUsername: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
   },
@@ -407,33 +787,6 @@ const styles = StyleSheet.create({
   postsSection: {
     paddingTop: Spacing.sm,
   },
-  postItem: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
-  },
-  postContent: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
-  postText: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-  },
-  postMeta: {
-    fontSize: FontSize.sm,
-    color: Colors.gray500,
-    marginTop: Spacing.sm,
-  },
-  postThumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.gray100,
-  },
   emptyState: {
     padding: Spacing.huge,
     alignItems: 'center',
@@ -441,6 +794,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.md,
     color: Colors.gray400,
+    marginTop: Spacing.md,
   },
   loadingContainer: {
     flex: 1,
