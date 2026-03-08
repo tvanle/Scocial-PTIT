@@ -58,8 +58,8 @@ export const updatePreferencesSchema = z
   .object({
     ageMin: z.number().int().min(18).max(99),
     ageMax: z.number().int().min(18).max(99),
-    maxDistance: z.number().int().min(1).max(500, 'Khoảng cách tối đa 500 km').optional(),
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+    maxDistance: z.number().int().min(1).max(500, 'Khoảng cách tối đa 500 km').nullable().optional(),
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullable().optional(),
     preferredMajors: z.array(z.string()).optional(),
     sameYearOnly: z.boolean().optional(),
   })

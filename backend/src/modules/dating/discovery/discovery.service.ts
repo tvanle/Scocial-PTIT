@@ -13,6 +13,8 @@ const DISCOVERY_CONFIG = {
 const CANDIDATE_SELECT = {
   userId: true,
   bio: true,
+  latitude: true,
+  longitude: true,
   photos: {
     select: { url: true, order: true },
     orderBy: { order: 'asc' as const },
@@ -32,6 +34,25 @@ const CANDIDATE_SELECT = {
     select: { education: true },
   },
 } as const;
+
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+}
 
 export class DiscoveryService {
   async getCandidates(userId: string, page?: string, limit?: string) {
@@ -77,7 +98,7 @@ export class DiscoveryService {
       ...new Set([userId, ...swipedUsers.map((s) => s.toUserId), ...blockedIds]),
     ];
 
-    const where: Prisma.DatingProfileWhereInput = {
+    const whereBase: Prisma.DatingProfileWhereInput = {
       userId: { notIn: excludeIds },
       isActive: true,
       photos: { some: {} },
@@ -87,6 +108,7 @@ export class DiscoveryService {
     const hasPreferences = !!prefs;
 
     if (hasPreferences) {
+      // Lọc theo giới tính (và độ tuổi) trước ở DB, sau đó mới tính điểm theo preference khác trong fetchWithScoring
       const userFilter: Prisma.UserWhereInput = {};
 
       if (prefs.gender) {
@@ -108,15 +130,17 @@ export class DiscoveryService {
         }
       }
 
-      if (Object.keys(userFilter).length > 0) {
-        where.user = userFilter;
-      }
-    }
+      const whereWithPrefs =
+        Object.keys(userFilter).length > 0
+          ? { ...whereBase, user: userFilter }
+          : whereBase;
 
-    if (hasPreferences) {
-      return this.fetchWithScoring(where, prefs, myUser?.studentId ?? null, myProfile, p, l);
+      const countWithPrefs = await prisma.datingProfile.count({ where: whereWithPrefs });
+      const whereToUse = countWithPrefs > 0 ? whereWithPrefs : whereBase;
+
+      return this.fetchWithScoring(whereToUse, prefs, myUser?.studentId ?? null, myProfile, p, l);
     }
-    return this.fetchDefault(where, p, l);
+    return this.fetchDefault(whereBase, p, l, myProfile);
   }
 
   private async fetchWithScoring(
@@ -149,7 +173,23 @@ export class DiscoveryService {
     });
 
     const start = (page - 1) * limit;
-    const paged = scored.slice(start, start + limit).map(({ score, ...rest }) => rest);
+    const paged = scored.slice(start, start + limit).map(({ score, ...rest }) => {
+      const candidate = rest as { latitude?: number | null; longitude?: number | null };
+      const distanceKm: number | null =
+        myProfile.latitude != null &&
+        myProfile.longitude != null &&
+        candidate.latitude != null &&
+        candidate.longitude != null
+          ? haversineKm(
+              myProfile.latitude,
+              myProfile.longitude,
+              candidate.latitude,
+              candidate.longitude,
+            )
+          : null;
+      const { latitude, longitude, ...out } = candidate;
+      return { ...out, distanceKm };
+    });
 
     return {
       data: paged,
@@ -166,10 +206,11 @@ export class DiscoveryService {
     where: Prisma.DatingProfileWhereInput,
     page: number,
     limit: number,
+    myProfile: { latitude: number | null; longitude: number | null },
   ) {
     const skip = (page - 1) * limit;
 
-    const [candidates, total] = await Promise.all([
+    const [rawCandidates, total] = await Promise.all([
       prisma.datingProfile.findMany({
         where,
         select: CANDIDATE_SELECT,
@@ -179,6 +220,18 @@ export class DiscoveryService {
       }),
       prisma.datingProfile.count({ where }),
     ]);
+
+    const myLat = myProfile.latitude;
+    const myLng = myProfile.longitude;
+
+    const candidates = rawCandidates.map((c: { latitude?: number | null; longitude?: number | null }) => {
+      const distanceKm: number | null =
+        myLat != null && myLng != null && c.latitude != null && c.longitude != null
+          ? haversineKm(myLat, myLng, c.latitude, c.longitude)
+          : null;
+      const { latitude, longitude, ...rest } = c;
+      return { ...rest, distanceKm };
+    });
 
     return {
       data: candidates,
