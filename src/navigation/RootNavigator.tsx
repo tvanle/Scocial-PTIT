@@ -18,6 +18,7 @@ import {
   DatingOnboardingIntroScreen,
   DatingProfileSetupScreen,
   DatingPreferencesSetupScreen,
+  DatingLocationPermissionScreen,
 } from '../screens/dating/onboarding';
 import { DatingScreen } from '../screens/dating/discovery';
 import { DatingProfileDetailScreen } from '../screens/dating/profile-detail';
@@ -86,6 +87,7 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="DatingOnboardingIntro" component={DatingOnboardingIntroScreen} />
             <Stack.Screen name="DatingProfileSetup" component={DatingProfileSetupScreen} />
             <Stack.Screen name="DatingPreferencesSetup" component={DatingPreferencesSetupScreen} />
+            <Stack.Screen name="DatingLocationPermission" component={DatingLocationPermissionScreen} />
             <Stack.Screen name="DatingDiscovery" component={DatingScreen} />
             <Stack.Screen
               name="DatingProfileDetail"

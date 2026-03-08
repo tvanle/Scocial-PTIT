@@ -59,7 +59,7 @@ const DatingPreferencesSetupScreen: React.FC = () => {
         preferredMajors: selectedMajors,
         sameYearOnly,
       });
-      navigation.navigate('DatingDiscovery');
+      navigation.navigate('DatingLocationPermission');
     } catch (err: any) {
       const msg =
         err?.message || DATING_STRINGS.preferences.saveFailed;
