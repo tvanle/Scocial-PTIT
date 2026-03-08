@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -6,13 +6,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_SPACING } from '../../../constants/dating/tokens';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
+import { calculateAge } from '../../../utils/dating';
 import {
   DiscoveryHeader,
   DiscoveryProfileCard,
+  DiscoverySwipeableCard,
   DiscoveryActions,
   DiscoveryBottomNav,
+  DiscoveryFilterSheet,
 } from './components';
 import { useDiscoveryFeed } from './hooks/useDiscoveryFeed';
+import { useDatingLocation } from './hooks/useDatingLocation';
 import type { RootStackParamList } from '../../../types';
 
 const colors = DATING_COLORS.discovery;
@@ -21,27 +25,21 @@ const strings = DATING_STRINGS.discovery;
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-function calculateAge(dob: string | null | undefined): number {
-  if (!dob) return 0;
-  const birth = new Date(dob);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-  return age;
-}
-
-const DatingScreen: React.FC = () => {
+const DatingScreen: React.FC = React.memo(() => {
   const navigation = useNavigation<Nav>();
+  const [filterVisible, setFilterVisible] = useState(false);
   const {
     currentCard,
     isLoading,
     isEmpty,
+    isProfileMissing,
     swipe,
     isSwiping,
     isMatched,
     resetMatch,
+    refresh,
   } = useDiscoveryFeed();
+  const { requestAndUpdateLocation, isUpdating: isLocationUpdating } = useDatingLocation();
 
   useEffect(() => {
     if (!isMatched) return;
@@ -59,6 +57,7 @@ const DatingScreen: React.FC = () => {
       bio: currentCard.bio ?? '',
       imageUrl: currentCard.photos[0]?.url ?? '',
       interests: [] as { icon: string; label: string }[],
+      distanceKm: currentCard.distanceKm,
     };
   }, [currentCard]);
 
@@ -77,59 +76,72 @@ const DatingScreen: React.FC = () => {
     navigation.navigate('DatingProfileDetail', { profile: currentCard });
   }, [currentCard, navigation]);
 
+  const handleFilterPress = useCallback(() => {
+    setFilterVisible(true);
+  }, []);
+
   return (
-    <View style={[styles.wrapper, { backgroundColor: colors.background }]}>
+    <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <DiscoveryHeader />
+        <DiscoveryHeader onFilterPress={handleFilterPress} />
 
         <View style={styles.cardContainer}>
           {isLoading && !currentCard ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={colors.nameText} />
             </View>
+          ) : isProfileMissing ? (
+            <View style={styles.center}>
+              <Text style={styles.emptyTitle}>{strings.profileMissingTitle}</Text>
+              <Text style={styles.emptySubtitle}>{strings.profileMissingSubtitle}</Text>
+            </View>
           ) : isEmpty ? (
             <View style={styles.center}>
-              <Text style={[styles.emptyTitle, { fontSize: layout.empty.titleSize, color: colors.emptyTitle }]}>
-                {strings.emptyTitle}
-              </Text>
-              <Text
-                style={[
-                  styles.emptySubtitle,
-                  {
-                    fontSize: layout.empty.subtitleSize,
-                    color: colors.emptySubtitle,
-                    paddingHorizontal: layout.empty.subtitlePaddingH,
-                    marginTop: layout.empty.subtitleMarginTop,
-                  },
-                ]}
-              >
-                {strings.emptySubtitle}
-              </Text>
+              <Text style={styles.emptyTitle}>{strings.emptyTitle}</Text>
+              <Text style={styles.emptySubtitle}>{strings.emptySubtitle}</Text>
             </View>
           ) : profileData ? (
-            <DiscoveryProfileCard profile={profileData} onPress={handleCardPress} />
+            <DiscoverySwipeableCard
+              key={profileData.userId}
+              onSwipeLeft={handleSkip}
+              onSwipeRight={handleLike}
+              onPress={handleCardPress}
+              disabled={isSwiping}
+            >
+              <DiscoveryProfileCard
+                profile={profileData}
+                onRequestLocation={requestAndUpdateLocation}
+                isLocationUpdating={isLocationUpdating}
+              />
+            </DiscoverySwipeableCard>
           ) : null}
         </View>
 
-        {!isEmpty && (
+        {!isEmpty && !isProfileMissing && (
           <DiscoveryActions onSkip={handleSkip} onLike={handleLike} />
         )}
 
         {isMatched && (
-          <View style={[styles.matchOverlay, { backgroundColor: colors.matchOverlayBg }]}>
-            <Text style={[styles.matchText, { fontSize: layout.match.textSize, color: colors.matchText }]}>
-              {strings.matchTitle}
-            </Text>
+          <View style={styles.matchOverlay}>
+            <Text style={styles.matchText}>{strings.matchTitle}</Text>
           </View>
         )}
       </SafeAreaView>
       <DiscoveryBottomNav />
+      <DiscoveryFilterSheet
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        onFilterApplied={refresh}
+      />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1 },
+  wrapper: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   safeArea: { flex: 1 },
   cardContainer: {
     flex: 1,
@@ -137,8 +149,18 @@ const styles = StyleSheet.create({
     paddingVertical: DATING_SPACING.lg,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyTitle: { fontWeight: '700' },
-  emptySubtitle: { textAlign: 'center' },
+  emptyTitle: {
+    fontWeight: '700',
+    fontSize: layout.empty.titleSize,
+    color: colors.emptyTitle,
+  },
+  emptySubtitle: {
+    textAlign: 'center',
+    fontSize: layout.empty.subtitleSize,
+    color: colors.emptySubtitle,
+    paddingHorizontal: layout.empty.subtitlePaddingH,
+    marginTop: layout.empty.subtitleMarginTop,
+  },
   matchOverlay: {
     position: 'absolute',
     top: 0,
@@ -147,8 +169,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.matchOverlayBg,
   },
-  matchText: { fontWeight: '800' },
+  matchText: {
+    fontWeight: '800',
+    fontSize: layout.match.textSize,
+    color: colors.matchText,
+  },
 });
 
 export default DatingScreen;
