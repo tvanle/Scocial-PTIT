@@ -49,6 +49,8 @@ export interface DatingPreferences {
   ageMax: number;
   maxDistance: number | null;
   gender: DatingGenderPreference | null;
+  preferredMajors?: string[];
+  sameYearOnly?: boolean;
   updatedAt: string;
 }
 
@@ -104,10 +106,20 @@ export interface UpdateLifestyleInput {
 export interface UpdatePreferencesInput {
   ageMin: number;
   ageMax: number;
-  maxDistance?: number;
-  gender?: DatingGenderPreference;
+  maxDistance?: number | null;
+  gender?: DatingGenderPreference | null;
   preferredMajors?: string[];
   sameYearOnly?: boolean;
+}
+
+/** Giá trị form bộ lọc dating, dùng chung cho discovery filter và màn khác */
+export interface DatingFilterValues {
+  preferredGender: DatingGenderPreference | null;
+  maxDistanceKm: number | null;
+  ageMin: number;
+  ageMax: number;
+  preferredMajor: string | null;
+  sameYearOnly: boolean;
 }
 
 // --- Discovery ---
@@ -121,6 +133,8 @@ export interface DiscoveryCard {
     lastActiveAt?: string | null;
   };
   lifestyle?: { education: string | null } | null;
+  /** Khoảng cách (km) từ user hiện tại; null khi chưa bật vị trí hoặc không tính được */
+  distanceKm?: number | null;
 }
 
 export interface DiscoveryQuery {
