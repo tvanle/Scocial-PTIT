@@ -74,8 +74,8 @@ export const ENDPOINTS = {
     GET_OR_CREATE_BY_USER: (userId: string) => `/chat/conversations/user/${userId}`,
     MESSAGES: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
     SEND_MESSAGE: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
-    DELETE_MESSAGE: (conversationId: string, messageId: string) =>
-      `/chat/conversations/${conversationId}/messages/${messageId}`,
+    DELETE_MESSAGE: (_conversationId: string, messageId: string) =>
+      `/chat/messages/${messageId}`,
     MARK_READ: (conversationId: string) => `/chat/conversations/${conversationId}/read`,
     TYPING: (conversationId: string) => `/chat/conversations/${conversationId}/typing`,
     CREATE_GROUP: '/chat/groups',

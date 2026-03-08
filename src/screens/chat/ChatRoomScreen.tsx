@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar, Header } from '../../components/common';
@@ -43,24 +42,26 @@ const ChatRoomScreen: React.FC = () => {
   const fetchData = async () => {
     try {
       let convId = conversationId;
+      let convData: Conversation | null = null;
 
       if (!convId && userId) {
         const conv = await chatService.getOrCreateConversation(userId);
         convId = conv.id;
+        convData = conv;
         setConversationId(convId);
-        setConversation(conv);
       }
 
       if (!convId) {
         throw new Error('No conversation ID or user ID provided');
       }
 
-      const [convData, messagesData] = await Promise.all([
-        conversation ? Promise.resolve(conversation) : chatService.getConversation(convId),
+      // Only fetch conversation if we don't already have it from getOrCreate
+      const [fetchedConv, messagesData] = await Promise.all([
+        convData ? Promise.resolve(convData) : chatService.getConversation(convId),
         chatService.getMessages(convId, { page: 1, limit: 50 }),
       ]);
-      setConversation(convData);
-      setMessages(messagesData.data.reverse());
+      setConversation(fetchedConv);
+      setMessages(messagesData.data);
 
       await chatService.markAsRead(convId);
     } catch (error) {
