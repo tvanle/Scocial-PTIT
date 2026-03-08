@@ -108,5 +108,7 @@ export const DATING_COLORS_SEMANTIC = {
   emptyTitleColor: '#333333',
   emptySubtitleColor: '#888888',
   matchOverlayBg: 'rgba(196, 30, 58, 0.85)',
+  swipeNopeBorder: '#E53935',
+  swipeLikeBorder: '#43A047',
   matchText: '#ffffff',
 } as const;

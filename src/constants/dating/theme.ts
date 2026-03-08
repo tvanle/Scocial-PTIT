@@ -10,15 +10,15 @@ import {
 /** Màu sắc dating – chỉ tham chiếu tokens, không hardcode hex */
 export const DATING_COLORS = {
   primary: C.primary,
-  light: {
+    light: {
     background: C.surface,
     surface: C.surface,
     textPrimary: C.lightTextPrimary,
     textSecondary: C.lightTextSecondary,
     textMuted: C.textMuted,
     border: C.primaryBorder,
-  },
-  dark: {
+    },
+    dark: {
     background: C.darkBackground,
     surface: C.darkSurface,
     textPrimary: C.darkTextPrimary,
@@ -86,6 +86,9 @@ export const DATING_COLORS = {
     privacyIcon: C.infoIcon,
     chipBg: C.chipSelectedBg,
     chipText: C.chipSelectedText,
+    chipUnselectedBg: C.chipUnselectedBg,
+    chipUnselectedText: C.chipUnselectedText,
+    chipUnselectedBorder: C.chipUnselectedBorder,
     buttonText: C.textInverse,
   },
   profileDetail: {
@@ -154,6 +157,8 @@ export const DATING_COLORS = {
     emptySubtitle: C.emptySubtitleColor,
     matchOverlayBg: C.matchOverlayBg,
     matchText: C.matchText,
+    swipeNopeBorder: C.swipeNopeBorder,
+    swipeLikeBorder: C.swipeLikeBorder,
   },
 };
 
@@ -410,6 +415,34 @@ export const DATING_LAYOUT = {
       modalTitleFontSize: DATING_FONT_SIZE.title,
       modalMaxHeight: L.modalMaxHeight,
     },
+    gender: {
+      cardPadding: DATING_SPACING.xl,
+      cardBorderRadius: DATING_RADIUS.xl,
+      cardMarginBottom: DATING_SPACING.lg,
+      titleFontSize: DATING_FONT_SIZE.bodyLarge,
+      hintFontSize: DATING_FONT_SIZE.small,
+      hintMarginTop: DATING_SPACING.xs,
+      hintLineHeight: L.hintLineHeight,
+      chipGap: DATING_SPACING.sm,
+      chipPaddingH: DATING_SPACING.lg,
+      chipPaddingV: DATING_SPACING.sm,
+      chipBorderRadius: DATING_RADIUS.full,
+      chipFontSize: DATING_FONT_SIZE.body,
+    },
+    distance: {
+      cardPadding: DATING_SPACING.xl,
+      cardBorderRadius: DATING_RADIUS.xl,
+      cardMarginBottom: DATING_SPACING.lg,
+      titleFontSize: DATING_FONT_SIZE.bodyLarge,
+      hintFontSize: DATING_FONT_SIZE.small,
+      hintMarginTop: DATING_SPACING.xs,
+      hintLineHeight: L.hintLineHeight,
+      chipGap: DATING_SPACING.sm,
+      chipPaddingH: DATING_SPACING.lg,
+      chipPaddingV: DATING_SPACING.sm,
+      chipBorderRadius: DATING_RADIUS.full,
+      chipFontSize: DATING_FONT_SIZE.body,
+    },
     sameYear: {
       cardPadding: DATING_SPACING.xl,
       cardBorderRadius: DATING_RADIUS.xl,
@@ -597,6 +630,20 @@ export const DATING_LAYOUT = {
     feed: {
       pageSize: L.discovery.pageSize,
       prefetchThreshold: L.discovery.prefetchThreshold,
+    },
+    swipe: {
+      thresholdRatio: L.discovery.swipeThresholdRatio,
+      rotationFactor: L.discovery.swipeRotationFactor,
+      exitDurationMs: L.discovery.swipeExitDurationMs,
+      overlayOpacityMax: L.discovery.swipeOverlayOpacityMax,
+      velocityThreshold: L.discovery.swipeVelocityThreshold,
+      exitMultiplier: L.discovery.swipeExitMultiplier,
+      returnRotationDeg: L.discovery.swipeReturnRotationDeg,
+      overlayPosition: L.discovery.swipeOverlayPosition,
+      interpolationRatio: L.discovery.swipeInterpolationRatio,
+      verticalDragFactor: L.discovery.swipeVerticalDragFactor,
+      springDamping: L.discovery.swipeSpringDamping,
+      springStiffness: L.discovery.swipeSpringStiffness,
     },
   },
 } as const;

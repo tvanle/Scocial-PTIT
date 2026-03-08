@@ -99,6 +99,18 @@ export const DATING_LAYOUT_TOKENS = {
     matchDurationMs: 2500,
     pageSize: 10,
     prefetchThreshold: 2,
+    swipeThresholdRatio: 0.25,
+    swipeRotationFactor: 0.08,
+    swipeExitDurationMs: 200,
+    swipeOverlayOpacityMax: 0.85,
+    swipeVelocityThreshold: 400,
+    swipeExitMultiplier: 1.2,
+    swipeReturnRotationDeg: 18,
+    swipeOverlayPosition: 24,
+    swipeInterpolationRatio: 0.4,
+    swipeVerticalDragFactor: 0.3,
+    swipeSpringDamping: 15,
+    swipeSpringStiffness: 150,
   },
 
   profileDetail: {
