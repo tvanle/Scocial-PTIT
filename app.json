@@ -30,7 +30,13 @@
       }
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PTIT Social cần vị trí để hiển thị khoảng cách với bạn bè trong phần Dating."
+        }
+      ]
     ]
   }
 }

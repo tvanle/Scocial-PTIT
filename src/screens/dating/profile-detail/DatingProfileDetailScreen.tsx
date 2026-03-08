@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
+import { calculateAge, extractYear } from '../../../utils/dating';
 import type { RootStackParamList } from '../../../types';
 import {
   DetailHeroImage,
@@ -17,6 +18,7 @@ import {
   DetailActionBar,
 } from './components';
 import datingService from '../../../services/dating/datingService';
+import { useDatingLocation } from '../discovery/hooks/useDatingLocation';
 
 const colors = DATING_COLORS.profileDetail;
 const layout = DATING_LAYOUT.profileDetail;
@@ -25,29 +27,12 @@ const strings = DATING_STRINGS.profileDetail;
 type RouteParams = RouteProp<RootStackParamList, 'DatingProfileDetail'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-function calculateAge(dob: string | null | undefined): number {
-  if (!dob) return 0;
-  const birth = new Date(dob);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-  return age;
-}
-
-function extractYear(studentId?: string | null): number | null {
-  if (!studentId) return null;
-  const match = studentId.match(/[A-Z](\d{2})/);
-  if (!match) return null;
-  const startYear = 2000 + parseInt(match[1], 10);
-  return new Date().getFullYear() - startYear + 1;
-}
-
 const DatingProfileDetailScreen: React.FC = () => {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<Nav>();
   const queryClient = useQueryClient();
   const { profile } = route.params;
+  const { requestAndUpdateLocation, isUpdating: isLocationUpdating } = useDatingLocation();
 
   const swipeMutation = useMutation({
     mutationFn: (action: 'LIKE' | 'UNLIKE') =>
@@ -69,7 +54,7 @@ const DatingProfileDetailScreen: React.FC = () => {
   const handleLike = useCallback(() => swipeMutation.mutate('LIKE'), [swipeMutation]);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={styles.root}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -82,6 +67,9 @@ const DatingProfileDetailScreen: React.FC = () => {
           name={profile.user.fullName ?? strings.unknownName}
           age={age}
           location="Hanoi, Vietnam"
+          distanceKm={profile.distanceKm}
+          onRequestLocation={requestAndUpdateLocation}
+          isLocationUpdating={isLocationUpdating}
           isVerified
         />
 
@@ -90,11 +78,11 @@ const DatingProfileDetailScreen: React.FC = () => {
           yearLabel={yearLabel}
         />
 
-        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+        <View style={styles.divider} />
 
         {profile.bio ? (
           <DetailSection icon="people-outline" title={strings.aboutMe}>
-            <Text style={[styles.bioText, { color: colors.bioText }]}>
+            <Text style={styles.bioText}>
               {profile.bio}
             </Text>
           </DetailSection>
@@ -129,17 +117,19 @@ const DatingProfileDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: layout.scrollPaddingBottom },
   divider: {
     height: layout.divider.height,
     marginHorizontal: layout.divider.marginH,
     marginVertical: layout.divider.marginV,
+    backgroundColor: colors.divider,
   },
   bioText: {
     fontSize: layout.bio.textSize,
     lineHeight: layout.bio.lineHeight,
+    color: colors.bioText,
   },
   campusWrap: {
     paddingHorizontal: layout.section.paddingH,

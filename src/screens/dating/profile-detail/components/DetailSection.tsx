@@ -13,33 +13,38 @@ interface DetailSectionProps {
 }
 
 export const DetailSection = React.memo<DetailSectionProps>(({ icon, title, children }) => (
-  <View style={[styles.container, { paddingHorizontal: layout.paddingH, marginTop: layout.marginTop }]}>
-    <View style={[styles.titleRow, { gap: layout.titleGap }]}>
+  <View style={styles.container}>
+    <View style={styles.titleRow}>
       <MaterialIcons name={icon} size={layout.iconSize} color={colors.sectionIcon} />
-      <Text style={[styles.title, { fontSize: layout.titleSize, color: colors.sectionTitle }]}>
-        {title}
-      </Text>
+      <Text style={styles.title}>{title}</Text>
       <View style={styles.line} />
     </View>
-    <View style={{ marginTop: layout.contentMarginTop }}>
-      {children}
-    </View>
+    <View style={styles.contentWrap}>{children}</View>
   </View>
 ));
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    paddingHorizontal: layout.paddingH,
+    marginTop: layout.marginTop,
+  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: layout.titleGap,
   },
   title: {
     fontWeight: '700',
+    fontSize: layout.titleSize,
+    color: colors.sectionTitle,
   },
   line: {
     flex: 1,
     height: 2,
     backgroundColor: DATING_COLORS.profileDetail.divider,
     marginLeft: 8,
+  },
+  contentWrap: {
+    marginTop: layout.contentMarginTop,
   },
 });
