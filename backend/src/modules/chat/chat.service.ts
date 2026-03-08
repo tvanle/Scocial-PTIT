@@ -5,6 +5,16 @@ import { parsePagination, paginate } from '../../shared/utils';
 import { MessageType } from './chat.types';
 
 export class ChatService {
+  // Helper: flatten ConversationParticipant[] into User[] for frontend compatibility
+  private flattenConversation(conversation: any) {
+    if (!conversation) return conversation;
+    const { participants, ...rest } = conversation;
+    return {
+      ...rest,
+      participants: (participants || []).map((p: any) => p.user || p),
+    };
+  }
+
   // Get or create private conversation
   async getOrCreateConversation(userId: string, otherUserId: string) {
     // Check if other user exists
@@ -51,7 +61,7 @@ export class ChatService {
           },
         },
       });
-      return conversationWithUsers;
+      return this.flattenConversation(conversationWithUsers);
     }
 
     // Create new conversation with transaction
@@ -83,7 +93,7 @@ export class ChatService {
       });
     });
 
-    return newConv;
+    return this.flattenConversation(newConv);
   }
 
   async getConversation(conversationId: string, userId: string) {
@@ -109,10 +119,7 @@ export class ChatService {
       throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
     }
 
-    return {
-      ...conversation,
-      participantUsers: conversation.participants.map((p) => p.user),
-    };
+    return this.flattenConversation(conversation);
   }
 
   // Get user conversations
@@ -148,11 +155,8 @@ export class ChatService {
       },
     });
 
-    // Map to include participantUsers for backward compatibility
-    const conversationsWithUsers = conversations.map((conv) => ({
-      ...conv,
-      participantUsers: conv.participants.map((p) => p.user),
-    }));
+    // Flatten participants for frontend compatibility
+    const conversationsWithUsers = conversations.map((conv) => this.flattenConversation(conv));
 
     return paginate(conversationsWithUsers, total, p, l);
   }

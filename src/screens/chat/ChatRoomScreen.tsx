@@ -124,7 +124,7 @@ const ChatRoomScreen: React.FC = () => {
   };
 
   const getOtherParticipant = (): User | null => {
-    if (!conversation || conversation.type !== 'private') return null;
+    if (!conversation || conversation.type.toLowerCase() !== 'private') return null;
     return conversation.participants.find(p => p.id !== user?.id) || null;
   };
 
@@ -219,10 +219,11 @@ const ChatRoomScreen: React.FC = () => {
   }
 
   const otherParticipant = getOtherParticipant();
-  const chatName = conversation.type === 'group'
+  const isPrivate = conversation.type.toLowerCase() === 'private';
+  const chatName = !isPrivate
     ? conversation.name || 'Nhóm chat'
     : otherParticipant?.fullName || 'Unknown';
-  const chatAvatar = conversation.type === 'group'
+  const chatAvatar = !isPrivate
     ? conversation.avatar
     : otherParticipant?.avatar;
 
@@ -235,7 +236,7 @@ const ChatRoomScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.headerCenter}
             onPress={() => {
-              if (conversation.type === 'private' && otherParticipant) {
+              if (isPrivate && otherParticipant) {
                 navigation.navigate('UserProfile', { userId: otherParticipant.id });
               }
             }}
@@ -244,12 +245,12 @@ const ChatRoomScreen: React.FC = () => {
               uri={chatAvatar}
               name={chatName}
               size="sm"
-              showOnlineStatus={conversation.type === 'private'}
-              isOnline={conversation.type === 'private' ? otherParticipant?.isOnline : false}
+              showOnlineStatus={isPrivate}
+              isOnline={isPrivate ? otherParticipant?.isOnline : false}
             />
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>{chatName}</Text>
-              {conversation.type === 'private' && (
+              {isPrivate && (
                 <Text style={styles.headerStatus}>
                   {otherParticipant?.isOnline ? Strings.chat.online : Strings.chat.offline}
                 </Text>
