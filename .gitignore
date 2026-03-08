@@ -29,6 +29,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# uploads (user-generated, do not commit)
+backend/uploads/
+
 # local env files
 .env
 .env.*

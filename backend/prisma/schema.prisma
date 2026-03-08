@@ -432,16 +432,18 @@ model DatingProfileLifestyle {
 }
 
 model DatingPreferences {
-  id          String         @id @default(uuid())
-  profileId   String         @unique
-  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id              String         @id @default(uuid())
+  profileId       String         @unique
+  profile         DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  ageMin      Int            @default(18)
-  ageMax      Int            @default(99)
-  maxDistance  Int?           // in km, null = no limit
-  gender      Gender?        // Preferred gender
+  ageMin          Int            @default(18)
+  ageMax          Int            @default(99)
+  maxDistance      Int?           // in km, null = no limit
+  gender          Gender?        // Preferred gender
+  preferredMajors String[]       @default([])
+  sameYearOnly    Boolean        @default(false)
 
-  updatedAt   DateTime       @updatedAt
+  updatedAt       DateTime       @updatedAt
 
   @@index([profileId])
 }
@@ -478,7 +480,7 @@ model DatingMatch {
 
 enum SwipeAction {
   LIKE
-  PASS
+  UNLIKE
 }
 
 enum FrequencyLevel {
