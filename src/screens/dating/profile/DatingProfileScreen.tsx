@@ -22,15 +22,12 @@ export const DatingProfileScreen: React.FC = () => {
   const userName = user?.fullName || 'Người dùng';
 
   const handleDatingProfile = useCallback(() => {
-    // Navigate to dating preferences screen
-    // For now, keep it simple - can be expanded later
-    console.log('Navigate to dating profile');
-  }, []);
+    navigation.navigate('DatingEditProfile');
+  }, [navigation]);
 
   const handleDatingPreferences = useCallback(() => {
-    // Navigate to dating preferences screen
-    console.log('Navigate to dating preferences');
-  }, []);
+    navigation.navigate('DatingCriteria');
+  }, [navigation]);
 
   const handleSettings = useCallback(() => {
     // Navigate to settings screen
@@ -42,7 +39,7 @@ export const DatingProfileScreen: React.FC = () => {
       {
         id: 'profile',
         icon: 'heart',
-        label: 'Hộ sộ hẹn hò',
+        label: 'Hồ sơ hẹn hò',
         onPress: handleDatingProfile,
       },
       {

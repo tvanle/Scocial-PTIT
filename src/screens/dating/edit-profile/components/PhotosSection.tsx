@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
-import { View, Image, Pressable, StyleSheet, ScrollView, Text } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Image, Pressable, StyleSheet, ScrollView, Text, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {
   DATING_COLORS,
   DATING_SPACING,
@@ -16,9 +17,46 @@ interface PhotosSectionProps {
 
 export const PhotosSection: React.FC<PhotosSectionProps> = React.memo(
   ({ photos, onPhotosUpdate }) => {
-    const handleAddPhoto = useCallback(() => {
-      // Open image picker - will be implemented with actual picker
-    }, []);
+    const [autoReorderEnabled, setAutoReorderEnabled] = useState(false);
+
+    const handleToggleAutoReorder = useCallback((value: boolean) => {
+      setAutoReorderEnabled(value);
+      if (value && photos.length > 1) {
+        Alert.alert(
+          'Tự động sắp xếp',
+          'Ảnh sẽ được sắp xếp dựa trên lượt tương tác. Hình ảnh nổi bật nhất sẽ được đặt ở trước.'
+        );
+      }
+    }, [photos]);
+
+    const handleAddPhoto = useCallback(async () => {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Lỗi', 'Cần cấp quyền truy cập thư viện ảnh');
+          return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          const uri = result.assets[0].uri;
+          if (photos.length < 5) {
+            onPhotosUpdate([...photos, uri]);
+          } else {
+            Alert.alert('Thông báo', 'Tối đa 5 ảnh');
+          }
+        }
+      } catch (err) {
+        console.error('Error picking image:', err);
+        Alert.alert('Lỗi', 'Không thể chọn ảnh');
+      }
+    }, [photos, onPhotosUpdate]);
 
     const handleRemovePhoto = useCallback(
       (index: number) => {
@@ -95,18 +133,44 @@ export const PhotosSection: React.FC<PhotosSectionProps> = React.memo(
           ))}
         </ScrollView>
 
-        {/* Auto-reorder Info */}
-        <View style={styles.autoReorderContainer}>
-          <Ionicons
-            name="information-circle"
-            size={16}
-            color={DATING_COLORS.light.textSecondary}
-            style={{ marginRight: DATING_SPACING.xs }}
-          />
-          <Text style={styles.autoReorderText}>
-            Hộ sắp xếp để tìm thấy ảnh tốt nhất của bạn!{'\n'}Lượt chuyển
-          </Text>
-        </View>
+        {/* Auto-reorder Toggle */}
+        {photos.length >= 2 && (
+          <View style={styles.autoReorderToggleContainer}>
+            <View style={styles.autoReorderLabelGroup}>
+              <Ionicons
+                name="sync-outline"
+                size={20}
+                color={DATING_COLORS.primary}
+                style={{ marginRight: DATING_SPACING.sm }}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.autoReorderLabel}>Tự động sắp xếp lại ảnh</Text>
+                <Text style={styles.autoReorderSubtitle}>Sắp xếp ảnh theo lượt tương tác</Text>
+              </View>
+            </View>
+            <Switch
+              value={autoReorderEnabled}
+              onValueChange={handleToggleAutoReorder}
+              trackColor={{ false: '#e0e0e0', true: DATING_COLORS.primary }}
+            />
+          </View>
+        )}
+
+        {/* Photo Requirement Info */}
+        {photos.length < 3 && (
+          <View style={styles.infoContainer}>
+            <Ionicons
+              name="information-circle"
+              size={16}
+              color={DATING_COLORS.light.textSecondary}
+              style={{ marginRight: DATING_SPACING.xs }}
+            />
+            <Text style={styles.infoText}>
+              Hồ sơ có từ 3 ảnh trở lên sẽ hiển thị với nhiều người
+              hơn. {'\n'}Hãy chọn những tấm hình đẹp nhất của bạn nhé!
+            </Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -192,14 +256,41 @@ const styles = StyleSheet.create({
   gridItem: {
     width: 100,
   },
-  autoReorderContainer: {
+  autoReorderToggleContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: DATING_SPACING.md,
+    paddingVertical: DATING_SPACING.md,
+    borderRadius: DATING_RADIUS.md,
+    backgroundColor: DATING_COLORS.light.background,
+    borderWidth: 1,
+    borderColor: DATING_COLORS.light.border,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: DATING_SPACING.lg,
+  },
+  autoReorderLabelGroup: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+  },
+  autoReorderLabel: {
+    fontSize: DATING_FONT_SIZE.body,
+    fontWeight: '600',
+    color: DATING_COLORS.light.textPrimary,
+  },
+  autoReorderSubtitle: {
+    fontSize: DATING_FONT_SIZE.small,
+    color: DATING_COLORS.light.textSecondary,
+    marginTop: 2,
+  },
+  infoContainer: {
     flexDirection: 'row',
     paddingHorizontal: DATING_SPACING.md,
     paddingVertical: DATING_SPACING.sm,
     borderRadius: DATING_RADIUS.md,
     backgroundColor: '#F0F0F0',
   },
-  autoReorderText: {
+  infoText: {
     fontSize: DATING_FONT_SIZE.small,
     color: DATING_COLORS.light.textSecondary,
     flex: 1,

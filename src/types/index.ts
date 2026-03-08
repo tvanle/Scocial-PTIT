@@ -265,6 +265,7 @@ export type RootStackParamList = {
   DatingPreferencesSetup: undefined;
   DatingDiscovery: undefined;
   DatingEditProfile: undefined;
+  DatingCriteria: undefined;
   DatingProfile: undefined;
 };
 

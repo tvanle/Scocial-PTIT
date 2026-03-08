@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_SPACING } from '../../../constants/dating/tokens';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
@@ -11,7 +13,7 @@ import {
   DiscoveryBottomNav,
 } from './components';
 import datingService from '../../../services/dating/datingService';
-import type { DiscoveryCard } from '../../../types';
+import type { DiscoveryCard, RootStackParamList } from '../../../types';
 
 const colors = DATING_COLORS.discovery;
 const layout = DATING_LAYOUT.discovery;
@@ -40,6 +42,7 @@ function toProfileData(card: DiscoveryCard) {
 }
 
 const DatingScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [cards, setCards] = useState<DiscoveryCard[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -113,6 +116,24 @@ const DatingScreen: React.FC = () => {
   const handleSkip = useCallback(() => handleSwipe('PASS'), [handleSwipe]);
   const handleLike = useCallback(() => handleSwipe('LIKE'), [handleSwipe]);
 
+  const handleTabPress = useCallback((tabKey: string) => {
+    switch (tabKey) {
+      case 'profile':
+        navigation.navigate('DatingProfile');
+        break;
+      case 'likes':
+        console.log('Navigate to likes');
+        break;
+      case 'chats':
+        console.log('Navigate to chats');
+        break;
+      case 'discover':
+      default:
+        console.log('Already on discover');
+        break;
+    }
+  }, [navigation]);
+
   const currentCard = cards[currentIdx];
   const isEmpty = !loading && !currentCard;
 
@@ -167,7 +188,7 @@ const DatingScreen: React.FC = () => {
           </View>
         )}
       </SafeAreaView>
-      <DiscoveryBottomNav />
+      <DiscoveryBottomNav onTabPress={handleTabPress} />
     </View>
   );
 };
