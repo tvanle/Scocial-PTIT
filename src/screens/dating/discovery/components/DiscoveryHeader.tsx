@@ -6,19 +6,14 @@ import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme
 const colors = DATING_COLORS.discovery;
 const layout = DATING_LAYOUT.discovery.header;
 
-export const DiscoveryHeader = React.memo(() => (
-  <View
-    style={[
-      styles.container,
-      {
-        paddingHorizontal: layout.paddingH,
-        paddingTop: layout.paddingTop,
-        paddingBottom: layout.paddingBottom,
-      },
-    ]}
-  >
+interface DiscoveryHeaderProps {
+  onFilterPress?: () => void;
+}
+
+export const DiscoveryHeader = React.memo<DiscoveryHeaderProps>(({ onFilterPress }) => (
+  <View style={styles.container}>
     <TouchableOpacity
-      style={[styles.iconBtn, { width: layout.iconSize, height: layout.iconSize, backgroundColor: colors.headerIconBg }]}
+      style={styles.iconBtn}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel="My profile"
@@ -27,22 +22,14 @@ export const DiscoveryHeader = React.memo(() => (
     </TouchableOpacity>
 
     <View style={styles.titleWrap}>
-      <Text style={[styles.title, { fontSize: layout.titleSize, color: colors.title }]}>
-        PTIT Connect
-      </Text>
-      <Text
-        style={[
-          styles.subtitle,
-          { fontSize: layout.subtitleSize, color: colors.subtitleColor, opacity: layout.subtitleOpacity },
-        ]}
-      >
-        DISCOVERY
-      </Text>
+      <Text style={styles.title}>PTIT Connect</Text>
+      <Text style={styles.subtitle}>DISCOVERY</Text>
     </View>
 
     <TouchableOpacity
-      style={[styles.iconBtn, { width: layout.iconSize, height: layout.iconSize, backgroundColor: colors.headerIconBg }]}
+      style={styles.iconBtn}
       activeOpacity={0.7}
+      onPress={onFilterPress}
       accessibilityRole="button"
       accessibilityLabel="Filter preferences"
     >
@@ -56,9 +43,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: layout.paddingH,
+    paddingTop: layout.paddingTop,
+    paddingBottom: layout.paddingBottom,
   },
   iconBtn: {
+    width: layout.iconSize,
+    height: layout.iconSize,
     borderRadius: 9999,
+    backgroundColor: colors.headerIconBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -68,9 +61,14 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '700',
     letterSpacing: -0.3,
+    fontSize: layout.titleSize,
+    color: colors.title,
   },
   subtitle: {
     fontWeight: '700',
     letterSpacing: 3,
+    fontSize: layout.subtitleSize,
+    color: colors.subtitleColor,
+    opacity: layout.subtitleOpacity,
   },
 });

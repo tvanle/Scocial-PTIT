@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import datingService from '../../../../services/dating/datingService';
 import { DATING_LAYOUT } from '../../../../constants/dating/theme';
@@ -13,8 +13,13 @@ export function useDiscoveryFeed() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
+  const cardsLengthRef = useRef(0);
 
-  const { isLoading } = useQuery({
+  useEffect(() => {
+    cardsLengthRef.current = cards.length;
+  }, [cards.length]);
+
+  const { isLoading, isError, error } = useQuery({
     queryKey: [...QUERY_KEY, 1],
     queryFn: async () => {
       const res = await datingService.getDiscovery({
@@ -24,52 +29,72 @@ export function useDiscoveryFeed() {
       const newCards = res.data ?? [];
       setCards(newCards);
       setCurrentIdx(0);
+      pageRef.current = 1;
       hasMoreRef.current = 1 < (res.pagination?.totalPages ?? 1);
       return res;
     },
     staleTime: 1000 * 60 * 5,
   });
 
+  const isProfileMissing =
+    isError &&
+    (error as { response?: { status?: number } })?.response?.status === 404;
+
   const loadMore = useCallback(async () => {
     if (!hasMoreRef.current) return;
-    pageRef.current += 1;
-    const res = await datingService.getDiscovery({
-      page: String(pageRef.current),
-      limit: String(pageSize),
-    });
-    const newCards = res.data ?? [];
-    setCards((prev) => [...prev, ...newCards]);
-    hasMoreRef.current = pageRef.current < (res.pagination?.totalPages ?? 1);
+    try {
+      pageRef.current += 1;
+      const res = await datingService.getDiscovery({
+        page: String(pageRef.current),
+        limit: String(pageSize),
+      });
+      const newCards = res.data ?? [];
+      setCards((prev) => [...prev, ...newCards]);
+      hasMoreRef.current = pageRef.current < (res.pagination?.totalPages ?? 1);
+    } catch {
+      pageRef.current -= 1;
+    }
   }, []);
 
   const swipeMutation = useMutation({
     mutationFn: (params: { targetUserId: string; action: 'LIKE' | 'UNLIKE' }) =>
       datingService.swipe(params),
+    onSuccess: () => {
+      // Không invalidate discovery feed để tránh refetch reset cards + currentIdx
+    },
     onSettled: () => {
-      const nextIdx = currentIdx + 1;
-      if (nextIdx >= cards.length - prefetchThreshold && hasMoreRef.current) {
-        loadMore();
-      }
-      setCurrentIdx(nextIdx);
+      setCurrentIdx((prev) => {
+        const nextIdx = prev + 1;
+        if (
+          nextIdx >= cardsLengthRef.current - prefetchThreshold &&
+          hasMoreRef.current
+        ) {
+          loadMore();
+        }
+        return nextIdx;
+      });
     },
   });
 
   const refresh = useCallback(() => {
     pageRef.current = 1;
-    queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    return queryClient.refetchQueries({ queryKey: QUERY_KEY });
   }, [queryClient]);
 
+  const resetMatch = useCallback(() => swipeMutation.reset(), [swipeMutation]);
+
   const currentCard = cards[currentIdx] ?? null;
-  const isEmpty = !isLoading && !currentCard;
+  const isEmpty = !isLoading && !isError && !currentCard;
 
   return {
     currentCard,
     isLoading,
     isEmpty,
+    isProfileMissing,
     swipe: swipeMutation.mutateAsync,
     isSwiping: swipeMutation.isPending,
     isMatched: swipeMutation.data?.matched ?? false,
-    resetMatch: () => swipeMutation.reset(),
+    resetMatch,
     refresh,
   };
 }
