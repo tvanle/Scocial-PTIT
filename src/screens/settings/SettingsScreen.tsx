@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  TextInput,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSize, FontWeight, Spacing } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { RootStackParamList } from '../../types';
+import { authService } from '../../services/auth/authService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -22,11 +26,12 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 interface SettingRowProps {
   title: string;
   value?: string;
+  valueColor?: string;
   onPress?: () => void;
   isLast?: boolean;
 }
 
-const SettingRow: React.FC<SettingRowProps> = ({ title, value, onPress, isLast }) => (
+const SettingRow: React.FC<SettingRowProps> = ({ title, value, valueColor, onPress, isLast }) => (
   <TouchableOpacity
     style={[styles.row, !isLast && styles.rowBorder]}
     onPress={onPress}
@@ -35,7 +40,11 @@ const SettingRow: React.FC<SettingRowProps> = ({ title, value, onPress, isLast }
   >
     <Text style={styles.rowTitle}>{title}</Text>
     <View style={styles.rowRight}>
-      {value ? <Text style={styles.rowValue}>{value}</Text> : null}
+      {value ? (
+        <Text style={[styles.rowValue, valueColor ? { color: valueColor } : undefined]}>
+          {value}
+        </Text>
+      ) : null}
       <Ionicons name="chevron-forward" size={18} color={Colors.gray300} />
     </View>
   </TouchableOpacity>
@@ -53,7 +62,7 @@ const Section: React.FC<SectionProps> = ({ label, children }) => (
       <Text style={styles.sectionLabel}>{label}</Text>
       <View style={styles.sectionLabelLine} />
     </View>
-    <View style={styles.sectionContent}>{children}</View>
+    <View>{children}</View>
   </View>
 );
 
@@ -62,7 +71,12 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { user, logout } = useAuthStore();
 
-  const isVerified = user?.isVerified;
+  // Change password modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -81,14 +95,40 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      Alert.alert('Thành công', 'Đổi mật khẩu thành công!');
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.';
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleOpenUrl = (url: string) => {
     Linking.openURL(url).catch(() => {
       Alert.alert('Lỗi', 'Không thể mở liên kết');
     });
-  };
-
-  const comingSoon = (feature: string) => {
-    Alert.alert(feature, 'Tính năng đang phát triển');
   };
 
   return (
@@ -114,43 +154,12 @@ const SettingsScreen: React.FC = () => {
           />
           <SettingRow
             title="University Verification"
-            value={isVerified ? 'Verified' : 'Not Verified'}
-            onPress={() => comingSoon('University Verification')}
+            value={user?.isVerified ? 'Verified' : 'Not Verified'}
+            valueColor={user?.isVerified ? Colors.success : Colors.gray400}
           />
           <SettingRow
-            title="Password & Security"
-            onPress={() => comingSoon('Password & Security')}
-            isLast
-          />
-        </Section>
-
-        {/* PRIVACY */}
-        <Section label="PRIVACY">
-          <SettingRow
-            title="Profile Visibility"
-            onPress={() => comingSoon('Profile Visibility')}
-          />
-          <SettingRow
-            title="Blocked Users"
-            onPress={() => comingSoon('Blocked Users')}
-          />
-          <SettingRow
-            title="Data Usage"
-            onPress={() => comingSoon('Data Usage')}
-            isLast
-          />
-        </Section>
-
-        {/* NOTIFICATIONS */}
-        <Section label="NOTIFICATIONS">
-          <SettingRow
-            title="Push Notifications"
-            onPress={() => comingSoon('Push Notifications')}
-          />
-          <SettingRow
-            title="Quiet Hours"
-            value="Off"
-            onPress={() => comingSoon('Quiet Hours')}
+            title="Change Password"
+            onPress={() => setShowPasswordModal(true)}
             isLast
           />
         </Section>
@@ -178,8 +187,75 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
 
         {/* Version */}
-        <Text style={styles.version}>VERSION 2.4.1 (CAMPUS EDITION)</Text>
+        <Text style={styles.version}>VERSION 1.0.0 (CAMPUS EDITION)</Text>
       </ScrollView>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showPasswordModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          {/* Modal Header */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <TouchableOpacity onPress={handleChangePassword} disabled={changingPassword}>
+              {changingPassword ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Text style={styles.modalSave}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Modal Body */}
+          <View style={styles.modalBody}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter current password"
+                placeholderTextColor={Colors.gray400}
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter new password (min 6 chars)"
+                placeholderTextColor={Colors.gray400}
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Re-enter new password"
+                placeholderTextColor={Colors.gray400}
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -238,7 +314,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: Colors.gray200,
   },
-  sectionContent: {},
 
   /* Row */
   row: {
@@ -289,6 +364,58 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.medium,
     color: Colors.gray300,
     letterSpacing: 1.2,
+  },
+
+  /* Modal */
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.gray200,
+  },
+  modalCancel: {
+    fontSize: FontSize.lg,
+    color: Colors.primary,
+  },
+  modalTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  modalSave: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.primary,
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.gray50,
   },
 });
 
