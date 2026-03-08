@@ -86,6 +86,35 @@ export class ChatService {
     return newConv;
   }
 
+  async getConversation(conversationId: string, userId: string) {
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, avatar: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new AppError(ERROR_MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    if (!isParticipant) {
+      throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+    }
+
+    return {
+      ...conversation,
+      participantUsers: conversation.participants.map((p) => p.user),
+    };
+  }
+
   // Get user conversations
   async getConversations(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);

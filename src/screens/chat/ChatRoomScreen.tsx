@@ -30,8 +30,9 @@ type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 const ChatRoomScreen: React.FC = () => {
   const navigation = useNavigation<ChatRoomScreenNavigationProp>();
   const route = useRoute<ChatRoomScreenRouteProp>();
-  const { conversationId } = route.params;
+  const { conversationId: routeConversationId, userId } = route.params;
   const { user } = useAuthStore();
+  const [conversationId, setConversationId] = useState<string | null>(routeConversationId || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,15 +42,27 @@ const ChatRoomScreen: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      let convId = conversationId;
+
+      if (!convId && userId) {
+        const conv = await chatService.getOrCreateConversation(userId);
+        convId = conv.id;
+        setConversationId(convId);
+        setConversation(conv);
+      }
+
+      if (!convId) {
+        throw new Error('No conversation ID or user ID provided');
+      }
+
       const [convData, messagesData] = await Promise.all([
-        chatService.getConversation(conversationId),
-        chatService.getMessages(conversationId, { page: 1, limit: 50 }),
+        conversation ? Promise.resolve(conversation) : chatService.getConversation(convId),
+        chatService.getMessages(convId, { page: 1, limit: 50 }),
       ]);
       setConversation(convData);
       setMessages(messagesData.data.reverse());
 
-      // Mark as read
-      await chatService.markAsRead(conversationId);
+      await chatService.markAsRead(convId);
     } catch (error) {
       console.error('Failed to fetch chat data:', error);
       Alert.alert('Lỗi', 'Không thể tải cuộc trò chuyện. Vui lòng thử lại.');
@@ -61,10 +74,10 @@ const ChatRoomScreen: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [conversationId]);
+  }, [routeConversationId, userId]);
 
   const handleSend = useCallback(async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !conversationId) return;
 
     const tempId = Date.now().toString();
     const newMessage: Message = {

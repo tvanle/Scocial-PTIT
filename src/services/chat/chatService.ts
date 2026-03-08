@@ -13,6 +13,11 @@ class ChatService {
     return response.data;
   }
 
+  async getOrCreateConversation(userId: string): Promise<Conversation> {
+    const response = await apiClient.get(ENDPOINTS.CHAT.GET_OR_CREATE_BY_USER(userId));
+    return response.data;
+  }
+
   async createConversation(participantIds: string[]): Promise<Conversation> {
     const response = await apiClient.post(ENDPOINTS.CHAT.CREATE_CONVERSATION, { participantIds });
     return response.data;

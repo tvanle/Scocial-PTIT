@@ -380,7 +380,7 @@ const UserProfileScreen: React.FC = () => {
 
   const handleMessage = useCallback(() => {
     if (!profileUser) return;
-    navigation.navigate('ChatRoom', { conversationId: userId });
+    navigation.navigate('ChatRoom', { userId });
   }, [profileUser, navigation, userId]);
 
   // Post action handlers

@@ -71,6 +71,7 @@ export const ENDPOINTS = {
     CONVERSATIONS: '/chat/conversations',
     CREATE_CONVERSATION: '/chat/conversations',
     GET_CONVERSATION: (id: string) => `/chat/conversations/${id}`,
+    GET_OR_CREATE_BY_USER: (userId: string) => `/chat/conversations/user/${userId}`,
     MESSAGES: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
     SEND_MESSAGE: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
     DELETE_MESSAGE: (conversationId: string, messageId: string) =>
