@@ -1,11 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { DATING_COLORS } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
@@ -20,7 +14,6 @@ export interface LocationPermissionActionsProps {
   onPressIn: () => void;
   onPressOut: () => void;
   onAllow: () => void;
-  onLater: () => void;
 }
 
 export const LocationPermissionActions: React.FC<
@@ -33,15 +26,10 @@ export const LocationPermissionActions: React.FC<
     onPressIn,
     onPressOut,
     onAllow,
-    onLater,
   }) => {
     const handleAllow = useCallback(() => {
       if (!loading) onAllow();
     }, [loading, onAllow]);
-
-    const handleLater = useCallback(() => {
-      if (!loading) onLater();
-    }, [loading, onLater]);
 
     const Root = containerAnimatedStyle ? Animated.View : View;
     const rootStyle = containerAnimatedStyle
@@ -57,7 +45,7 @@ export const LocationPermissionActions: React.FC<
           disabled={loading}
           accessibilityRole="button"
           accessibilityLabel={DATING_STRINGS.locationPermission.allow}
-          accessibilityHint="Yêu cầu quyền truy cập vị trí"
+          accessibilityHint="Yêu cầu quyền truy cập vị trí, bắt buộc để tiếp tục"
         >
           <Animated.View style={[styles.primaryButton, primaryButtonStyle]}>
             {loading ? (
@@ -69,18 +57,6 @@ export const LocationPermissionActions: React.FC<
             )}
           </Animated.View>
         </Pressable>
-        <TouchableOpacity
-          onPress={handleLater}
-          disabled={loading}
-          style={styles.secondaryButton}
-          accessibilityRole="button"
-          accessibilityLabel={DATING_STRINGS.locationPermission.later}
-          accessibilityHint="Bỏ qua và vào khám phá"
-        >
-          <Text style={styles.secondaryButtonText}>
-            {DATING_STRINGS.locationPermission.later}
-          </Text>
-        </TouchableOpacity>
       </Root>
     );
   }

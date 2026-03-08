@@ -35,9 +35,10 @@ export const DiscoveryProfileCard = React.memo<DiscoveryProfileCardProps>(({
   onRequestLocation,
   isLocationUpdating,
 }) => {
-  const showDistanceHint = !(profile.distanceKm != null && profile.distanceKm > 0);
-  const distanceLabel = profile.distanceKm != null && profile.distanceKm > 0
-    ? strings.distanceAway(profile.distanceKm)
+  const hasDistance = profile.distanceKm != null && profile.distanceKm >= 0;
+  const showDistanceHint = !hasDistance;
+  const distanceLabel = hasDistance
+    ? strings.distanceAway(profile.distanceKm!)
     : isLocationUpdating
       ? strings.locationUpdating
       : strings.distanceUnknown;

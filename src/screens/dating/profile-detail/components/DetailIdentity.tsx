@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../constants/dating/theme';
+import { DATING_STRINGS } from '../../../../constants/dating/strings';
 
 const colors = DATING_COLORS.profileDetail;
 const layout = DATING_LAYOUT.profileDetail.identity;
+const strings = DATING_STRINGS.discovery;
 
 interface DetailIdentityProps {
   name: string;
@@ -26,12 +28,12 @@ export const DetailIdentity = React.memo<DetailIdentityProps>(({
   onRequestLocation,
   isLocationUpdating,
 }) => {
-  const hasDistance = distanceKm != null && distanceKm > 0;
+  const hasDistance = distanceKm != null && distanceKm >= 0;
   const distanceLabel = hasDistance
-    ? `Cách bạn ${distanceKm} km`
+    ? strings.distanceAway(distanceKm)
     : isLocationUpdating
-      ? 'Đang cập nhật vị trí...'
-      : 'Bật vị trí để xem khoảng cách';
+      ? strings.locationUpdating
+      : strings.distanceUnknown;
   const showLocationRow = location || distanceKm !== undefined;
   const locationLineText = [location, distanceLabel].filter(Boolean).join(' • ');
 

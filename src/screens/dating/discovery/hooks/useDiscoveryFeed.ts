@@ -19,7 +19,7 @@ export function useDiscoveryFeed() {
     cardsLengthRef.current = cards.length;
   }, [cards.length]);
 
-  const { isLoading, isError, error } = useQuery({
+  const { data: queryData, isLoading, isError, error } = useQuery({
     queryKey: [...QUERY_KEY, 1],
     queryFn: async () => {
       const res = await datingService.getDiscovery({
@@ -35,6 +35,15 @@ export function useDiscoveryFeed() {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  useEffect(() => {
+    if (queryData?.data != null) {
+      setCards(queryData.data);
+      setCurrentIdx(0);
+      pageRef.current = 1;
+      hasMoreRef.current = 1 < (queryData.pagination?.totalPages ?? 1);
+    }
+  }, [queryData]);
 
   const isProfileMissing =
     isError &&

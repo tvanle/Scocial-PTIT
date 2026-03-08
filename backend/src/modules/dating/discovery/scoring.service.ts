@@ -3,6 +3,8 @@ import { DatingPreferences, Gender } from '@prisma/client';
 interface CandidateData {
   userId: string;
   bio: string | null;
+  latitude: number | null;
+  longitude: number | null;
   photos: { url: string }[];
   user: {
     id: string;

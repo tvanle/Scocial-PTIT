@@ -55,7 +55,6 @@ const DatingLocationPermissionScreen: React.FC = () => {
   } = usePressScale();
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
-  const handleLater = useCallback(() => goToDiscovery(), [goToDiscovery]);
 
   return (
     <View style={styles.wrapper}>
@@ -70,7 +69,6 @@ const DatingLocationPermissionScreen: React.FC = () => {
           onPressIn={primaryPressIn}
           onPressOut={primaryPressOut}
           onAllow={requestAndNavigate}
-          onLater={handleLater}
         />
       </SafeAreaView>
     </View>

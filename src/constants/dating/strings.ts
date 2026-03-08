@@ -77,9 +77,8 @@ export const DATING_STRINGS = {
     headerTitle: 'PTIT Connect',
     title: 'Cho phép truy cập vị trí',
     description:
-      'PTIT Connect sử dụng vị trí của bạn để tìm kiếm và kết nối với những người bạn phù hợp ở gần bạn nhất trong khuôn viên học viện.',
+      'PTIT Connect sử dụng vị trí của bạn để tìm kiếm và kết nối với những người bạn phù hợp ở gần bạn nhất trong khuôn viên học viện. Bật vị trí là bắt buộc để sử dụng tính năng.',
     allow: 'Cho phép',
-    later: 'Để sau',
   },
   preferences: {
     step3Of3: 'Step 3 of 3',

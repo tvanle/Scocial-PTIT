@@ -36,15 +36,15 @@ export const LOCATION_PERMISSION_LAYOUT = {
 
 export const LOCATION_PERMISSION_ALERTS = {
   permissionDenied: {
-    title: 'Quyền vị trí',
+    title: 'Cần bật vị trí',
     message:
-      'Bạn có thể bật quyền vị trí sau trong Cài đặt để xem khoảng cách với mọi người.',
-    ok: 'OK',
+      'Bạn cần bật quyền vị trí để sử dụng PTIT Connect. Vui lòng bật trong Cài đặt hoặc thử lại.',
+    openSettings: 'Mở cài đặt',
+    retry: 'Thử lại',
   },
   error: {
     title: 'Lỗi',
-    message:
-      'Không lấy được vị trí. Bạn vẫn có thể vào khám phá và bật vị trí sau.',
-    ok: 'OK',
+    message: 'Không lấy được vị trí. Vui lòng kiểm tra GPS và thử lại.',
+    retry: 'Thử lại',
   },
 } as const;
