@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_SPACING } from '../../../constants/dating/tokens';
@@ -37,16 +37,24 @@ const DatingScreen: React.FC = React.memo(() => {
     swipe,
     isSwiping,
     isMatched,
-    resetMatch,
+    matchedCard,
+    consumeMatch,
     refresh,
   } = useDiscoveryFeed();
   const { requestAndUpdateLocation, isUpdating: isLocationUpdating } = useDatingLocation();
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
   useEffect(() => {
-    if (!isMatched) return;
-    const timer = setTimeout(resetMatch, layout.match.durationMs);
-    return () => clearTimeout(timer);
-  }, [isMatched, resetMatch]);
+    if (!isMatched || !matchedCard) return;
+    const profile = matchedCard;
+    consumeMatch();
+    navigation.navigate('DatingMatch', { profile, source: 'discovery' });
+  }, [isMatched, matchedCard, navigation, consumeMatch]);
 
   const profileData = useMemo(() => {
     if (!currentCard) return null;
@@ -122,12 +130,6 @@ const DatingScreen: React.FC = React.memo(() => {
         {!isEmpty && !isProfileMissing && (
           <DiscoveryActions onSkip={handleSkip} onLike={handleLike} />
         )}
-
-        {isMatched && (
-          <View style={styles.matchOverlay}>
-            <Text style={styles.matchText}>{strings.matchTitle}</Text>
-          </View>
-        )}
       </SafeAreaView>
       <DiscoveryBottomNav />
       <DiscoveryFilterSheet
@@ -162,21 +164,6 @@ const styles = StyleSheet.create({
     color: colors.emptySubtitle,
     paddingHorizontal: layout.empty.subtitlePaddingH,
     marginTop: layout.empty.subtitleMarginTop,
-  },
-  matchOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.matchOverlayBg,
-  },
-  matchText: {
-    fontWeight: '800',
-    fontSize: layout.match.textSize,
-    color: colors.matchText,
   },
 });
 

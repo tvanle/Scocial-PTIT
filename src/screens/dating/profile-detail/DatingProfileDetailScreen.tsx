@@ -37,8 +37,31 @@ const DatingProfileDetailScreen: React.FC = () => {
   const swipeMutation = useMutation({
     mutationFn: (action: 'LIKE' | 'UNLIKE') =>
       datingService.swipe({ targetUserId: profile.userId, action }),
-    onSuccess: () => {
+    onSuccess: (data: { matched?: boolean | null }) => {
+      // Cập nhật discovery feed ngay lập tức để loại bỏ user hiện tại
+      queryClient.setQueriesData(
+        { queryKey: ['dating', 'discovery'] },
+        (old: unknown) => {
+          if (!old || typeof old !== 'object') return old;
+          const value = old as {
+            data?: Array<{ userId: string }>;
+            pagination?: unknown;
+          };
+          if (!Array.isArray(value.data)) return old;
+          return {
+            ...value,
+            data: value.data.filter((card) => card.userId !== profile.userId),
+          };
+        },
+      );
+
       queryClient.invalidateQueries({ queryKey: ['dating', 'discovery'] });
+
+      if (data?.matched) {
+        navigation.navigate('DatingMatch', { profile, source: 'detail' });
+        return;
+      }
+
       navigation.goBack();
     },
   });

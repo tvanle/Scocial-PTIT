@@ -21,6 +21,7 @@ import {
   DatingLocationPermissionScreen,
 } from '../screens/dating/onboarding';
 import { DatingScreen } from '../screens/dating/discovery';
+import DatingMatchScreen from '../screens/dating/match/DatingMatchScreen';
 import { DatingProfileDetailScreen } from '../screens/dating/profile-detail';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -93,6 +94,11 @@ const RootNavigator: React.FC = () => {
               name="DatingProfileDetail"
               component={DatingProfileDetailScreen}
               options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="DatingMatch"
+              component={DatingMatchScreen}
+              options={{ animation: 'fade_from_bottom' }}
             />
           </>
         )}

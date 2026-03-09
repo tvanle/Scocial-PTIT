@@ -14,19 +14,28 @@ export function useDiscoveryFeed() {
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const cardsLengthRef = useRef(0);
+  const currentCardRef = useRef<DiscoveryCard | null>(null);
+  const [matchedCard, setMatchedCard] = useState<DiscoveryCard | null>(null);
+  const removedUserIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     cardsLengthRef.current = cards.length;
   }, [cards.length]);
 
+  useEffect(() => {
+    currentCardRef.current = cards[currentIdx] ?? null;
+  }, [cards, currentIdx]);
+
   const { data: queryData, isLoading, isError, error } = useQuery({
-    queryKey: [...QUERY_KEY, 1],
+    queryKey: QUERY_KEY,
     queryFn: async () => {
       const res = await datingService.getDiscovery({
         page: '1',
         limit: String(pageSize),
       });
-      const newCards = res.data ?? [];
+      const newCards = (res.data ?? []).filter(
+        (card) => !removedUserIdsRef.current.has(card.userId),
+      );
       setCards(newCards);
       setCurrentIdx(0);
       pageRef.current = 1;
@@ -38,7 +47,11 @@ export function useDiscoveryFeed() {
 
   useEffect(() => {
     if (queryData?.data != null) {
-      setCards(queryData.data);
+      setCards(
+        queryData.data.filter(
+          (card) => !removedUserIdsRef.current.has(card.userId),
+        ),
+      );
       setCurrentIdx(0);
       pageRef.current = 1;
       hasMoreRef.current = 1 < (queryData.pagination?.totalPages ?? 1);
@@ -57,7 +70,9 @@ export function useDiscoveryFeed() {
         page: String(pageRef.current),
         limit: String(pageSize),
       });
-      const newCards = res.data ?? [];
+      const newCards = (res.data ?? []).filter(
+        (card) => !removedUserIdsRef.current.has(card.userId),
+      );
       setCards((prev) => [...prev, ...newCards]);
       hasMoreRef.current = pageRef.current < (res.pagination?.totalPages ?? 1);
     } catch {
@@ -68,12 +83,23 @@ export function useDiscoveryFeed() {
   const swipeMutation = useMutation({
     mutationFn: (params: { targetUserId: string; action: 'LIKE' | 'UNLIKE' }) =>
       datingService.swipe(params),
-    onSuccess: () => {
+    onSuccess: (data: { matched?: boolean | null }) => {
       // Không invalidate discovery feed để tránh refetch reset cards + currentIdx
+      if (data?.matched) {
+        const matched = currentCardRef.current;
+        setMatchedCard(matched);
+        if (matched) {
+          removedUserIdsRef.current.add(matched.userId);
+          setCards((prev) =>
+            prev.filter((card) => card.userId !== matched.userId),
+          );
+        }
+      }
     },
     onSettled: () => {
       setCurrentIdx((prev) => {
-        const nextIdx = prev + 1;
+        const shouldAdvance = !swipeMutation.data?.matched;
+        const nextIdx = shouldAdvance ? prev + 1 : prev;
         if (
           nextIdx >= cardsLengthRef.current - prefetchThreshold &&
           hasMoreRef.current
@@ -90,7 +116,10 @@ export function useDiscoveryFeed() {
     return queryClient.refetchQueries({ queryKey: QUERY_KEY });
   }, [queryClient]);
 
-  const resetMatch = useCallback(() => swipeMutation.reset(), [swipeMutation]);
+  const consumeMatch = useCallback(() => {
+    swipeMutation.reset();
+    setMatchedCard(null);
+  }, [swipeMutation]);
 
   const currentCard = cards[currentIdx] ?? null;
   const isEmpty = !isLoading && !isError && !currentCard;
@@ -102,8 +131,9 @@ export function useDiscoveryFeed() {
     isProfileMissing,
     swipe: swipeMutation.mutateAsync,
     isSwiping: swipeMutation.isPending,
-    isMatched: swipeMutation.data?.matched ?? false,
-    resetMatch,
+    isMatched: (swipeMutation.data?.matched ?? false) && !!matchedCard,
+    matchedCard,
+    consumeMatch,
     refresh,
   };
 }
