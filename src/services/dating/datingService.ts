@@ -108,6 +108,16 @@ class DatingService {
     return response.data;
   }
 
+  async getIncomingLikes(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<DiscoveryCard>> {
+    const response = await apiClient.get(ENDPOINTS.DATING.INCOMING_LIKES, { params: params ?? {} });
+    return response.data;
+  }
+
+  async getSentLikes(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<DiscoveryCard>> {
+    const response = await apiClient.get(ENDPOINTS.DATING.SENT_LIKES, { params: params ?? {} });
+    return response.data;
+  }
+
   // --- Match ---
 
   async getMatches(params?: MatchQuery): Promise<PaginatedResponse<MatchItem>> {

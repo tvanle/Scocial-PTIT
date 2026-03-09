@@ -56,6 +56,7 @@ const DatingProfileDetailScreen: React.FC = () => {
       );
 
       queryClient.invalidateQueries({ queryKey: ['dating', 'discovery'] });
+      queryClient.invalidateQueries({ queryKey: ['dating', 'likes', 'incoming'] });
 
       if (data?.matched) {
         navigation.navigate('DatingMatch', { profile, source: 'detail' });

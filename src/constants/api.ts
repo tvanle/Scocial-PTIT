@@ -123,6 +123,8 @@ export const ENDPOINTS = {
 
     // Swipe
     SWIPE: '/dating/swipe',
+    INCOMING_LIKES: '/dating/swipe/likes/incoming',
+    SENT_LIKES: '/dating/swipe/likes/sent',
 
     // Match
     MATCHES: '/dating/matches',

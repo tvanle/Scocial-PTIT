@@ -206,8 +206,48 @@ export class SwipeService {
 
     const userIds = swipes.map((s) => s.fromUserId);
 
+    if (userIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: 0,
+        },
+      };
+    }
+
+    // Exclude users that you have already liked back (mutual LIKE -> match)
+    const myLikes = await prisma.datingSwipe.findMany({
+      where: {
+        fromUserId: userId,
+        toUserId: { in: userIds },
+        action: SwipeAction.LIKE,
+      },
+      select: {
+        toUserId: true,
+      },
+    });
+
+    const matchedUserIds = new Set(myLikes.map((s) => s.toUserId));
+
+    const filteredUserIds = userIds.filter((id) => !matchedUserIds.has(id));
+
+    if (filteredUserIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
     const profiles = await prisma.datingProfile.findMany({
-      where: { userId: { in: userIds }, isActive: true },
+      where: { userId: { in: filteredUserIds }, isActive: true },
       select: {
         userId: true,
         bio: true,
@@ -248,8 +288,8 @@ export class SwipeService {
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: filteredUserIds.length,
+        totalPages: Math.ceil(filteredUserIds.length / limit),
       },
     };
   }

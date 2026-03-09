@@ -93,6 +93,16 @@ const DatingScreen: React.FC = React.memo(() => {
     setFilterVisible(false);
   }, []);
 
+  const handleBottomTabPress = useCallback(
+    (key: string) => {
+      if (key === 'likes') {
+        navigation.navigate('DatingLikes');
+      }
+      // Other tabs (discover/chats/profile) can be wired later
+    },
+    [navigation],
+  );
+
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -131,7 +141,7 @@ const DatingScreen: React.FC = React.memo(() => {
           <DiscoveryActions onSkip={handleSkip} onLike={handleLike} />
         )}
       </SafeAreaView>
-      <DiscoveryBottomNav />
+      <DiscoveryBottomNav activeTab="discover" onTabPress={handleBottomTabPress} />
       <DiscoveryFilterSheet
         visible={filterVisible}
         onClose={handleCloseFilter}
