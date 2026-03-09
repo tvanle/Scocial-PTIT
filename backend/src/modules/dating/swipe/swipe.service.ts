@@ -178,6 +178,156 @@ export class SwipeService {
       ],
     });
   }
+
+  async getIncomingLikes(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [swipes, total] = await Promise.all([
+      prisma.datingSwipe.findMany({
+        where: {
+          toUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+        select: {
+          fromUserId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.datingSwipe.count({
+        where: {
+          toUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+      }),
+    ]);
+
+    const userIds = swipes.map((s) => s.fromUserId);
+
+    const profiles = await prisma.datingProfile.findMany({
+      where: { userId: { in: userIds }, isActive: true },
+      select: {
+        userId: true,
+        bio: true,
+        latitude: true,
+        longitude: true,
+        photos: {
+          select: { url: true, order: true },
+          orderBy: { order: 'asc' },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            dateOfBirth: true,
+            gender: true,
+            studentId: true,
+            lastActiveAt: true,
+          },
+        },
+        lifestyle: {
+          select: { education: true },
+        },
+      },
+    });
+
+    const data = profiles.map((p) => ({
+      userId: p.userId,
+      bio: p.bio,
+      photos: p.photos,
+      user: p.user,
+      lifestyle: p.lifestyle,
+      distanceKm: null as number | null,
+    }));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getSentLikes(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [swipes, total] = await Promise.all([
+      prisma.datingSwipe.findMany({
+        where: {
+          fromUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+        select: {
+          toUserId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.datingSwipe.count({
+        where: {
+          fromUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+      }),
+    ]);
+
+    const userIds = swipes.map((s) => s.toUserId);
+
+    const profiles = await prisma.datingProfile.findMany({
+      where: { userId: { in: userIds }, isActive: true },
+      select: {
+        userId: true,
+        bio: true,
+        latitude: true,
+        longitude: true,
+        photos: {
+          select: { url: true, order: true },
+          orderBy: { order: 'asc' },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            dateOfBirth: true,
+            gender: true,
+            studentId: true,
+            lastActiveAt: true,
+          },
+        },
+        lifestyle: {
+          select: { education: true },
+        },
+      },
+    });
+
+    const data = profiles.map((p) => ({
+      userId: p.userId,
+      bio: p.bio,
+      photos: p.photos,
+      user: p.user,
+      lifestyle: p.lifestyle,
+      distanceKm: null as number | null,
+    }));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }
 
 export const swipeService = new SwipeService();

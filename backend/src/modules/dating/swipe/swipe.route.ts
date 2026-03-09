@@ -13,4 +13,14 @@ router.post(
   swipeController.swipe,
 );
 
+router.get(
+  '/likes/incoming',
+  swipeController.getIncomingLikes,
+);
+
+router.get(
+  '/likes/sent',
+  swipeController.getSentLikes,
+);
+
 export default router;
