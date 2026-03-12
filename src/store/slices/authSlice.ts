@@ -70,20 +70,19 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        set({ isLoading: true });
+        const { refreshTokenValue } = get();
+        set({
+          user: null,
+          accessToken: null,
+          refreshTokenValue: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
         try {
-          await authService.logout();
+          await authService.logout(refreshTokenValue || undefined);
         } catch (error) {
-          // Ignore logout errors
-        } finally {
-          set({
-            user: null,
-            accessToken: null,
-            refreshTokenValue: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-          });
+          // Ignore logout errors — state is already cleared
         }
       },
 

@@ -8,10 +8,10 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { showAlert } from '../../utils/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -38,7 +38,7 @@ const CreatePostScreen: React.FC = () => {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
+      showAlert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -59,7 +59,7 @@ const CreatePostScreen: React.FC = () => {
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thông báo', 'Cần quyền truy cập camera');
+      showAlert('Thông báo', 'Cần quyền truy cập camera');
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
@@ -76,7 +76,7 @@ const CreatePostScreen: React.FC = () => {
 
   const handlePost = async () => {
     if (!content.trim() && media.length === 0) {
-      Alert.alert('Thông báo', 'Vui lòng nhập nội dung hoặc thêm ảnh/video');
+      showAlert('Thông báo', 'Vui lòng nhập nội dung hoặc thêm ảnh/video');
       return;
     }
     setIsLoading(true);
@@ -88,7 +88,7 @@ const CreatePostScreen: React.FC = () => {
       navigation.goBack();
     } catch (error: any) {
       console.error('Create post error:', error);
-      Alert.alert('Lỗi', error?.message || 'Không thể đăng bài viết. Vui lòng thử lại.');
+      showAlert('Lỗi', error?.message || 'Không thể đăng bài viết. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

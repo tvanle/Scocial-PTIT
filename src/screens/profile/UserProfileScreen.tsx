@@ -8,12 +8,12 @@ import {
   Image,
   RefreshControl,
   StatusBar,
-  Alert,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { showAlert } from '../../utils/alert';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
@@ -323,7 +323,7 @@ const UserProfileScreen: React.FC = () => {
       setSharedPosts(results[1].status === 'fulfilled' ? results[1].value?.data || [] : []);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -374,7 +374,7 @@ const UserProfileScreen: React.FC = () => {
         isFollowing: wasFollowing,
         followersCount: currentFollowersCount,
       });
-      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
     }
   }, [profileUser, userId]);
 

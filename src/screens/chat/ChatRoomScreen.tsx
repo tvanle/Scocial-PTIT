@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
+import { showAlert } from '../../utils/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -66,7 +66,7 @@ const ChatRoomScreen: React.FC = () => {
       await chatService.markAsRead(convId);
     } catch (error) {
       console.error('Failed to fetch chat data:', error);
-      Alert.alert('Lỗi', 'Không thể tải cuộc trò chuyện. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể tải cuộc trò chuyện. Vui lòng thử lại.');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -107,12 +107,12 @@ const ChatRoomScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
     }
   }, [inputText, conversationId, user]);
 
   const handleAttachment = async () => {
-    Alert.alert('Đính kèm', 'Tính năng đính kèm file đang phát triển');
+    showAlert('Đính kèm', 'Tính năng đính kèm file đang phát triển');
   };
 
   const formatMessageTime = (dateString: string): string => {
