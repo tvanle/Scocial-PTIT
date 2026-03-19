@@ -146,9 +146,15 @@ export class SwipeService {
     userId: string,
     targetUserId: string,
   ) {
-    // 1. Tạo PRIVATE conversation giữa 2 user đã match
+    const [participantAId, participantBId] = [userId, targetUserId].sort();
+
     const conversation = await tx.conversation.create({
-      data: { type: 'PRIVATE' },
+      data: {
+        type: 'PRIVATE',
+        context: 'DATING',
+        participantAId,
+        participantBId,
+      },
     });
 
     await tx.conversationParticipant.createMany({

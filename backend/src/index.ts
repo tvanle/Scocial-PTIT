@@ -8,6 +8,7 @@ import { Server as SocketServer } from 'socket.io';
 
 import { config } from './config';
 import { prisma, disconnectDatabases } from './config/database';
+import { setIO } from './config/socket';
 import { errorHandler, notFoundHandler } from './middleware';
 
 // Import routes
@@ -29,6 +30,8 @@ const io = new SocketServer(httpServer, {
     methods: ['GET', 'POST'],
   },
 });
+
+setIO(io);
 
 // Middleware
 app.use(helmet());

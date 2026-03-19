@@ -20,6 +20,7 @@ export class ChatService {
     const existingConversations = await prisma.conversation.findMany({
       where: {
         type: 'PRIVATE',
+        context: 'SOCIAL',
         participants: {
           some: { userId: { in: [userId, otherUserId] } },
         },
@@ -56,8 +57,9 @@ export class ChatService {
 
     // Create new conversation with transaction
     const newConv = await prisma.$transaction(async (tx) => {
+      const [participantAId, participantBId] = [userId, otherUserId].sort();
       const conv = await tx.conversation.create({
-        data: { type: 'PRIVATE' },
+        data: { type: 'PRIVATE', context: 'SOCIAL', participantAId, participantBId },
       });
 
       await tx.conversationParticipant.createMany({

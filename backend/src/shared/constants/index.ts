@@ -77,6 +77,9 @@ export const ERROR_MESSAGES = {
   ALREADY_SWIPED: 'Bạn đã swipe người này rồi',
   MATCH_NOT_FOUND: 'Không tìm thấy kết nối',
   BLOCKED_USER: 'Không thể tương tác với người dùng này',
+  DATING_CONVERSATION_NOT_FOUND: 'Không tìm thấy cuộc trò chuyện hẹn hò',
+  NOT_MATCHED: 'Bạn chưa kết nối với người này',
+  NOT_CONVERSATION_PARTICIPANT: 'Bạn không thuộc cuộc trò chuyện này',
 
   // General
   VALIDATION_ERROR: 'Dữ liệu không hợp lệ',
@@ -135,6 +138,9 @@ export const SUCCESS_MESSAGES = {
   PREFERENCES_UPDATED: 'Cập nhật sở thích thành công',
   SWIPE_SUCCESS: 'Swipe thành công',
   MATCH_CREATED: 'Bạn có một kết nối mới!',
+  DATING_PROFILE_DELETED: 'Xoá hồ sơ hẹn hò thành công',
+  DATING_CONVERSATION_CREATED: 'Tạo cuộc trò chuyện hẹn hò thành công',
+  DATING_MESSAGE_SENT: 'Gửi tin nhắn thành công',
 } as const;
 
 export const PAGINATION = {

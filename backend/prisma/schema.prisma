@@ -270,10 +270,15 @@ enum NotificationType {
 // ============== CHAT ==============
 
 model Conversation {
-  id            String            @id @default(uuid())
-  type          ConversationType  @default(PRIVATE)
+  id            String              @id @default(uuid())
+  type          ConversationType    @default(PRIVATE)
+  context       ConversationContext  @default(SOCIAL)
   name          String?
   avatar        String?
+
+  // For unique 1:1 constraint – always store sorted (smaller UUID first)
+  participantAId String?
+  participantBId String?
 
   // Denormalized lastMessage for performance
   lastMessageContent   String?
@@ -286,7 +291,9 @@ model Conversation {
   participants  ConversationParticipant[]
   messages      Message[]
 
+  @@unique([participantAId, participantBId, context])
   @@index([updatedAt(sort: Desc)])
+  @@index([context])
 }
 
 model ConversationParticipant {
@@ -338,6 +345,11 @@ model MessageReadStatus {
 enum ConversationType {
   PRIVATE
   GROUP
+}
+
+enum ConversationContext {
+  SOCIAL
+  DATING
 }
 
 enum MessageType {
