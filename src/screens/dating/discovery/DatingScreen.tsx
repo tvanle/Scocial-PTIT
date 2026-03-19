@@ -97,8 +97,18 @@ const DatingScreen: React.FC = React.memo(() => {
     (key: string) => {
       if (key === 'likes') {
         navigation.navigate('DatingLikes');
+        return;
       }
-      // Other tabs (discover/chats/profile) can be wired later
+      if (key === 'discover') {
+        return;
+      }
+      if (key === 'profile') {
+        navigation.navigate('DatingMyProfile');
+        return;
+      }
+      if (key === 'chats') {
+        navigation.navigate('DatingChatList');
+      }
     },
     [navigation],
   );
@@ -106,7 +116,11 @@ const DatingScreen: React.FC = React.memo(() => {
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <DiscoveryHeader onFilterPress={handleFilterPress} />
+        <DiscoveryHeader
+          onFilterPress={handleFilterPress}
+          onProfilePress={() => navigation.navigate('DatingMyProfile')}
+          onBackToSocial={() => navigation.navigate('Main' as any)}
+        />
 
         <View style={styles.cardContainer}>
           {isLoading && !currentCard ? (

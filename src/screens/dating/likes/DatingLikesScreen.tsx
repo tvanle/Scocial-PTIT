@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -90,6 +90,21 @@ export const DatingLikesScreen: React.FC = () => {
     [navigation],
   );
 
+  const handleGoMyProfile = useCallback(() => {
+    navigation.navigate('DatingMyProfile');
+  }, [navigation]);
+
+  const handleBackToSocial = useCallback(() => {
+    navigation.navigate('Main' as any);
+  }, [navigation]);
+
+  const handleInfoPress = useCallback(() => {
+    Alert.alert(
+      'Về tính năng Likes',
+      'Đây là danh sách những người đã thích hồ sơ của bạn. Nhấn vào hồ sơ để xem chi tiết và quyết định thích lại hoặc bỏ qua.',
+    );
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: DiscoveryCard }) => (
       <LikesGridItem item={item} onPress={handleCardPress} />
@@ -101,8 +116,18 @@ export const DatingLikesScreen: React.FC = () => {
     (key: string) => {
       if (key === 'discover') {
         navigation.navigate('DatingDiscovery');
+        return;
       }
-      // other tabs (chats/profile) can be wired later
+      if (key === 'likes') {
+        return;
+      }
+      if (key === 'profile') {
+        navigation.navigate('DatingMyProfile');
+        return;
+      }
+      if (key === 'chats') {
+        navigation.navigate('DatingChatList');
+      }
     },
     [navigation],
   );
@@ -111,13 +136,24 @@ export const DatingLikesScreen: React.FC = () => {
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="My profile"
-          >
-            <MaterialIcons name="person" size={20} color={colors.subtitleColor} />
-          </TouchableOpacity>
+          <View style={styles.headerLeftGroup}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Quay về mạng xã hội"
+              onPress={handleBackToSocial}
+            >
+              <MaterialIcons name="arrow-back" size={20} color={colors.subtitleColor} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="My profile"
+              onPress={handleGoMyProfile}
+            >
+              <MaterialIcons name="person" size={20} color={colors.subtitleColor} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Likes</Text>
             <View style={styles.headerBadge}>
@@ -128,19 +164,35 @@ export const DatingLikesScreen: React.FC = () => {
             style={styles.headerIconBtn}
             accessibilityRole="button"
             accessibilityLabel="Likes info"
+            onPress={handleInfoPress}
           >
             <MaterialIcons name="info-outline" size={20} color={colors.subtitleColor} />
           </TouchableOpacity>
         </View>
 
         <FlatList
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            listData.length === 0 && styles.emptyListContent,
+          ]}
           data={listData}
           keyExtractor={(item) => item.userId}
           numColumns={NUM_COLUMNS}
           renderItem={renderItem}
           refreshing={isLoading}
           onRefresh={refetchIncoming}
+          ListEmptyComponent={
+            !isLoading ? (
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="favorite-border" size={64} color={colors.navInactive} />
+                <Text style={styles.emptyTitle}>Chưa có lượt thích mới</Text>
+                <Text style={styles.emptySubtitle}>
+                  Khi ai đó thích hồ sơ của bạn, họ sẽ xuất hiện ở đây. Những người bạn đã thích
+                  lại sẽ chuyển sang mục Tin nhắn.
+                </Text>
+              </View>
+            ) : null
+          }
         />
       </SafeAreaView>
       <DiscoveryBottomNav activeTab="likes" onTabPress={handleBottomTabPress} />
@@ -163,6 +215,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: DATING_SPACING.lg,
     paddingTop: DATING_SPACING.lg,
     paddingBottom: DATING_SPACING.sm,
+  },
+  headerLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   headerTitleContainer: {
     flexDirection: 'row',
@@ -198,6 +255,27 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: CARD_MARGIN,
     paddingBottom: DATING_SPACING.xl,
+  },
+  emptyListContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingHorizontal: DATING_SPACING.xl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.title,
+    marginTop: DATING_SPACING.md,
+    marginBottom: DATING_SPACING.sm,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.navInactive,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   cardWrapper: {
     width: CARD_WIDTH,

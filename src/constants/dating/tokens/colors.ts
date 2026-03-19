@@ -111,4 +111,5 @@ export const DATING_COLORS_SEMANTIC = {
   swipeNopeBorder: '#E53935',
   swipeLikeBorder: '#43A047',
   matchText: '#ffffff',
+  matchTitleHighlight: '#FF6B6B',
 } as const;

@@ -157,6 +157,7 @@ export const DATING_COLORS = {
     emptySubtitle: C.emptySubtitleColor,
     matchOverlayBg: C.matchOverlayBg,
     matchText: C.matchText,
+    matchTitleHighlight: C.matchTitleHighlight,
     swipeNopeBorder: C.swipeNopeBorder,
     swipeLikeBorder: C.swipeLikeBorder,
   },

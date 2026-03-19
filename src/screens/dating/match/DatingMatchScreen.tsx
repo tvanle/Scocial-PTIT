@@ -8,6 +8,7 @@ import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_SPACING } from '../../../constants/dating/tokens';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
 import type { RootStackParamList } from '../../../types';
+import datingChatService from '../../../services/dating/datingChatService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DatingMatch'>;
 type Route = RouteProp<RootStackParamList, 'DatingMatch'>;
@@ -126,9 +127,21 @@ export const DatingMatchScreen: React.FC = () => {
     navigation.goBack();
   }, [navigation, source, profile.userId]);
 
-  const handleSendMessage = useCallback(() => {
-    navigation.navigate('ChatList');
-  }, [navigation]);
+  const handleSendMessage = useCallback(async () => {
+    try {
+      const conv = await datingChatService.getOrCreateConversation(profile.userId);
+      navigation.navigate('DatingChatRoom', {
+        conversationId: conv.id,
+        otherUser: conv.otherUser ?? {
+          id: profile.userId,
+          fullName: profile.user.fullName ?? '',
+          avatar: profile.photos[0]?.url ?? null,
+        },
+      });
+    } catch {
+      navigation.navigate('DatingChatList');
+    }
+  }, [navigation, profile]);
 
   return (
     <View style={styles.wrapper}>
@@ -248,7 +261,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: layout.textSize,
     fontWeight: '800',
-    color: colors.matchText,
+    color: colors.matchTitleHighlight,
     textAlign: 'center',
     marginBottom: DATING_SPACING.sm,
   },

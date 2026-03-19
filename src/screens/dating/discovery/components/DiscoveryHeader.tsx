@@ -8,18 +8,34 @@ const layout = DATING_LAYOUT.discovery.header;
 
 interface DiscoveryHeaderProps {
   onFilterPress?: () => void;
+  onProfilePress?: () => void;
+  onBackToSocial?: () => void;
 }
 
-export const DiscoveryHeader = React.memo<DiscoveryHeaderProps>(({ onFilterPress }) => (
+export const DiscoveryHeader = React.memo<DiscoveryHeaderProps>(({ onFilterPress, onProfilePress, onBackToSocial }) => (
   <View style={styles.container}>
-    <TouchableOpacity
-      style={styles.iconBtn}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel="My profile"
-    >
-      <MaterialIcons name="person" size={layout.iconSize / 2} color={colors.subtitleColor} />
-    </TouchableOpacity>
+    <View style={styles.leftGroup}>
+      {onBackToSocial && (
+        <TouchableOpacity
+          style={styles.iconBtn}
+          activeOpacity={0.7}
+          onPress={onBackToSocial}
+          accessibilityRole="button"
+          accessibilityLabel="Quay về mạng xã hội"
+        >
+          <MaterialIcons name="arrow-back" size={layout.iconSize / 2} color={colors.subtitleColor} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={styles.iconBtn}
+        activeOpacity={0.7}
+        onPress={onProfilePress}
+        accessibilityRole="button"
+        accessibilityLabel="My profile"
+      >
+        <MaterialIcons name="person" size={layout.iconSize / 2} color={colors.subtitleColor} />
+      </TouchableOpacity>
+    </View>
 
     <View style={styles.titleWrap}>
       <Text style={styles.title}>PTIT Connect</Text>
@@ -46,6 +62,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.paddingH,
     paddingTop: layout.paddingTop,
     paddingBottom: layout.paddingBottom,
+  },
+  leftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   iconBtn: {
     width: layout.iconSize,
