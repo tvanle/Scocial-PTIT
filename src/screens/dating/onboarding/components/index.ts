@@ -7,8 +7,10 @@ export {
   ProfileSetupPhotosSection,
   ProfileSetupBioSection,
   ProfileSetupInterestsSection,
+  ProfileSetupPromptsSection,
   ProfileSetupBottomBar,
   type PhotoSlot,
+  type PromptValue,
 } from './profile-setup';
 
 export {

@@ -5,4 +5,5 @@ export { DetailInfoCards } from './DetailInfoCards';
 export { DetailSection } from './DetailSection';
 export { DetailInterests } from './DetailInterests';
 export { DetailCampusCard } from './DetailCampusCard';
+export { DetailPromptsCard } from './DetailPromptsCard';
 export { DetailActionBar } from './DetailActionBar';

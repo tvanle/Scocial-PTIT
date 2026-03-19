@@ -14,7 +14,7 @@ import {
   DetailInfoCards,
   DetailSection,
   DetailInterests,
-  DetailCampusCard,
+  DetailPromptsCard,
   DetailActionBar,
 } from './components';
 import datingService from '../../../services/dating/datingService';
@@ -119,7 +119,7 @@ const DatingProfileDetailScreen: React.FC = () => {
         </DetailSection>
 
         <View style={styles.campusWrap}>
-          <DetailCampusCard department={profile.lifestyle?.education ?? undefined} />
+          <DetailPromptsCard prompts={profile.prompts} />
         </View>
 
         <DetailPhotoGrid photos={profile.photos} />

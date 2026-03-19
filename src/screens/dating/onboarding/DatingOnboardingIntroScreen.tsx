@@ -28,7 +28,7 @@ const DatingOnboardingIntroScreen: React.FC = () => {
     NativeStackNavigationProp<RootStackParamList, 'DatingOnboardingIntro'>
   >();
   const handleNextPress = useCallback(() => {
-    navigation.navigate('DatingProfileSetup');
+    navigation.navigate('DatingProfileSetup', { from: 'onboarding' });
   }, [navigation]);
 
   return (

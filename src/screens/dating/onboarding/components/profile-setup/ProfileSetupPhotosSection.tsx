@@ -17,18 +17,24 @@ const colors = DATING_COLORS.profileSetup;
 export interface PhotoSlot {
   uri: string;
   order: number;
+  /** Ảnh đã tồn tại trên server (không cần upload lại trong bước setup) */
+  isExisting?: boolean;
+  /** Id ảnh trên backend – chỉ dùng nội bộ, UI không cần */
+  id?: string;
 }
 
 interface ProfileSetupPhotosSectionProps {
   photos: PhotoSlot[];
   onPickPhoto: (slotIndex: number) => void;
   uploadingSlot: number | null;
+  onRemovePhoto?: (slotIndex: number) => void;
 }
 
 export const ProfileSetupPhotosSection: React.FC<ProfileSetupPhotosSectionProps> = ({
   photos,
   onPickPhoto,
   uploadingSlot,
+  onRemovePhoto,
 }) => {
   const photoByOrder = (order: number) => photos.find((p) => p.order === order);
 
@@ -60,6 +66,16 @@ export const ProfileSetupPhotosSection: React.FC<ProfileSetupPhotosSectionProps>
               <View style={[styles.uploadingOverlay, { backgroundColor: layout.overlayBg }]}>
                 <ActivityIndicator color={colors.buttonText} />
               </View>
+            )}
+            {onRemovePhoto && !isUploading && (
+              <TouchableOpacity
+                style={styles.removeBtn}
+                onPress={() => onRemovePhoto(order)}
+                accessibilityRole="button"
+                accessibilityLabel={DATING_STRINGS.profileSetup.photos}
+              >
+                <MaterialIcons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
             )}
           </>
         ) : isUploading ? (
@@ -186,6 +202,17 @@ const styles = StyleSheet.create({
   },
   uploadingOverlay: {
     ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },

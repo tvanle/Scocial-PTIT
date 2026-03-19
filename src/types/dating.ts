@@ -128,12 +128,12 @@ export interface DiscoveryCard {
   userId: string;
   bio: string;
   photos: Array<{ url: string; order?: number }>;
+  prompts?: Array<{ question: string; answer: string }>;
   user: DatingUserSnippet & {
     studentId?: string | null;
     lastActiveAt?: string | null;
   };
   lifestyle?: { education: string | null } | null;
-  /** Khoảng cách (km) từ user hiện tại; null khi chưa bật vị trí hoặc không tính được */
   distanceKm?: number | null;
 }
 
@@ -190,6 +190,32 @@ export interface NearbyQuery {
   distance?: string;
   page?: string;
   limit?: string;
+}
+
+// --- Dating Chat ---
+
+export interface DatingChatUser {
+  id: string;
+  fullName: string;
+  avatar: string | null;
+}
+
+export interface DatingConversation {
+  id: string;
+  lastMessageContent: string | null;
+  lastMessageSenderId: string | null;
+  lastMessageCreatedAt: string | null;
+  updatedAt: string;
+  otherUser: DatingChatUser | null;
+  unreadCount: number;
+}
+
+export interface DatingMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+  sender: DatingChatUser;
 }
 
 /** Flat shape returned by GET /dating/location/nearby (matches backend) */

@@ -13,6 +13,7 @@ interface ProfileSetupBottomBarProps {
   loading?: boolean;
   disabled?: boolean;
   hint?: string | null;
+   label?: string;
 }
 
 const layout = DATING_LAYOUT.profileSetup.bottomBar;
@@ -26,6 +27,7 @@ export const ProfileSetupBottomBar: React.FC<ProfileSetupBottomBarProps> = ({
   loading = false,
   disabled = false,
   hint = null,
+  label,
 }) => {
   const isInactive = loading || disabled;
 
@@ -69,7 +71,7 @@ export const ProfileSetupBottomBar: React.FC<ProfileSetupBottomBarProps> = ({
             <ActivityIndicator color={colors.buttonText} />
           ) : (
             <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-              {DATING_STRINGS.profileSetup.continue}
+              {label ?? DATING_STRINGS.profileSetup.continue}
             </Text>
           )}
         </Animated.View>

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating';
@@ -21,6 +21,7 @@ import {
 import type { DatingGenderPreference } from '../../../types/dating';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingPreferencesSetup'>;
+type Route = RouteProp<RootStackParamList, 'DatingPreferencesSetup'>;
 
 const layoutContent = DATING_LAYOUT.preferences.content;
 const layoutAge = DATING_LAYOUT.preferences.ageRange;
@@ -28,6 +29,7 @@ const colors = DATING_COLORS.preferences;
 
 const DatingPreferencesSetupScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<Route>();
   const [preferredGender, setPreferredGender] = useState<DatingGenderPreference | null>(null);
   const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
   const [ageRange, setAgeRange] = useState<AgeRangeValue>({
@@ -38,6 +40,9 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   const [pickerValue, setPickerValue] = useState('');
   const [sameYearOnly, setSameYearOnly] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  const from = route.params?.from ?? 'onboarding';
+  const isEditing = from === 'settings';
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleAddMajor = useCallback((major: string) => {
@@ -78,6 +83,7 @@ const DatingPreferencesSetupScreen: React.FC = () => {
           title={DATING_STRINGS.preferences.title}
           showBackButton
           onBack={handleBack}
+          hideProgress={isEditing}
         />
         <ScrollView
           style={styles.scrollView}
