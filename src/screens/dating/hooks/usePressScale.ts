@@ -4,24 +4,22 @@ import {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-
-const PRESS_SCALE = 0.97;
-const SPRING_CONFIG = { damping: 15, stiffness: 400 };
+import { SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../constants/dating';
 
 interface UsePressScaleOptions {
   scaleDown?: number;
 }
 
 export const usePressScale = (options: UsePressScaleOptions = {}) => {
-  const { scaleDown = PRESS_SCALE } = options;
+  const { scaleDown = PRESS_SCALE_DOWN } = options;
   const scale = useSharedValue(1);
 
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(scaleDown, SPRING_CONFIG);
+    scale.value = withSpring(scaleDown, SPRING_BUTTON);
   }, [scale, scaleDown]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1);
+    scale.value = withSpring(1, SPRING_BUTTON);
   }, [scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({

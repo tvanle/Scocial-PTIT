@@ -1,7 +1,7 @@
 
 export type DatingSmokingDrinkingExercise = 'NEVER' | 'SOMETIMES' | 'REGULARLY';
 export type DatingGenderPreference = 'MALE' | 'FEMALE' | 'OTHER';
-export type SwipeAction = 'LIKE' | 'PASS';
+export type SwipeAction = 'LIKE' | 'UNLIKE';
 
 // --- Shared: user snippet in dating responses ---
 
@@ -49,6 +49,8 @@ export interface DatingPreferences {
   ageMax: number;
   maxDistance: number | null;
   gender: DatingGenderPreference | null;
+  preferredMajors?: string[];
+  sameYearOnly?: boolean;
   updatedAt: string;
 }
 
@@ -104,8 +106,20 @@ export interface UpdateLifestyleInput {
 export interface UpdatePreferencesInput {
   ageMin: number;
   ageMax: number;
-  maxDistance?: number;
-  gender?: DatingGenderPreference;
+  maxDistance?: number | null;
+  gender?: DatingGenderPreference | null;
+  preferredMajors?: string[];
+  sameYearOnly?: boolean;
+}
+
+/** Giá trị form bộ lọc dating, dùng chung cho discovery filter và màn khác */
+export interface DatingFilterValues {
+  preferredGender: DatingGenderPreference | null;
+  maxDistanceKm: number | null;
+  ageMin: number;
+  ageMax: number;
+  preferredMajor: string | null;
+  sameYearOnly: boolean;
 }
 
 // --- Discovery ---
@@ -113,8 +127,14 @@ export interface UpdatePreferencesInput {
 export interface DiscoveryCard {
   userId: string;
   bio: string;
-  photos: Array<{ url: string }>;
-  user: DatingUserSnippet;
+  photos: Array<{ url: string; order?: number }>;
+  prompts?: Array<{ question: string; answer: string }>;
+  user: DatingUserSnippet & {
+    studentId?: string | null;
+    lastActiveAt?: string | null;
+  };
+  lifestyle?: { education: string | null } | null;
+  distanceKm?: number | null;
 }
 
 export interface DiscoveryQuery {
@@ -170,6 +190,32 @@ export interface NearbyQuery {
   distance?: string;
   page?: string;
   limit?: string;
+}
+
+// --- Dating Chat ---
+
+export interface DatingChatUser {
+  id: string;
+  fullName: string;
+  avatar: string | null;
+}
+
+export interface DatingConversation {
+  id: string;
+  lastMessageContent: string | null;
+  lastMessageSenderId: string | null;
+  lastMessageCreatedAt: string | null;
+  updatedAt: string;
+  otherUser: DatingChatUser | null;
+  unreadCount: number;
+}
+
+export interface DatingMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+  sender: DatingChatUser;
 }
 
 /** Flat shape returned by GET /dating/location/nearby (matches backend) */

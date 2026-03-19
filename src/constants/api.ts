@@ -124,6 +124,8 @@ export const ENDPOINTS = {
 
     // Swipe
     SWIPE: '/dating/swipe',
+    INCOMING_LIKES: '/dating/swipe/likes/incoming',
+    SENT_LIKES: '/dating/swipe/likes/sent',
 
     // Match
     MATCHES: '/dating/matches',
@@ -132,6 +134,13 @@ export const ENDPOINTS = {
     // Location
     UPDATE_LOCATION: '/dating/location',
     NEARBY: '/dating/location/nearby',
+
+    // Profile Lifecycle
+    DELETE_PROFILE: '/dating/profile',
+
+    // Dating Chat
+    CHAT_CONVERSATIONS: '/dating/chat',
+    CHAT_MESSAGES: (conversationId: string) => `/dating/chat/${conversationId}/messages`,
   },
 };
 

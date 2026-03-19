@@ -40,13 +40,13 @@ export class LocationService {
           latitude: data.latitude,
           longitude: data.longitude,
           locationUpdatedAt: new Date(),
-        } as any,
+        },
         select: {
           userId: true,
           latitude: true,
           longitude: true,
           locationUpdatedAt: true,
-        } as any,
+        },
       });
 
       return updated;

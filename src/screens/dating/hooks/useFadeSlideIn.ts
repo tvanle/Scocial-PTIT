@@ -6,10 +6,10 @@ import {
   withSpring,
   withDelay,
 } from 'react-native-reanimated';
-
-const DEFAULT_DURATION = 700;
-const DEFAULT_DAMPING = 12;
-const DEFAULT_STIFFNESS = 90;
+import {
+  DATING_ANIMATION,
+  SPRING_ENTRANCE,
+} from '../../../constants/dating';
 
 interface UseFadeSlideInOptions {
   delay?: number;
@@ -22,10 +22,10 @@ interface UseFadeSlideInOptions {
 export const useFadeSlideIn = (options: UseFadeSlideInOptions = {}) => {
   const {
     delay = 0,
-    initialTranslateY = 30,
-    duration = DEFAULT_DURATION,
-    damping = DEFAULT_DAMPING,
-    stiffness = DEFAULT_STIFFNESS,
+    initialTranslateY = DATING_ANIMATION.translateYEntrance,
+    duration = DATING_ANIMATION.durationEntrance,
+    damping = SPRING_ENTRANCE.damping,
+    stiffness = SPRING_ENTRANCE.stiffness,
   } = options;
 
   const opacity = useSharedValue(0);

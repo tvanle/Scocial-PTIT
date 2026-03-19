@@ -20,6 +20,7 @@ router.use(authenticate);
 // Profile routes
 router.post('/', validateBody(createDatingProfileSchema), profileController.createProfile);
 router.put('/', validateBody(updateDatingProfileSchema), profileController.updateProfile);
+router.delete('/', profileController.deleteProfile);
 router.get('/me', profileController.getMyProfile);
 router.get('/:userId', validateParams(userIdParamSchema), profileController.getProfileByUserId);
 

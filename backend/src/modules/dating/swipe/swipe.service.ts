@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, SwipeAction } from '@prisma/client';
 import { prisma } from '../../../config/database';
 import { AppError } from '../../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../../shared/constants';
@@ -25,7 +25,7 @@ const MATCH_SELECT: Prisma.DatingMatchSelect = {
 };
 
 export class SwipeService {
-  async swipe(userId: string, targetUserId: string, action: 'LIKE' | 'PASS') {
+  async swipe(userId: string, targetUserId: string, action: 'LIKE' | 'UNLIKE') {
     if (userId === targetUserId) {
       throw new AppError(ERROR_MESSAGES.CANNOT_SWIPE_SELF, HTTP_STATUS.BAD_REQUEST);
     }
@@ -67,37 +67,28 @@ export class SwipeService {
       return this.swipeWithMatchCheck(userId, targetUserId);
     }
 
-    // PASS — attempt create, catch duplicate via P2002
-    try {
-      const swipe = await prisma.datingSwipe.create({
-        data: { fromUserId: userId, toUserId: targetUserId, action: 'PASS' },
-        select: SWIPE_SELECT,
-      });
+    const swipe = await prisma.datingSwipe.upsert({
+      where: {
+        fromUserId_toUserId: { fromUserId: userId, toUserId: targetUserId },
+      },
+      update: { action: SwipeAction.UNLIKE },
+      create: { fromUserId: userId, toUserId: targetUserId, action: SwipeAction.UNLIKE },
+      select: SWIPE_SELECT,
+    });
 
-      return { swipe, matched: false, match: null };
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
-      }
-      throw error;
-    }
+    return { swipe, matched: false, match: null };
   }
 
   private async swipeWithMatchCheck(userId: string, targetUserId: string) {
     return prisma.$transaction(async (tx) => {
-      // Create LIKE swipe — catch P2002 (duplicate) inside transaction
-      let swipe;
-      try {
-        swipe = await tx.datingSwipe.create({
-          data: { fromUserId: userId, toUserId: targetUserId, action: 'LIKE' },
-          select: SWIPE_SELECT,
-        });
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          throw new AppError(ERROR_MESSAGES.ALREADY_SWIPED, HTTP_STATUS.CONFLICT);
-        }
-        throw error;
-      }
+      const swipe = await tx.datingSwipe.upsert({
+        where: {
+          fromUserId_toUserId: { fromUserId: userId, toUserId: targetUserId },
+        },
+        update: { action: SwipeAction.LIKE },
+        create: { fromUserId: userId, toUserId: targetUserId, action: SwipeAction.LIKE },
+        select: SWIPE_SELECT,
+      });
 
       // Check reciprocal LIKE
       const reciprocal = await tx.datingSwipe.findFirst({
@@ -155,9 +146,15 @@ export class SwipeService {
     userId: string,
     targetUserId: string,
   ) {
-    // 1. Tạo PRIVATE conversation giữa 2 user đã match
+    const [participantAId, participantBId] = [userId, targetUserId].sort();
+
     const conversation = await tx.conversation.create({
-      data: { type: 'PRIVATE' },
+      data: {
+        type: 'PRIVATE',
+        context: 'DATING',
+        participantAId,
+        participantBId,
+      },
     });
 
     await tx.conversationParticipant.createMany({
@@ -186,6 +183,196 @@ export class SwipeService {
         },
       ],
     });
+  }
+
+  async getIncomingLikes(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [swipes, total] = await Promise.all([
+      prisma.datingSwipe.findMany({
+        where: {
+          toUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+        select: {
+          fromUserId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.datingSwipe.count({
+        where: {
+          toUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+      }),
+    ]);
+
+    const userIds = swipes.map((s) => s.fromUserId);
+
+    if (userIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: 0,
+        },
+      };
+    }
+
+    // Exclude users that you have already liked back (mutual LIKE -> match)
+    const myLikes = await prisma.datingSwipe.findMany({
+      where: {
+        fromUserId: userId,
+        toUserId: { in: userIds },
+        action: SwipeAction.LIKE,
+      },
+      select: {
+        toUserId: true,
+      },
+    });
+
+    const matchedUserIds = new Set(myLikes.map((s) => s.toUserId));
+
+    const filteredUserIds = userIds.filter((id) => !matchedUserIds.has(id));
+
+    if (filteredUserIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
+    const profiles = await prisma.datingProfile.findMany({
+      where: { userId: { in: filteredUserIds }, isActive: true },
+      select: {
+        userId: true,
+        bio: true,
+        latitude: true,
+        longitude: true,
+        photos: {
+          select: { url: true, order: true },
+          orderBy: { order: 'asc' },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            dateOfBirth: true,
+            gender: true,
+            studentId: true,
+            lastActiveAt: true,
+          },
+        },
+        lifestyle: {
+          select: { education: true },
+        },
+      },
+    });
+
+    const data = profiles.map((p) => ({
+      userId: p.userId,
+      bio: p.bio,
+      photos: p.photos,
+      user: p.user,
+      lifestyle: p.lifestyle,
+      distanceKm: null as number | null,
+    }));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total: filteredUserIds.length,
+        totalPages: Math.ceil(filteredUserIds.length / limit),
+      },
+    };
+  }
+
+  async getSentLikes(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [swipes, total] = await Promise.all([
+      prisma.datingSwipe.findMany({
+        where: {
+          fromUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+        select: {
+          toUserId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.datingSwipe.count({
+        where: {
+          fromUserId: userId,
+          action: SwipeAction.LIKE,
+        },
+      }),
+    ]);
+
+    const userIds = swipes.map((s) => s.toUserId);
+
+    const profiles = await prisma.datingProfile.findMany({
+      where: { userId: { in: userIds }, isActive: true },
+      select: {
+        userId: true,
+        bio: true,
+        latitude: true,
+        longitude: true,
+        photos: {
+          select: { url: true, order: true },
+          orderBy: { order: 'asc' },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            dateOfBirth: true,
+            gender: true,
+            studentId: true,
+            lastActiveAt: true,
+          },
+        },
+        lifestyle: {
+          select: { education: true },
+        },
+      },
+    });
+
+    const data = profiles.map((p) => ({
+      userId: p.userId,
+      bio: p.bio,
+      photos: p.photos,
+      user: p.user,
+      lifestyle: p.lifestyle,
+      distanceKm: null as number | null,
+    }));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }
 

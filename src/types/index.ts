@@ -261,7 +261,21 @@ export type RootStackParamList = {
   Following: { userId: string };
   DatingSplash: undefined;
   DatingOnboardingIntro: undefined;
-  DatingProfileSetup: undefined;
+  DatingProfileSetup: { from?: 'onboarding' | 'settings' } | undefined;
+  DatingPreferencesSetup: { from?: 'onboarding' | 'settings' } | undefined;
+  DatingLocationPermission: undefined;
+  DatingDiscovery: undefined;
+  DatingProfileDetail: { profile: import('./dating').DiscoveryCard };
+  DatingMatch: { profile: import('./dating').DiscoveryCard; source: 'discovery' | 'detail' };
+  DatingLikes: undefined;
+  DatingMyProfile: undefined;
+  DatingMatchSuccess: { match: import('./dating').MatchItem };
+  DatingPaused: undefined;
+  DatingChatList: undefined;
+  DatingChatRoom: {
+    conversationId: string;
+    otherUser?: import('./dating').DatingChatUser | null;
+  };
 };
 
 export type AuthStackParamList = {

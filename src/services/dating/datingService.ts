@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import apiClient from '../api/apiClient';
 import { ENDPOINTS } from '../../constants/api';
 import type {
@@ -53,6 +54,27 @@ class DatingService {
     return response.data;
   }
 
+  async uploadMedia(uri: string): Promise<string> {
+    const formData = new FormData();
+
+    if (Platform.OS === 'web') {
+      const blob = await fetch(uri).then((r) => r.blob());
+      formData.append('file', blob, 'photo.jpg');
+    } else {
+      formData.append('file', {
+        uri,
+        type: 'image/jpeg',
+        name: 'photo.jpg',
+      } as any);
+    }
+
+    const response = await apiClient.post(ENDPOINTS.MEDIA.UPLOAD, formData, {
+      headers: { 'Content-Type': undefined },
+      transformRequest: (data: FormData) => data,
+    });
+    return response.data.url;
+  }
+
   async deletePhoto(photoId: string): Promise<void> {
     await apiClient.delete(ENDPOINTS.DATING.DELETE_PHOTO(photoId));
   }
@@ -72,6 +94,10 @@ class DatingService {
     return response.data;
   }
 
+  async deleteProfile(): Promise<void> {
+    await apiClient.delete(ENDPOINTS.DATING.DELETE_PROFILE);
+  }
+
   // --- Discovery ---
 
   async getDiscovery(params?: DiscoveryQuery): Promise<PaginatedResponse<DiscoveryCard>> {
@@ -83,6 +109,16 @@ class DatingService {
 
   async swipe(data: SwipeInput): Promise<SwipeResponse> {
     const response = await apiClient.post(ENDPOINTS.DATING.SWIPE, data);
+    return response.data;
+  }
+
+  async getIncomingLikes(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<DiscoveryCard>> {
+    const response = await apiClient.get(ENDPOINTS.DATING.INCOMING_LIKES, { params: params ?? {} });
+    return response.data;
+  }
+
+  async getSentLikes(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<DiscoveryCard>> {
+    const response = await apiClient.get(ENDPOINTS.DATING.SENT_LIKES, { params: params ?? {} });
     return response.data;
   }
 

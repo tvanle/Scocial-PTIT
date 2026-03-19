@@ -1,0 +1,10 @@
+export {
+  PreferencesAgeRangeSection,
+  type AgeRangeValue,
+} from './PreferencesAgeRangeSection';
+export { PreferencesGenderSection } from './PreferencesGenderSection';
+export { PreferencesDistanceSection } from './PreferencesDistanceSection';
+export { PreferencesMajorSection } from './PreferencesMajorSection';
+export { PreferencesSameYearSection } from './PreferencesSameYearSection';
+export { PreferencesPrivacyNote } from './PreferencesPrivacyNote';
+export { PreferencesBottomBar } from './PreferencesBottomBar';

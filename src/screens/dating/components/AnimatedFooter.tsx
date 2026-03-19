@@ -31,7 +31,7 @@ export const AnimatedFooter: React.FC<AnimatedFooterProps> = ({
     <View style={styles.footer}>
       <Animated.View style={animatedStyle}>
         <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={onStartPress}>
-          <Text style={styles.buttonText}>{DATING_STRINGS.buttonText}</Text>
+          <Text style={styles.buttonText}>{DATING_STRINGS.splash.buttonText}</Text>
           <MaterialIcons
             name="arrow-forward"
             size={22}
@@ -42,7 +42,7 @@ export const AnimatedFooter: React.FC<AnimatedFooterProps> = ({
       </Animated.View>
 
       <Animated.Text style={[styles.footerText, { color: mutedTextColor }, animatedStyle]}>
-        {DATING_STRINGS.footerText}
+        {DATING_STRINGS.splash.footerText}
       </Animated.Text>
     </View>
   );
