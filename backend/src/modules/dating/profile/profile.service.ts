@@ -349,6 +349,19 @@ export class ProfileService {
     return lifestyle;
   }
 
+  async deleteProfile(userId: string) {
+    const profile = await prisma.datingProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) return;
+
+    await prisma.datingProfile.delete({
+      where: { id: profile.id },
+    });
+  }
+
   // Update preferences
   async updatePreferences(userId: string, data: UpdatePreferencesInput) {
     const profileId = await this.getProfileIdByUserId(userId);

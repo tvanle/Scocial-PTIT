@@ -67,6 +67,16 @@ export class ProfileController {
     }
   }
 
+  async deleteProfile(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      await profileService.deleteProfile(userId);
+      res.status(HTTP_STATUS.NO_CONTENT).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updatePrompts(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;

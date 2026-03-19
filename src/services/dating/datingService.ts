@@ -94,6 +94,10 @@ class DatingService {
     return response.data;
   }
 
+  async deleteProfile(): Promise<void> {
+    await apiClient.delete(ENDPOINTS.DATING.DELETE_PROFILE);
+  }
+
   // --- Discovery ---
 
   async getDiscovery(params?: DiscoveryQuery): Promise<PaginatedResponse<DiscoveryCard>> {
