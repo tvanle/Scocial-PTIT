@@ -5,6 +5,16 @@ import { parsePagination, paginate } from '../../shared/utils';
 import { MessageType } from './chat.types';
 
 export class ChatService {
+  // Helper: flatten ConversationParticipant[] into User[] for frontend compatibility
+  private flattenConversation(conversation: any) {
+    if (!conversation) return conversation;
+    const { participants, ...rest } = conversation;
+    return {
+      ...rest,
+      participants: (participants || []).map((p: any) => p.user || p),
+    };
+  }
+
   // Get or create private conversation
   async getOrCreateConversation(userId: string, otherUserId: string) {
     // Check if other user exists
@@ -16,43 +26,29 @@ export class ChatService {
       throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    // Find existing conversation with exactly 2 participants
-    const existingConversations = await prisma.conversation.findMany({
+    // Find existing private conversation between these 2 users (optimized: single query with AND)
+    const existingConversation = await prisma.conversation.findFirst({
       where: {
         type: 'PRIVATE',
         context: 'SOCIAL',
-        participants: {
-          some: { userId: { in: [userId, otherUserId] } },
-        },
+        AND: [
+          { participants: { some: { userId: userId } } },
+          { participants: { some: { userId: otherUserId } } },
+        ],
       },
       include: {
-        participants: true,
-      },
-    });
-
-    // Filter for exactly 2 participants matching our users
-    const conversation = existingConversations.find(
-      (conv) =>
-        conv.participants.length === 2 &&
-        conv.participants.every((p) => [userId, otherUserId].includes(p.userId))
-    );
-
-    if (conversation) {
-      // Return existing with user data enrichment
-      const conversationWithUsers = await prisma.conversation.findUnique({
-        where: { id: conversation.id },
-        include: {
-          participants: {
-            where: { userId: { not: userId } },
-            include: {
-              user: {
-                select: { id: true, fullName: true, avatar: true },
-              },
+        participants: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, avatar: true },
             },
           },
         },
-      });
-      return conversationWithUsers;
+      },
+    });
+
+    if (existingConversation) {
+      return this.flattenConversation(existingConversation);
     }
 
     // Create new conversation with transaction
@@ -69,12 +65,10 @@ export class ChatService {
         ],
       });
 
-      // Fetch with user data
       return tx.conversation.findUnique({
         where: { id: conv.id },
         include: {
           participants: {
-            where: { userId: { not: userId } },
             include: {
               user: {
                 select: { id: true, fullName: true, avatar: true },
@@ -85,7 +79,33 @@ export class ChatService {
       });
     });
 
-    return newConv;
+    return this.flattenConversation(newConv);
+  }
+
+  async getConversation(conversationId: string, userId: string) {
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, avatar: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new AppError(ERROR_MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    if (!isParticipant) {
+      throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+    }
+
+    return this.flattenConversation(conversation);
   }
 
   // Get user conversations
@@ -121,13 +141,33 @@ export class ChatService {
       },
     });
 
-    // Map to include participantUsers for backward compatibility
-    const conversationsWithUsers = conversations.map((conv) => ({
-      ...conv,
-      participantUsers: conv.participants.map((p) => p.user),
-    }));
+    // Enrich with lastMessage object + unreadCount for frontend
+    const enriched = await Promise.all(
+      conversations.map(async (conv) => {
+        const unreadCount = await prisma.message.count({
+          where: {
+            conversationId: conv.id,
+            senderId: { not: userId },
+            readBy: { none: { userId: userId } },
+          },
+        });
 
-    return paginate(conversationsWithUsers, total, p, l);
+        const flattened = this.flattenConversation(conv);
+        return {
+          ...flattened,
+          unreadCount,
+          lastMessage: conv.lastMessageContent
+            ? {
+              content: conv.lastMessageContent,
+              senderId: conv.lastMessageSenderId,
+              createdAt: conv.lastMessageCreatedAt,
+            }
+            : null,
+        };
+      })
+    );
+
+    return paginate(enriched, total, p, l);
   }
 
   // Get messages in conversation
@@ -154,6 +194,9 @@ export class ChatService {
       skip: skip,
       take: l,
       include: {
+        sender: {
+          select: { id: true, fullName: true, avatar: true },
+        },
         readBy: true,
       },
     });
@@ -170,9 +213,12 @@ export class ChatService {
     conversationId: string,
     senderId: string,
     content: string,
-    type: MessageType = 'TEXT',
+    type: string = 'TEXT',
     mediaUrl?: string
   ) {
+    // Normalize type to uppercase for Prisma enum (frontend may send lowercase)
+    const normalizedType = (type?.toUpperCase() || 'TEXT') as MessageType;
+
     // Verify user is participant
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -189,17 +235,14 @@ export class ChatService {
 
     // Use transaction to create message and update conversation
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create message
+      // 1. Create message (without include — will fetch with relations at end)
       const message = await tx.message.create({
         data: {
           conversationId,
           senderId,
           content,
-          type,
+          type: normalizedType,
           mediaUrl,
-        },
-        include: {
-          readBy: true,
         },
       });
 
@@ -222,10 +265,13 @@ export class ChatService {
         },
       });
 
-      // Fetch message with updated readBy
+      // 4. Single fetch with all relations
       return tx.message.findUnique({
         where: { id: message.id },
         include: {
+          sender: {
+            select: { id: true, fullName: true, avatar: true },
+          },
           readBy: true,
         },
       });

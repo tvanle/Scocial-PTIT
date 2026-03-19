@@ -15,6 +15,16 @@ export class ChatController {
     }
   }
 
+  async getConversation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const conversationId = req.params.conversationId as string;
+      const conversation = await chatService.getConversation(conversationId, req.user!.userId);
+      sendSuccess(res, conversation);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getConversations(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { page, limit } = req.query;

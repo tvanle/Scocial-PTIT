@@ -9,3 +9,5 @@ export { Loading, FullScreenLoading, InlineLoading } from './Loading';
 export { default as EmptyState } from './EmptyState';
 export { default as ScreenHeader } from './ScreenHeader';
 export { default as SearchInput } from './SearchInput';
+export { default as BottomMenu } from './BottomMenu';
+export type { BottomMenuItem } from './BottomMenu';

@@ -33,14 +33,14 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   };
 
   const getConversationName = (conversation: Conversation): string => {
-    if (conversation.type === 'group') {
+    if (conversation.type.toLowerCase() === 'group') {
       return conversation.name || 'Nhóm chat';
     }
     return conversation.participants[0]?.fullName || 'Unknown';
   };
 
   const getConversationAvatar = (conversation: Conversation): string | undefined => {
-    if (conversation.type === 'group') {
+    if (conversation.type.toLowerCase() === 'group') {
       return conversation.avatar;
     }
     return conversation.participants[0]?.avatar;
@@ -53,8 +53,9 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   const renderConversation = ({ item }: { item: Conversation }) => {
     const name = getConversationName(item);
     const avatar = getConversationAvatar(item);
-    const isOnline = item.type === 'private' && item.isOnline;
+    const isOnline = item.type.toLowerCase() === 'private' && item.isOnline;
     const hasUnread = item.unreadCount > 0;
+    const isPrivate = item.type.toLowerCase() === 'private';
 
     return (
       <TouchableOpacity
@@ -66,7 +67,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
           uri={avatar}
           name={name}
           size="lg"
-          showOnlineStatus={item.type === 'private'}
+          showOnlineStatus={isPrivate}
           isOnline={isOnline}
         />
 

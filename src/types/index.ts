@@ -249,7 +249,7 @@ export type RootStackParamList = {
   PostDetail: { postId: string };
   UserProfile: { userId: string };
   EditProfile: undefined;
-  ChatRoom: { conversationId: string };
+  ChatRoom: { conversationId?: string; userId?: string };
   ChatList: undefined;
   CreatePost: undefined;
   CreatePostModal: undefined;

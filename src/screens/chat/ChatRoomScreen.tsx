@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar, Header } from '../../components/common';
@@ -30,8 +29,9 @@ type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 const ChatRoomScreen: React.FC = () => {
   const navigation = useNavigation<ChatRoomScreenNavigationProp>();
   const route = useRoute<ChatRoomScreenRouteProp>();
-  const { conversationId } = route.params;
+  const { conversationId: routeConversationId, userId } = route.params;
   const { user } = useAuthStore();
+  const [conversationId, setConversationId] = useState<string | null>(routeConversationId || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,15 +41,29 @@ const ChatRoomScreen: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [convData, messagesData] = await Promise.all([
-        chatService.getConversation(conversationId),
-        chatService.getMessages(conversationId, { page: 1, limit: 50 }),
-      ]);
-      setConversation(convData);
-      setMessages(messagesData.data.reverse());
+      let convId = conversationId;
+      let convData: Conversation | null = null;
 
-      // Mark as read
-      await chatService.markAsRead(conversationId);
+      if (!convId && userId) {
+        const conv = await chatService.getOrCreateConversation(userId);
+        convId = conv.id;
+        convData = conv;
+        setConversationId(convId);
+      }
+
+      if (!convId) {
+        throw new Error('No conversation ID or user ID provided');
+      }
+
+      // Only fetch conversation if we don't already have it from getOrCreate
+      const [fetchedConv, messagesData] = await Promise.all([
+        convData ? Promise.resolve(convData) : chatService.getConversation(convId),
+        chatService.getMessages(convId, { page: 1, limit: 50 }),
+      ]);
+      setConversation(fetchedConv);
+      setMessages(messagesData.data);
+
+      await chatService.markAsRead(convId);
     } catch (error) {
       console.error('Failed to fetch chat data:', error);
       Alert.alert('Lỗi', 'Không thể tải cuộc trò chuyện. Vui lòng thử lại.');
@@ -61,10 +75,10 @@ const ChatRoomScreen: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [conversationId]);
+  }, [routeConversationId, userId]);
 
   const handleSend = useCallback(async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !conversationId) return;
 
     const tempId = Date.now().toString();
     const newMessage: Message = {
@@ -111,7 +125,7 @@ const ChatRoomScreen: React.FC = () => {
   };
 
   const getOtherParticipant = (): User | null => {
-    if (!conversation || conversation.type !== 'private') return null;
+    if (!conversation || conversation.type.toLowerCase() !== 'private') return null;
     return conversation.participants.find(p => p.id !== user?.id) || null;
   };
 
@@ -206,10 +220,11 @@ const ChatRoomScreen: React.FC = () => {
   }
 
   const otherParticipant = getOtherParticipant();
-  const chatName = conversation.type === 'group'
+  const isPrivate = conversation.type.toLowerCase() === 'private';
+  const chatName = !isPrivate
     ? conversation.name || 'Nhóm chat'
     : otherParticipant?.fullName || 'Unknown';
-  const chatAvatar = conversation.type === 'group'
+  const chatAvatar = !isPrivate
     ? conversation.avatar
     : otherParticipant?.avatar;
 
@@ -222,7 +237,7 @@ const ChatRoomScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.headerCenter}
             onPress={() => {
-              if (conversation.type === 'private' && otherParticipant) {
+              if (isPrivate && otherParticipant) {
                 navigation.navigate('UserProfile', { userId: otherParticipant.id });
               }
             }}
@@ -231,12 +246,12 @@ const ChatRoomScreen: React.FC = () => {
               uri={chatAvatar}
               name={chatName}
               size="sm"
-              showOnlineStatus={conversation.type === 'private'}
-              isOnline={conversation.type === 'private' ? otherParticipant?.isOnline : false}
+              showOnlineStatus={isPrivate}
+              isOnline={isPrivate ? otherParticipant?.isOnline : false}
             />
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>{chatName}</Text>
-              {conversation.type === 'private' && (
+              {isPrivate && (
                 <Text style={styles.headerStatus}>
                   {otherParticipant?.isOnline ? Strings.chat.online : Strings.chat.offline}
                 </Text>

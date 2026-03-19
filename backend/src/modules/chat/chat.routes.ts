@@ -10,8 +10,7 @@ router.use(authenticate);
 // Conversations
 router.get('/conversations', chatController.getConversations);
 router.get('/conversations/user/:userId', chatController.getOrCreateConversation);
-
-// Messages
+router.get('/conversations/:conversationId', chatController.getConversation);
 router.get('/conversations/:conversationId/messages', chatController.getMessages);
 router.post('/conversations/:conversationId/messages', chatController.sendMessage);
 router.post('/conversations/:conversationId/read', chatController.markAsRead);
