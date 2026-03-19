@@ -133,6 +133,13 @@ export const ENDPOINTS = {
     // Location
     UPDATE_LOCATION: '/dating/location',
     NEARBY: '/dating/location/nearby',
+
+    // Profile Lifecycle
+    DELETE_PROFILE: '/dating/profile',
+
+    // Dating Chat
+    CHAT_CONVERSATIONS: '/dating/chat',
+    CHAT_MESSAGES: (conversationId: string) => `/dating/chat/${conversationId}/messages`,
   },
 };
 

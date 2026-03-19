@@ -269,6 +269,13 @@ export type RootStackParamList = {
   DatingMatch: { profile: import('./dating').DiscoveryCard; source: 'discovery' | 'detail' };
   DatingLikes: undefined;
   DatingMyProfile: undefined;
+  DatingMatchSuccess: { match: import('./dating').MatchItem };
+  DatingPaused: undefined;
+  DatingChatList: undefined;
+  DatingChatRoom: {
+    conversationId: string;
+    otherUser?: import('./dating').DatingChatUser | null;
+  };
 };
 
 export type AuthStackParamList = {
