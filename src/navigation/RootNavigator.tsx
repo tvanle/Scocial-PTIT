@@ -5,6 +5,7 @@ import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
 import { ChatListScreen, ChatRoomScreen } from '../screens/chat';
 import { useAuthStore } from '../store/slices/authSlice';
+import { useAuthInitializer } from '../hooks';
 import socketService from '../services/socket/socketService';
 import { RootStackParamList } from '../types';
 import { Colors } from '../constants/theme';
@@ -39,7 +40,9 @@ const FollowersScreen = () => null;
 const FollowingScreen = () => null;
 
 const RootNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const { isInitialized } = useAuthInitializer();
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -50,7 +53,7 @@ const RootNavigator: React.FC = () => {
     return () => socketService.disconnect();
   }, [isAuthenticated, user?.id]);
 
-  if (isLoading) {
+  if (!isInitialized) {
     return <FullScreenLoading />;
   }
 
