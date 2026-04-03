@@ -1,3 +1,9 @@
+/**
+ * Dating Profile Setup Screen
+ *
+ * Step 2 of onboarding - setup photos, bio, interests
+ */
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -5,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating';
 import { RootStackParamList, DiscoveryCard } from '../../../types';
@@ -29,7 +36,8 @@ const PROFILE_SETUP_TRANSLATE_Y = 10;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingProfileSetup'>;
 type Route = RouteProp<RootStackParamList, 'DatingProfileSetup'>;
 
-const DatingProfileSetupScreen: React.FC = () => {
+const ProfileSetupInner: React.FC = () => {
+  const { theme } = useDatingTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<Route>();
   const queryClient = useQueryClient();
@@ -314,6 +322,7 @@ const DatingProfileSetupScreen: React.FC = () => {
         userId: latest.userId,
         bio: latest.bio,
         photos: latest.photos.map((p) => ({ url: p.url, order: p.order })),
+        prompts: latest.prompts?.map((p) => ({ question: p.question, answer: p.answer })) ?? [],
         user: {
           id: latest.user?.id ?? latest.userId,
           fullName: latest.user?.fullName ?? 'Bạn',
@@ -364,29 +373,22 @@ const DatingProfileSetupScreen: React.FC = () => {
   });
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: '#F5F5F5' }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <OnboardingStepHeader
           stepIndex={2}
           totalSteps={3}
-          title={DATING_STRINGS.profileSetup.title}
+          title={isEditing ? 'Edit Profile' : 'Create Your Profile'}
           showBackButton
           onBack={handleBack}
           hideProgress={isEditing || !!existingProfile}
-          rightActionLabel={isEditing ? 'Xem trước' : undefined}
+          rightActionLabel={isEditing ? 'Preview' : undefined}
           onRightAction={isEditing ? handlePreview : undefined}
         />
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingHorizontal: layout.content.paddingHorizontal,
-              paddingBottom: layout.content.paddingBottom,
-              gap: layout.content.gap,
-            },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -429,16 +431,23 @@ const DatingProfileSetupScreen: React.FC = () => {
         loading={creating}
         disabled={!canContinue}
         hint={validationHint}
-        label={isEditing ? 'Lưu' : undefined}
+        label={isEditing ? 'Save Changes' : 'Continue'}
       />
     </View>
+  );
+};
+
+const DatingProfileSetupScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <ProfileSetupInner />
+    </DatingThemeProvider>
   );
 };
 
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: DATING_COLORS.profileSetup.background,
   },
   safeArea: {
     flex: 1,
@@ -449,6 +458,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+    gap: 16,
   },
 });
 
