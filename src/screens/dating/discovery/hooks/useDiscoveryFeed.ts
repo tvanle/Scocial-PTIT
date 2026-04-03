@@ -96,9 +96,14 @@ export function useDiscoveryFeed() {
         }
       }
     },
-    onSettled: () => {
+    onError: () => {
+      // Silently handle error - just move to next card
+      // This prevents crash when backend is unavailable
+    },
+    onSettled: (_data, error) => {
+      // Only advance card if not a match (or if there was an error)
       setCurrentIdx((prev) => {
-        const shouldAdvance = !swipeMutation.data?.matched;
+        const shouldAdvance = error || !swipeMutation.data?.matched;
         const nextIdx = shouldAdvance ? prev + 1 : prev;
         if (
           nextIdx >= cardsLengthRef.current - prefetchThreshold &&
