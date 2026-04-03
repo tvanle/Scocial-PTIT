@@ -1,8 +1,15 @@
+/**
+ * Dating Location Permission Screen
+ *
+ * Final step of onboarding - request location permission
+ */
+
 import React, { useCallback } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
 import { RootStackParamList } from '../../../types';
 import { useFadeSlideIn, usePressScale } from '../hooks';
 import {
@@ -14,10 +21,7 @@ import {
 } from './components/location-permission';
 import { locationPermissionStyles as styles } from './components/location-permission/locationPermissionStyles';
 
-type NavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'DatingLocationPermission'
->;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DatingLocationPermission'>;
 
 const ANIMATION_DELAY_ILLUSTRATION = 100;
 const ANIMATION_DELAY_CONTENT = 220;
@@ -25,11 +29,12 @@ const ANIMATION_DELAY_ACTIONS = 340;
 const ANIMATION_TRANSLATE_Y = 24;
 const ANIMATION_TRANSLATE_Y_SMALL = 20;
 
-const DatingLocationPermissionScreen: React.FC = () => {
+const LocationPermissionInner: React.FC = () => {
+  const { theme } = useDatingTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const goToDiscovery = useCallback(() => {
-    navigation.replace('DatingDiscovery');
+    navigation.replace('DatingTabs');
   }, [navigation]);
 
   const { requestAndNavigate, loading } = useLocationPermission({
@@ -57,7 +62,7 @@ const DatingLocationPermissionScreen: React.FC = () => {
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <LocationPermissionHeader onBack={handleBack} />
         <LocationPermissionIllustration animatedStyle={animatedIllustration} />
@@ -72,6 +77,14 @@ const DatingLocationPermissionScreen: React.FC = () => {
         />
       </SafeAreaView>
     </View>
+  );
+};
+
+const DatingLocationPermissionScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <LocationPermissionInner />
+    </DatingThemeProvider>
   );
 };
 

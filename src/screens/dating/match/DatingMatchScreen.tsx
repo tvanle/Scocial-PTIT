@@ -1,115 +1,131 @@
+/**
+ * Dating Match Screen
+ *
+ * Shown when two users match, with actions to message or continue
+ */
+
 import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, StackActions, useNavigation, useRoute } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
-import { DATING_SPACING } from '../../../constants/dating/tokens';
-import { DATING_STRINGS } from '../../../constants/dating/strings';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
+import { SPACING, TEXT_STYLES, RADIUS, DURATION } from '../../../constants/dating/design-system';
 import type { RootStackParamList } from '../../../types';
 import datingChatService from '../../../services/dating/datingChatService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DatingMatch'>;
 type Route = RouteProp<RootStackParamList, 'DatingMatch'>;
 
-const colors = DATING_COLORS.discovery;
-const layout = DATING_LAYOUT.discovery.match;
-const strings = DATING_STRINGS.discovery;
-
 const AVATAR_SIZE = 120;
 const HEART_SIZE = 60;
-const HEADER_ICON_SIZE = 40;
-const ACTION_BUTTON_HEIGHT = 56;
 
 interface MatchHeaderProps {
   onClose: () => void;
 }
 
-const MatchHeader: React.FC<MatchHeaderProps> = React.memo(({ onClose }) => (
-  <View style={styles.topBar}>
-    <TouchableOpacity
-      style={styles.iconBtn}
-      onPress={onClose}
-      accessibilityRole="button"
-      accessibilityLabel={strings.matchCloseA11y}
-    >
-      <MaterialIcons name="close" size={24} color={colors.matchText} />
-    </TouchableOpacity>
-    <Text style={styles.topTitle} numberOfLines={1}>
-      {strings.matchHeaderTitle}
-    </Text>
-    <View style={styles.iconBtnPlaceholder} />
-  </View>
-));
+const MatchHeader: React.FC<MatchHeaderProps> = React.memo(({ onClose }) => {
+  const { theme } = useDatingTheme();
+
+  return (
+    <View style={styles.topBar}>
+      <TouchableOpacity style={styles.iconBtn} onPress={onClose}>
+        <Ionicons name="close" size={24} color={theme.text.secondary} />
+      </TouchableOpacity>
+      <Text style={[styles.topTitle, { color: theme.text.secondary }]}>PTIT Connect</Text>
+      <View style={styles.iconBtnPlaceholder} />
+    </View>
+  );
+});
 
 interface MatchAvatarsProps {
   avatarUrl: string;
 }
 
-const MatchAvatars: React.FC<MatchAvatarsProps> = React.memo(({ avatarUrl }) => (
-  <View style={styles.avatarsWrap}>
-    <View style={[styles.avatarOuter, styles.avatarLeft]}>
-      <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
-    </View>
+const MatchAvatars: React.FC<MatchAvatarsProps> = React.memo(({ avatarUrl }) => {
+  const { theme } = useDatingTheme();
 
-    <View style={styles.heartWrap}>
-      <View style={styles.heartCircle}>
-        <MaterialIcons name="favorite" size={28} color={colors.matchText} />
-      </View>
-    </View>
+  return (
+    <View style={styles.avatarsWrap}>
+      <Animated.View
+        entering={FadeInUp.delay(100).duration(DURATION.normal)}
+        style={[styles.avatarOuter, styles.avatarLeft, { borderColor: theme.bg.base, backgroundColor: theme.bg.base }]}
+      >
+        <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
+      </Animated.View>
 
-    <View style={[styles.avatarOuter, styles.avatarRight]}>
-      <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
+      <Animated.View
+        entering={ZoomIn.delay(300).duration(DURATION.normal)}
+        style={styles.heartWrap}
+      >
+        <View style={[styles.heartCircle, { backgroundColor: theme.brand.primary, borderColor: theme.bg.base }]}>
+          <MaterialCommunityIcons name="heart" size={28} color="#FFFFFF" />
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInUp.delay(200).duration(DURATION.normal)}
+        style={[styles.avatarOuter, styles.avatarRight, { borderColor: theme.bg.base, backgroundColor: theme.bg.base }]}
+      >
+        <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
+      </Animated.View>
     </View>
-  </View>
-));
+  );
+});
 
 interface MatchActionsProps {
   onSendMessage: () => void;
   onContinue: () => void;
 }
 
-const MatchActions: React.FC<MatchActionsProps> = React.memo(
-  ({ onSendMessage, onContinue }) => (
-    <View style={styles.actions}>
+const MatchActions: React.FC<MatchActionsProps> = React.memo(({ onSendMessage, onContinue }) => {
+  const { theme } = useDatingTheme();
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(500).duration(DURATION.normal)}
+      style={styles.actions}
+    >
       <TouchableOpacity
-        style={styles.primaryBtn}
+        style={[styles.primaryBtn, { backgroundColor: theme.brand.primary }]}
         onPress={onSendMessage}
         activeOpacity={0.9}
-        accessibilityRole="button"
-        accessibilityLabel={strings.matchSendMessageA11y}
       >
-        <MaterialIcons name="chat-bubble" size={20} color={colors.matchText} />
-        <Text style={styles.primaryBtnText}>{strings.matchSendMessage}</Text>
+        <MaterialCommunityIcons name="chat" size={20} color="#FFFFFF" />
+        <Text style={styles.primaryBtnText}>Gui tin nhan</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.secondaryBtn}
+        style={[styles.secondaryBtn, { borderColor: theme.border.medium }]}
         onPress={onContinue}
         activeOpacity={0.9}
-        accessibilityRole="button"
-        accessibilityLabel={strings.matchContinueDiscoveryA11y}
       >
-        <Text style={styles.secondaryBtnText}>{strings.matchContinueDiscovery}</Text>
+        <Text style={[styles.secondaryBtnText, { color: theme.brand.primary }]}>
+          Tiep tuc kham pha
+        </Text>
       </TouchableOpacity>
-    </View>
-  ),
-);
+    </Animated.View>
+  );
+});
 
-export const DatingMatchScreen: React.FC = () => {
+const MatchInner: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
+  const { theme } = useDatingTheme();
 
   const profile = params.profile;
   const source = params.source;
 
-  const avatarUrl = useMemo(
-    () => profile.photos[0]?.url ?? '',
-    [profile.photos],
-  );
+  const avatarUrl = useMemo(() => profile.photos[0]?.url ?? '', [profile.photos]);
+  const name = profile.user.fullName ?? 'Ai do';
 
-  const name = profile.user.fullName ?? strings.unknownName;
+  React.useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
 
   const handleClose = useCallback(() => {
     if (source === 'detail') {
@@ -125,7 +141,7 @@ export const DatingMatchScreen: React.FC = () => {
       return;
     }
     navigation.goBack();
-  }, [navigation, source, profile.userId]);
+  }, [navigation, source]);
 
   const handleSendMessage = useCallback(async () => {
     try {
@@ -139,22 +155,27 @@ export const DatingMatchScreen: React.FC = () => {
         },
       });
     } catch {
-      navigation.navigate('DatingChatList');
+      navigation.navigate('DatingTabs', { screen: 'DatingChatsTab' });
     }
   }, [navigation, profile]);
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <MatchHeader onClose={handleClose} />
 
         <View style={styles.content}>
           <MatchAvatars avatarUrl={avatarUrl} />
 
-          <View style={styles.textWrap}>
-            <Text style={styles.title}>{strings.matchTitle}</Text>
-            <Text style={styles.subtitle}>{strings.matchSubtitle(name)}</Text>
-          </View>
+          <Animated.View
+            entering={FadeIn.delay(400).duration(DURATION.normal)}
+            style={styles.textWrap}
+          >
+            <Text style={[styles.title, { color: theme.brand.primary }]}>Da Match!</Text>
+            <Text style={[styles.subtitle, { color: theme.text.secondary }]}>
+              Ban va {name} da thich nhau. Hay bat dau tro chuyen nao!
+            </Text>
+          </Animated.View>
 
           <MatchActions onSendMessage={handleSendMessage} onContinue={handleContinue} />
         </View>
@@ -163,10 +184,17 @@ export const DatingMatchScreen: React.FC = () => {
   );
 };
 
+export const DatingMatchScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <MatchInner />
+    </DatingThemeProvider>
+  );
+};
+
 const styles = StyleSheet.create({
-  wrapper: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -175,47 +203,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: DATING_SPACING.lg,
-    paddingTop: DATING_SPACING.lg,
-    paddingBottom: DATING_SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   iconBtn: {
-    width: HEADER_ICON_SIZE,
-    height: HEADER_ICON_SIZE,
-    borderRadius: 9999,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconBtnPlaceholder: {
-    width: HEADER_ICON_SIZE,
-    height: HEADER_ICON_SIZE,
+    width: 40,
+    height: 40,
   },
   topTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.subtitleColor,
+    ...TEXT_STYLES.labelMedium,
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: DATING_SPACING.xl,
+    paddingHorizontal: SPACING.xl,
   },
   avatarsWrap: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: DATING_SPACING.xl,
+    marginBottom: SPACING.xl,
   },
   avatarOuter: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    borderRadius: 9999,
+    borderRadius: AVATAR_SIZE / 2,
     borderWidth: 4,
-    borderColor: DATING_COLORS.light.background,
-    backgroundColor: DATING_COLORS.light.background,
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
@@ -238,16 +262,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   heartCircle: {
     width: HEART_SIZE,
     height: HEART_SIZE,
-    borderRadius: 9999,
-    backgroundColor: DATING_COLORS.primary,
+    borderRadius: HEART_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
-    borderColor: DATING_COLORS.light.background,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 6 },
@@ -255,61 +278,53 @@ const styles = StyleSheet.create({
   },
   textWrap: {
     alignItems: 'center',
-    paddingHorizontal: DATING_SPACING.lg,
-    marginBottom: DATING_SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   title: {
-    fontSize: layout.textSize,
+    fontSize: 32,
     fontWeight: '800',
-    color: colors.matchTitleHighlight,
     textAlign: 'center',
-    marginBottom: DATING_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   subtitle: {
-    fontSize: 14,
+    ...TEXT_STYLES.bodyMedium,
     lineHeight: 22,
     textAlign: 'center',
-    color: DATING_COLORS.light.textSecondary,
   },
   actions: {
     width: '100%',
     maxWidth: 420,
-    paddingHorizontal: DATING_SPACING.md,
-    gap: DATING_SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
   },
   primaryBtn: {
-    height: ACTION_BUTTON_HEIGHT,
-    borderRadius: 9999,
-    backgroundColor: DATING_COLORS.primary,
+    height: 56,
+    borderRadius: RADIUS.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: DATING_SPACING.sm,
+    marginBottom: SPACING.sm,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
   primaryBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.matchText,
+    ...TEXT_STYLES.labelLarge,
+    color: '#FFFFFF',
   },
   secondaryBtn: {
-    height: ACTION_BUTTON_HEIGHT,
-    borderRadius: 9999,
+    height: 56,
+    borderRadius: RADIUS.full,
     borderWidth: 2,
-    borderColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: DATING_COLORS.primary,
+    ...TEXT_STYLES.labelLarge,
   },
 });
 
 export default DatingMatchScreen;
-
