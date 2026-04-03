@@ -1,3 +1,10 @@
+/**
+ * Dating Chat Room Screen
+ *
+ * Modern chat room with new design system
+ * Features: bubbles, icebreakers, haptic feedback
+ */
+
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
@@ -10,15 +17,31 @@ import {
   Platform,
   Image,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DATING_COLORS } from '../../../constants/dating/theme';
+
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
+import {
+  SPACING,
+  RADIUS,
+  TEXT_STYLES,
+  DURATION,
+  SPRING,
+  AVATAR,
+} from '../../../constants/dating/design-system';
 import datingChatService from '../../../services/dating/datingChatService';
 import datingService from '../../../services/dating/datingService';
 import socketService from '../../../services/socket/socketService';
@@ -26,328 +49,641 @@ import { useAuthStore } from '../../../store/slices/authSlice';
 import type { RootStackParamList } from '../../../types';
 import type { DatingMessage } from '../../../types/dating';
 
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
+
 type RouteParams = RouteProp<RootStackParamList, 'DatingChatRoom'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const P = DATING_COLORS.primary;
-const { width: SW } = Dimensions.get('window');
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
 
-// ─── Bubble ──────────────────────────────────────────────────────────
+interface PromptReplyContent {
+  type: 'prompt_reply';
+  prompt: { question: string; answer: string };
+  reply: string;
+}
+
+const parsePromptReply = (content: string): PromptReplyContent | null => {
+  try {
+    const parsed = JSON.parse(content);
+    console.log('[ChatRoom] Parsed message:', parsed?.type, parsed);
+    if (parsed?.type === 'prompt_reply' && parsed.prompt && parsed.reply) {
+      return parsed as PromptReplyContent;
+    }
+  } catch (e) {
+    // Not a JSON message - that's fine for regular messages
+  }
+  return null;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MESSAGE BUBBLE
+// ═══════════════════════════════════════════════════════════════
+
 interface BubbleProps {
   message: DatingMessage;
   isMine: boolean;
   showAvatar: boolean;
   isLast: boolean;
+  index: number;
 }
 
-const Bubble: React.FC<BubbleProps> = React.memo(({ message, isMine, showAvatar, isLast }) => {
+const Bubble: React.FC<BubbleProps> = React.memo(({ message, isMine, showAvatar, isLast, index }) => {
+  const { theme } = useDatingTheme();
+
   const time = new Date(message.createdAt).toLocaleTimeString('vi-VN', {
     hour: '2-digit',
     minute: '2-digit',
   });
 
-  return (
-    <View style={[s.row, isMine ? s.rowR : s.rowL, isLast ? s.rowGap : s.rowTight]}>
-      {!isMine &&
-        (showAvatar ? (
-          message.sender?.avatar ? (
-            <Image source={{ uri: message.sender.avatar }} style={s.ava} />
+  // Check if this is a prompt reply message
+  const promptReply = parsePromptReply(message.content);
+
+  // Debug: log every message
+  console.log('[Bubble] message.content:', message.content?.substring(0, 50), 'promptReply:', !!promptReply);
+
+  // Render prompt reply card
+  if (promptReply) {
+    return (
+      <Animated.View
+        entering={FadeInUp.delay(index * 20).duration(DURATION.fast)}
+        style={[styles.row, isMine ? styles.rowRight : styles.rowLeft, styles.rowGap]}
+      >
+        {!isMine && (
+          showAvatar ? (
+            message.sender?.avatar ? (
+              <Image source={{ uri: message.sender.avatar }} style={styles.bubbleAvatar} />
+            ) : (
+              <View style={[styles.bubbleAvatar, styles.bubbleAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+                <Ionicons name="person" size={12} color={theme.text.muted} />
+              </View>
+            )
           ) : (
-            <View style={[s.ava, s.avaFb]}>
-              <Ionicons name="person" size={13} color="#ccc" />
+            <View style={styles.bubbleAvatarSpacer} />
+          )
+        )}
+
+        <View style={[styles.bubbleContent, styles.promptReplyBubbleContent]}>
+          {/* Prompt Reply Card */}
+          <View
+            style={[
+              styles.promptReplyCard,
+              {
+                backgroundColor: isMine ? theme.brand.primary : theme.bg.elevated,
+                borderColor: isMine ? 'transparent' : theme.border.subtle,
+              },
+            ]}
+          >
+            {/* Quoted prompt section */}
+            <View
+              style={[
+                styles.promptReplyQuote,
+                {
+                  backgroundColor: isMine ? 'rgba(255,255,255,0.15)' : theme.bg.surface,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.promptReplyQuoteBar,
+                  { backgroundColor: isMine ? 'rgba(255,255,255,0.5)' : theme.brand.primary },
+                ]}
+              />
+              <View style={styles.promptReplyQuoteContent}>
+                <View style={styles.promptReplyQuoteHeader}>
+                  <MaterialCommunityIcons
+                    name="format-quote-open"
+                    size={12}
+                    color={isMine ? 'rgba(255,255,255,0.7)' : theme.text.muted}
+                  />
+                  <Text
+                    style={[
+                      styles.promptReplyQuoteQuestion,
+                      { color: isMine ? 'rgba(255,255,255,0.7)' : theme.text.muted },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {promptReply.prompt.question}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.promptReplyQuoteAnswer,
+                    { color: isMine ? 'rgba(255,255,255,0.85)' : theme.text.secondary },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {promptReply.prompt.answer}
+                </Text>
+              </View>
+            </View>
+
+            {/* Reply text */}
+            <Text style={[styles.promptReplyText, { color: isMine ? '#FFFFFF' : theme.text.primary }]}>
+              {promptReply.reply}
+            </Text>
+          </View>
+
+          {/* Timestamp */}
+          <Text style={[styles.timestamp, isMine ? styles.timestampRight : styles.timestampLeft, { color: theme.text.muted }]}>
+            {time}
+          </Text>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  // Regular message bubble
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(index * 20).duration(DURATION.fast)}
+      style={[styles.row, isMine ? styles.rowRight : styles.rowLeft, isLast ? styles.rowGap : styles.rowTight]}
+    >
+      {!isMine && (
+        showAvatar ? (
+          message.sender?.avatar ? (
+            <Image source={{ uri: message.sender.avatar }} style={styles.bubbleAvatar} />
+          ) : (
+            <View style={[styles.bubbleAvatar, styles.bubbleAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+              <Ionicons name="person" size={12} color={theme.text.muted} />
             </View>
           )
         ) : (
-          <View style={s.avaSpacer} />
-        ))}
+          <View style={styles.bubbleAvatarSpacer} />
+        )
+      )}
 
-      <View style={{ maxWidth: '76%' }}>
+      <View style={styles.bubbleContent}>
         <View
           style={[
-            s.bub,
-            isMine ? s.bubM : s.bubO,
-            isMine && isLast && s.bubMT,
-            !isMine && isLast && s.bubOT,
+            styles.bubble,
+            isMine
+              ? [styles.bubbleMine, { backgroundColor: theme.brand.primary }]
+              : [styles.bubbleOther, { backgroundColor: theme.bg.elevated }],
+            isMine && isLast && styles.bubbleMineTail,
+            !isMine && isLast && styles.bubbleOtherTail,
           ]}
         >
-          <Text style={[s.bubTxt, isMine && s.bubTxtM]}>{message.content}</Text>
+          <Text style={[styles.bubbleText, { color: isMine ? '#FFFFFF' : theme.text.primary }]}>
+            {message.content}
+          </Text>
         </View>
         {isLast && (
-          <Text style={[s.ts, isMine ? s.tsR : s.tsL]}>{time}</Text>
+          <Text style={[styles.timestamp, isMine ? styles.timestampRight : styles.timestampLeft, { color: theme.text.muted }]}>
+            {time}
+          </Text>
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 });
 
-// ─── Screen ──────────────────────────────────────────────────────────
-const DatingChatRoomScreen: React.FC = () => {
-  const nav = useNavigation<Nav>();
+// ═══════════════════════════════════════════════════════════════
+// ICEBREAKER CHIP
+// ═══════════════════════════════════════════════════════════════
+
+interface IcebreakerChipProps {
+  text: string;
+  onPress: () => void;
+  index: number;
+}
+
+const IcebreakerChip: React.FC<IcebreakerChipProps> = ({ text, onPress, index }) => {
+  const { theme } = useDatingTheme();
+  const scale = useSharedValue(1);
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.95, SPRING.snappy);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, SPRING.snappy);
+  }, []);
+
+  const handlePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }, [onPress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 80).duration(DURATION.normal)}
+      style={animatedStyle}
+    >
+      <TouchableOpacity
+        style={[styles.icebreaker, { backgroundColor: theme.bg.elevated, borderColor: theme.border.subtle }]}
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+      >
+        <Text style={[styles.icebreakerText, { color: theme.text.primary }]}>{text}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// INNER COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// PROMPT CARD COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+interface PromptCardProps {
+  prompt: { question: string; answer: string };
+  onPress: () => void;
+  index: number;
+}
+
+const PromptCard: React.FC<PromptCardProps> = ({ prompt, onPress, index }) => {
+  const { theme } = useDatingTheme();
+  const scale = useSharedValue(1);
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.97, SPRING.snappy);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, SPRING.snappy);
+  }, []);
+
+  const handlePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }, [onPress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(400 + index * 100).duration(DURATION.normal)}
+      style={animatedStyle}
+    >
+      <TouchableOpacity
+        style={[styles.promptCard, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+      >
+        <View style={styles.promptCardHeader}>
+          <MaterialCommunityIcons name="format-quote-open" size={16} color={theme.brand.primary} />
+          <Text style={[styles.promptCardQuestion, { color: theme.text.muted }]} numberOfLines={1}>
+            {prompt.question}
+          </Text>
+        </View>
+        <Text style={[styles.promptCardAnswer, { color: theme.text.primary }]} numberOfLines={2}>
+          {prompt.answer}
+        </Text>
+        <View style={styles.promptCardHint}>
+          <MaterialCommunityIcons name="message-reply-text" size={14} color={theme.brand.primary} />
+          <Text style={[styles.promptCardHintText, { color: theme.brand.primary }]}>
+            Nhấn để trả lời
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// INNER COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+const ChatRoomInner: React.FC = () => {
+  const navigation = useNavigation<Nav>();
   const route = useRoute<RouteParams>();
-  const qc = useQueryClient();
+  const { theme } = useDatingTheme();
+  const queryClient = useQueryClient();
   const me = useAuthStore((st) => st.user);
   const listRef = useRef<FlatList>(null);
-  const [txt, setTxt] = useState('');
+  const [text, setText] = useState('');
 
-  const { conversationId, otherUser } = route.params;
-  const qk = ['dating', 'chat', 'messages', conversationId] as const;
+  const { conversationId, otherUser, prefillMessage } = route.params as any;
+  const queryKey = ['dating', 'chat', 'messages', conversationId] as const;
+
+  // Pre-fill message if passed from profile detail (prompt reply)
+  useEffect(() => {
+    if (prefillMessage) {
+      setText(prefillMessage);
+    }
+  }, [prefillMessage]);
+
+  // Fetch other user's profile with prompts
+  const { data: otherProfile } = useQuery({
+    queryKey: ['dating', 'profile', otherUser?.id],
+    queryFn: () => datingService.getProfileByUserId(otherUser!.id),
+    enabled: !!otherUser?.id,
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: qk,
+    queryKey,
     queryFn: () => datingChatService.getMessages(conversationId),
     enabled: !!conversationId,
   });
-  const msgs = data?.messages ?? [];
+  const messages = data?.messages ?? [];
 
-  const enriched = useMemo(
+  const enrichedMessages = useMemo(
     () =>
-      msgs.map((m, i) => ({
-        m,
-        mine: m.senderId === me?.id,
-        first: !msgs[i - 1] || msgs[i - 1].senderId !== m.senderId,
-        last: !msgs[i + 1] || msgs[i + 1].senderId !== m.senderId,
+      messages.map((m, i) => ({
+        message: m,
+        isMine: m.senderId === me?.id,
+        showAvatar: !messages[i - 1] || messages[i - 1].senderId !== m.senderId,
+        isLast: !messages[i + 1] || messages[i + 1].senderId !== m.senderId,
       })),
-    [msgs, me?.id],
+    [messages, me?.id],
   );
 
   useEffect(() => {
-    const off = socketService.onNewMessage((inc: any) => {
-      if (inc.conversationId !== conversationId || inc.senderId === me?.id) return;
-      const nm: DatingMessage = {
-        id: inc.id,
-        content: inc.content,
-        senderId: inc.senderId,
-        createdAt: inc.createdAt,
-        sender: inc.sender,
+    const unsubscribe = socketService.onNewMessage((incoming: any) => {
+      if (incoming.conversationId !== conversationId || incoming.senderId === me?.id) return;
+      const newMessage: DatingMessage = {
+        id: incoming.id,
+        content: incoming.content,
+        senderId: incoming.senderId,
+        createdAt: incoming.createdAt,
+        sender: incoming.sender,
       };
-      qc.setQueryData(qk, (old: any) => {
-        const ex = old?.messages ?? [];
-        if (ex.some((x: DatingMessage) => x.id === nm.id)) return old;
-        return { ...old, messages: [...ex, nm] };
+      queryClient.setQueryData(queryKey, (old: any) => {
+        const existing = old?.messages ?? [];
+        if (existing.some((x: DatingMessage) => x.id === newMessage.id)) return old;
+        return { ...old, messages: [...existing, newMessage] };
       });
-      qc.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
     });
-    return off;
-  }, [conversationId, me?.id, qc]);
+    return unsubscribe;
+  }, [conversationId, me?.id, queryClient]);
 
-  const send = useMutation({
-    mutationFn: (c: string) => datingChatService.sendMessage(conversationId, c),
-    onMutate: async (c) => {
-      await qc.cancelQueries({ queryKey: qk });
-      const prev = qc.getQueryData(qk);
-      qc.setQueryData(qk, (old: any) => ({
+  const sendMutation = useMutation({
+    mutationFn: (content: string) => datingChatService.sendMessage(conversationId, content),
+    onMutate: async (content) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old: any) => ({
         ...old,
         messages: [
           ...(old?.messages ?? []),
           {
-            id: `t-${Date.now()}`,
-            content: c,
+            id: `temp-${Date.now()}`,
+            content,
             senderId: me?.id ?? '',
             createdAt: new Date().toISOString(),
             sender: { id: me?.id ?? '', fullName: me?.fullName ?? '', avatar: me?.avatar ?? null },
           },
         ],
       }));
-      return { prev };
+      return { previous };
     },
-    onError: (_e, _c, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk, ctx.prev);
+    onError: (_err, _content, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: qk });
-      qc.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
     },
   });
 
-  const doSend = useCallback(() => {
-    const t = txt.trim();
-    if (!t || send.isPending) return;
-    setTxt('');
-    send.mutate(t);
-  }, [txt, send]);
+  const handleSend = useCallback(() => {
+    const trimmed = text.trim();
+    if (!trimmed || sendMutation.isPending) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setText('');
+    sendMutation.mutate(trimmed);
+  }, [text, sendMutation]);
 
-  const goProfile = useCallback(async () => {
+  const handleGoProfile = useCallback(async () => {
     if (!otherUser?.id) return;
     try {
-      const p = await datingService.getProfileByUserId(otherUser.id);
-      nav.navigate('DatingProfileDetail', {
+      const profile = await datingService.getProfileByUserId(otherUser.id);
+      navigation.navigate('DatingProfileDetail', {
         profile: {
           userId: otherUser.id,
-          bio: p.bio ?? '',
-          photos: p.photos ?? [],
-          prompts: p.prompts?.map((x: any) => ({ question: x.question, answer: x.answer })),
+          bio: profile.bio ?? '',
+          photos: profile.photos ?? [],
+          prompts: profile.prompts?.map((x: any) => ({ question: x.question, answer: x.answer })),
           user: {
-            id: p.user?.id ?? otherUser.id,
-            fullName: p.user?.fullName ?? otherUser.fullName,
-            avatar: p.user?.avatar ?? otherUser.avatar,
-            dateOfBirth: p.user?.dateOfBirth ?? '',
-            gender: p.user?.gender ?? null,
+            id: profile.user?.id ?? otherUser.id,
+            fullName: profile.user?.fullName ?? otherUser.fullName,
+            avatar: profile.user?.avatar ?? otherUser.avatar,
+            dateOfBirth: profile.user?.dateOfBirth ?? '',
+            gender: profile.user?.gender ?? null,
           },
-          lifestyle: p.lifestyle ?? null,
+          lifestyle: profile.lifestyle ?? null,
         } as any,
       });
     } catch {
-      /* silent */
+      // silent
     }
-  }, [nav, otherUser]);
+  }, [navigation, otherUser]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: (typeof enriched)[0] }) => (
-      <Bubble message={item.m} isMine={item.mine} showAvatar={item.first} isLast={item.last} />
+  const renderMessage = useCallback(
+    ({ item, index }: { item: (typeof enrichedMessages)[0]; index: number }) => (
+      <Bubble
+        message={item.message}
+        isMine={item.isMine}
+        showAvatar={item.showAvatar}
+        isLast={item.isLast}
+        index={index}
+      />
     ),
     [],
   );
 
-  const empty = msgs.length === 0 && !isLoading;
-  const name1 = otherUser?.fullName?.split(' ').pop() ?? 'bạn ấy';
+  const isEmpty = messages.length === 0 && !isLoading;
+  const firstName = otherUser?.fullName?.split(' ').pop() ?? 'bạn ấy';
+
+  // Get prompts from the other user's profile
+  const otherPrompts = useMemo(
+    () => otherProfile?.prompts?.slice(0, 3) ?? [],
+    [otherProfile?.prompts],
+  );
 
   const icebreakers = useMemo(
     () => [
-      `Chào ${name1}! 👋`,
+      `Chào ${firstName}! 👋`,
       'Mình rất vui được match với bạn!',
       'Bạn đang học ngành gì vậy? 📚',
       'Cuối tuần này bạn có rảnh không? ☕',
     ],
-    [name1],
+    [firstName],
   );
 
+  // Handle prompt click - create a reply message
+  const handlePromptPress = useCallback((prompt: { question: string; answer: string }) => {
+    setText(`Về "${prompt.question.replace('...', '')}" - ${prompt.answer.slice(0, 50)}${prompt.answer.length > 50 ? '...' : ''} 👀\n\n`);
+  }, []);
+
   return (
-    <View style={s.wrap}>
-      <SafeAreaView style={s.safe} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={s.hdr}>
-          <TouchableOpacity style={s.hdrBack} onPress={() => nav.goBack()}>
-            <Ionicons name="chevron-back" size={26} color="#333" />
+        <View style={[styles.header, { borderBottomColor: theme.border.subtle }]}>
+          <TouchableOpacity style={styles.headerBack} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={26} color={theme.text.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.hdrMid} activeOpacity={0.7} onPress={goProfile}>
-            <View style={s.hdrAvaWrap}>
+          <TouchableOpacity style={styles.headerCenter} activeOpacity={0.7} onPress={handleGoProfile}>
+            <View style={styles.headerAvatarWrap}>
               {otherUser?.avatar ? (
-                <Image source={{ uri: otherUser.avatar }} style={s.hdrAva} />
+                <Image source={{ uri: otherUser.avatar }} style={styles.headerAvatar} />
               ) : (
-                <View style={[s.hdrAva, s.hdrAvaFb]}>
-                  <Ionicons name="person" size={18} color="#bbb" />
+                <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+                  <Ionicons name="person" size={18} color={theme.text.muted} />
                 </View>
               )}
-              <View style={s.hdrDot} />
+              <View style={[styles.onlineDot, { backgroundColor: theme.semantic.online, borderColor: theme.bg.base }]} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.hdrName} numberOfLines={1}>
-                {otherUser?.fullName ?? 'Người dùng'}
+            <View style={styles.headerInfo}>
+              <Text style={[styles.headerName, { color: theme.text.primary }]} numberOfLines={1}>
+                {otherUser?.fullName ?? 'Nguoi dung'}
               </Text>
-              <Text style={s.hdrSub}>Đang hoạt động</Text>
+              <Text style={[styles.headerStatus, { color: theme.semantic.online }]}>Dang hoat dong</Text>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.hdrAct} onPress={goProfile}>
-            <Ionicons name="ellipsis-vertical" size={20} color="#666" />
+          <TouchableOpacity style={styles.headerAction} onPress={handleGoProfile}>
+            <MaterialCommunityIcons name="dots-vertical" size={22} color={theme.text.secondary} />
           </TouchableOpacity>
         </View>
 
         {/* Body */}
         <KeyboardAvoidingView
-          style={s.body}
+          style={styles.body}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           {isLoading ? (
-            <View style={s.center}>
-              <ActivityIndicator size="large" color={P} />
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={theme.brand.primary} />
             </View>
-          ) : empty ? (
-            <View style={s.emWrap}>
-              <TouchableOpacity activeOpacity={0.85} onPress={goProfile}>
-                <View style={s.emAvaRing}>
+          ) : isEmpty ? (
+            <View style={styles.emptyContainer}>
+              <TouchableOpacity activeOpacity={0.85} onPress={handleGoProfile}>
+                <Animated.View entering={FadeIn.duration(DURATION.normal)} style={[styles.emptyAvatarRing, { borderColor: theme.brand.primaryMuted }]}>
                   {otherUser?.avatar ? (
-                    <Image source={{ uri: otherUser.avatar }} style={s.emAva} />
+                    <Image source={{ uri: otherUser.avatar }} style={styles.emptyAvatar} />
                   ) : (
-                    <View style={[s.emAva, s.emAvaFb]}>
-                      <Ionicons name="person" size={40} color="#d1d5db" />
+                    <View style={[styles.emptyAvatar, styles.emptyAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+                      <Ionicons name="person" size={40} color={theme.text.muted} />
                     </View>
                   )}
-                </View>
+                </Animated.View>
               </TouchableOpacity>
 
-              <View style={s.emMatchBadge}>
-                <Ionicons name="heart" size={12} color="#fff" />
-                <Text style={s.emMatchTxt}>Đã match</Text>
-              </View>
+              <Animated.View entering={FadeIn.delay(100).duration(DURATION.normal)} style={[styles.matchBadge, { backgroundColor: theme.brand.primary }]}>
+                <MaterialCommunityIcons name="heart" size={12} color="#FFFFFF" />
+                <Text style={styles.matchBadgeText}>Da match</Text>
+              </Animated.View>
 
-              <Text style={s.emTitle}>Bắt đầu trò chuyện với {name1}</Text>
-              <Text style={s.emSub}>
-                Đừng ngại, hãy gửi lời chào đầu tiên nhé!
-              </Text>
+              <Animated.Text entering={FadeIn.delay(200).duration(DURATION.normal)} style={[styles.emptyTitle, { color: theme.text.primary }]}>
+                Bat dau tro chuyen voi {firstName}
+              </Animated.Text>
+              <Animated.Text entering={FadeIn.delay(300).duration(DURATION.normal)} style={[styles.emptySubtitle, { color: theme.text.muted }]}>
+                {otherPrompts.length > 0
+                  ? `Hãy bắt đầu từ những điều ${firstName} chia sẻ!`
+                  : 'Đừng ngại, hãy gửi lời chào đầu tiên nhé!'}
+              </Animated.Text>
 
-              <View style={s.emChips}>
-                {icebreakers.map((ice) => (
-                  <TouchableOpacity
-                    key={ice}
-                    style={s.chip}
-                    activeOpacity={0.7}
-                    onPress={() => setTxt(ice)}
+              {/* Show other user's prompts if available */}
+              {otherPrompts.length > 0 && (
+                <View style={styles.promptsContainer}>
+                  <Animated.Text
+                    entering={FadeIn.delay(350).duration(DURATION.normal)}
+                    style={[styles.promptsTitle, { color: theme.text.secondary }]}
                   >
-                    <Text style={s.chipTxt}>{ice}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    Câu trả lời của {firstName}
+                  </Animated.Text>
+                  {otherPrompts.map((prompt: any, i: number) => (
+                    <PromptCard
+                      key={`${prompt.question}-${i}`}
+                      prompt={prompt}
+                      onPress={() => handlePromptPress(prompt)}
+                      index={i}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Fallback icebreakers if no prompts */}
+              {otherPrompts.length === 0 && (
+                <View style={styles.icebreakersContainer}>
+                  {icebreakers.map((ice, i) => (
+                    <IcebreakerChip key={ice} text={ice} onPress={() => setText(ice)} index={i} />
+                  ))}
+                </View>
+              )}
             </View>
           ) : (
             <FlatList
               ref={listRef}
-              data={enriched}
-              keyExtractor={(i) => i.m.id}
-              renderItem={renderItem}
-              contentContainerStyle={s.msgList}
+              data={enrichedMessages}
+              keyExtractor={(item) => item.message.id}
+              renderItem={renderMessage}
+              contentContainerStyle={styles.messageList}
               onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={
-                <View style={s.chatTopBanner}>
-                  <TouchableOpacity activeOpacity={0.85} onPress={goProfile}>
+                <Animated.View entering={FadeIn.duration(DURATION.normal)} style={styles.chatTopBanner}>
+                  <TouchableOpacity activeOpacity={0.85} onPress={handleGoProfile}>
                     {otherUser?.avatar ? (
-                      <Image source={{ uri: otherUser.avatar }} style={s.bannerAva} />
+                      <Image source={{ uri: otherUser.avatar }} style={styles.bannerAvatar} />
                     ) : (
-                      <View style={[s.bannerAva, s.emAvaFb]}>
-                        <Ionicons name="person" size={20} color="#ccc" />
+                      <View style={[styles.bannerAvatar, styles.emptyAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+                        <Ionicons name="person" size={20} color={theme.text.muted} />
                       </View>
                     )}
                   </TouchableOpacity>
-                  <Text style={s.bannerTxt}>
-                    Bạn đã match với {otherUser?.fullName ?? 'người này'}
+                  <Text style={[styles.bannerText, { color: theme.text.muted }]}>
+                    Ban da match voi {otherUser?.fullName ?? 'nguoi nay'}
                   </Text>
-                  <TouchableOpacity onPress={goProfile}>
-                    <Text style={s.bannerLink}>Xem hồ sơ</Text>
+                  <TouchableOpacity onPress={handleGoProfile}>
+                    <Text style={[styles.bannerLink, { color: theme.brand.primary }]}>Xem ho so</Text>
                   </TouchableOpacity>
-                </View>
+                </Animated.View>
               }
             />
           )}
 
-          {/* Input */}
-          <View style={s.bar}>
-            <View style={s.inputRow}>
+          {/* Input Bar */}
+          <View style={[styles.inputBar, { backgroundColor: theme.bg.base, borderTopColor: theme.border.subtle }]}>
+            <View style={[styles.inputRow, { backgroundColor: theme.bg.surface }]}>
               <TextInput
-                style={s.inp}
-                value={txt}
-                onChangeText={setTxt}
-                placeholder="Nhập tin nhắn..."
-                placeholderTextColor="#999"
+                style={[styles.input, { color: theme.text.primary }]}
+                value={text}
+                onChangeText={setText}
+                placeholder="Nhap tin nhan..."
+                placeholderTextColor={theme.text.muted}
                 multiline
                 maxLength={2000}
               />
-              {txt.trim() ? (
+              {text.trim() ? (
                 <TouchableOpacity
-                  style={s.sendActive}
-                  onPress={doSend}
+                  style={[styles.sendButton, { backgroundColor: theme.brand.primary }]}
+                  onPress={handleSend}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="send" size={16} color="#fff" />
+                  <Ionicons name="send" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={s.likeBtn}
-                  onPress={() => setTxt('❤️')}
+                  style={styles.heartButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setText('❤️');
+                  }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="heart" size={20} color={P} />
+                  <MaterialCommunityIcons name="heart" size={22} color={theme.brand.primary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -358,165 +694,374 @@ const DatingChatRoomScreen: React.FC = () => {
   );
 };
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#f5f5f7' },
-  safe: { flex: 1 },
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+export const DatingChatRoomScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <ChatRoomInner />
+    </DatingThemeProvider>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
 
   // Header
-  hdr: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 56,
-    paddingHorizontal: 8,
-    backgroundColor: '#fff',
+    paddingHorizontal: SPACING.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e5e5',
   },
-  hdrBack: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hdrMid: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 2 },
-  hdrAvaWrap: { position: 'relative' },
-  hdrAva: { width: 38, height: 38, borderRadius: 19 },
-  hdrAvaFb: { backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center' },
-  hdrDot: {
+  headerBack: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginLeft: SPACING.xxs,
+  },
+  headerAvatarWrap: {
+    position: 'relative',
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  headerAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onlineDot: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 11,
-    height: 11,
+    width: 12,
+    height: 12,
     borderRadius: 6,
-    backgroundColor: '#34d399',
     borderWidth: 2,
-    borderColor: '#fff',
   },
-  hdrName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
-  hdrSub: { fontSize: 11, color: '#34d399', fontWeight: '500', marginTop: 1 },
-  hdrAct: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerInfo: {
+    flex: 1,
+  },
+  headerName: {
+    ...TEXT_STYLES.labelLarge,
+  },
+  headerStatus: {
+    ...TEXT_STYLES.tiny,
+    marginTop: 1,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  body: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Body
+  body: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Message list
-  msgList: { paddingHorizontal: 12, paddingBottom: 8 },
+  messageList: {
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.sm,
+  },
 
   // Chat top banner
   chatTopBanner: {
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
-  bannerAva: { width: 56, height: 56, borderRadius: 28, marginBottom: 10 },
-  bannerTxt: { fontSize: 13, color: '#9ca3af', textAlign: 'center', marginBottom: 4 },
-  bannerLink: { fontSize: 13, color: P, fontWeight: '600' },
+  bannerAvatar: {
+    width: AVATAR.lg,
+    height: AVATAR.lg,
+    borderRadius: AVATAR.lg / 2,
+    marginBottom: SPACING.sm,
+  },
+  bannerText: {
+    ...TEXT_STYLES.bodySmall,
+    textAlign: 'center',
+    marginBottom: SPACING.xxs,
+  },
+  bannerLink: {
+    ...TEXT_STYLES.labelSmall,
+  },
 
-  // Bubble rows
-  row: { flexDirection: 'row', alignItems: 'flex-end' },
-  rowL: { justifyContent: 'flex-start' },
-  rowR: { justifyContent: 'flex-end' },
-  rowGap: { marginBottom: 8 },
-  rowTight: { marginBottom: 2 },
+  // Message rows
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  rowLeft: {
+    justifyContent: 'flex-start',
+  },
+  rowRight: {
+    justifyContent: 'flex-end',
+  },
+  rowGap: {
+    marginBottom: SPACING.sm,
+  },
+  rowTight: {
+    marginBottom: 2,
+  },
 
-  ava: { width: 26, height: 26, borderRadius: 13, marginRight: 6 },
-  avaFb: { backgroundColor: '#eee', alignItems: 'center', justifyContent: 'center' },
-  avaSpacer: { width: 32 },
+  bubbleAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: SPACING.xs,
+  },
+  bubbleAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bubbleAvatarSpacer: {
+    width: 34,
+  },
 
   // Bubbles
-  bub: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22 },
-  bubM: { backgroundColor: P },
-  bubMT: { borderBottomRightRadius: 6 },
-  bubO: { backgroundColor: '#fff' },
-  bubOT: { borderBottomLeftRadius: 6 },
-  bubTxt: { fontSize: 15, lineHeight: 21, color: '#1a1a1a' },
-  bubTxtM: { color: '#fff' },
+  bubbleContent: {
+    maxWidth: '76%',
+  },
+  bubble: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.xl,
+  },
+  bubbleMine: {},
+  bubbleOther: {},
+  bubbleMineTail: {
+    borderBottomRightRadius: RADIUS.xs,
+  },
+  bubbleOtherTail: {
+    borderBottomLeftRadius: RADIUS.xs,
+  },
+  bubbleText: {
+    ...TEXT_STYLES.bodyMedium,
+    lineHeight: 21,
+  },
 
-  ts: { fontSize: 10, color: '#aaa', marginTop: 3 },
-  tsL: { marginLeft: 4 },
-  tsR: { textAlign: 'right', marginRight: 4 },
+  timestamp: {
+    ...TEXT_STYLES.tiny,
+    marginTop: SPACING.xxs,
+  },
+  timestampLeft: {
+    marginLeft: SPACING.xxs,
+  },
+  timestampRight: {
+    textAlign: 'right',
+    marginRight: SPACING.xxs,
+  },
 
-  // Empty
-  emWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  emAvaRing: {
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  emptyAvatarRing: {
     width: 104,
     height: 104,
     borderRadius: 52,
     borderWidth: 3,
-    borderColor: `${P}25`,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.md,
   },
-  emAva: { width: 94, height: 94, borderRadius: 47 },
-  emAvaFb: { backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  emMatchBadge: {
+  emptyAvatar: {
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+  },
+  emptyAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: P,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
-    marginBottom: 16,
+    gap: SPACING.xxs,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xxs,
+    borderRadius: RADIUS.full,
+    marginBottom: SPACING.md,
   },
-  emMatchTxt: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  emTitle: { fontSize: 19, fontWeight: '700', color: '#1a1a1a', textAlign: 'center', marginBottom: 6 },
-  emSub: { fontSize: 14, color: '#9ca3af', textAlign: 'center', lineHeight: 21, marginBottom: 28 },
-  emChips: { width: '100%', gap: 8 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    borderWidth: 1.2,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+  matchBadgeText: {
+    ...TEXT_STYLES.labelSmall,
+    color: '#FFFFFF',
   },
-  chipTxt: { fontSize: 14, color: '#444', textAlign: 'center' },
+  emptyTitle: {
+    ...TEXT_STYLES.headingMedium,
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  emptySubtitle: {
+    ...TEXT_STYLES.bodyMedium,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
+  },
+
+  // Prompts section
+  promptsContainer: {
+    width: '100%',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  promptsTitle: {
+    ...TEXT_STYLES.labelMedium,
+    marginBottom: SPACING.xs,
+  },
+  promptCard: {
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+  },
+  promptCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  promptCardQuestion: {
+    ...TEXT_STYLES.labelSmall,
+    flex: 1,
+  },
+  promptCardAnswer: {
+    ...TEXT_STYLES.bodyMedium,
+    lineHeight: 22,
+    marginBottom: SPACING.xs,
+  },
+  promptCardHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xxs,
+  },
+  promptCardHintText: {
+    ...TEXT_STYLES.tiny,
+  },
+
+  // Icebreakers
+  icebreakersContainer: {
+    width: '100%',
+    gap: SPACING.sm,
+  },
+  icebreaker: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+  },
+  icebreakerText: {
+    ...TEXT_STYLES.bodyMedium,
+    textAlign: 'center',
+  },
 
   // Input bar
-  bar: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 6 : 8,
-    backgroundColor: '#fff',
+  inputBar: {
+    paddingHorizontal: SPACING.sm,
+    paddingTop: SPACING.sm,
+    paddingBottom: Platform.OS === 'ios' ? SPACING.xs : SPACING.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e5e5e5',
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 24,
+    borderRadius: RADIUS.xl,
     minHeight: 44,
-    paddingLeft: 16,
-    paddingRight: 5,
+    paddingLeft: SPACING.md,
+    paddingRight: SPACING.xxs,
   },
-  inp: {
+  input: {
     flex: 1,
-    fontSize: 15,
-    color: '#1a1a1a',
+    ...TEXT_STYLES.bodyMedium,
     maxHeight: 100,
-    lineHeight: 20,
     paddingTop: Platform.OS === 'ios' ? 10 : 8,
     paddingBottom: Platform.OS === 'ios' ? 10 : 8,
   },
-  sendActive: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: P,
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  likeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  heartButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Prompt Reply Bubble
+  promptReplyBubbleContent: {
+    maxWidth: '85%',
+  },
+  promptReplyCard: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  promptReplyQuote: {
+    flexDirection: 'row',
+    padding: SPACING.xs,
+  },
+  promptReplyQuoteBar: {
+    width: 3,
+    borderRadius: 2,
+    marginRight: SPACING.xs,
+  },
+  promptReplyQuoteContent: {
+    flex: 1,
+  },
+  promptReplyQuoteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xxs,
+    marginBottom: 2,
+  },
+  promptReplyQuoteQuestion: {
+    ...TEXT_STYLES.tiny,
+    flex: 1,
+  },
+  promptReplyQuoteAnswer: {
+    ...TEXT_STYLES.bodySmall,
+    lineHeight: 16,
+  },
+  promptReplyText: {
+    ...TEXT_STYLES.bodyMedium,
+    lineHeight: 21,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
   },
 });
 
