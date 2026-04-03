@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
+import { DatingTabNavigator } from './DatingTabNavigator';
 import { ChatListScreen, ChatRoomScreen } from '../screens/chat';
 import { useAuthStore } from '../store/slices/authSlice';
 import socketService from '../services/socket/socketService';
@@ -21,15 +22,13 @@ import {
   DatingPreferencesSetupScreen,
   DatingLocationPermissionScreen,
 } from '../screens/dating/onboarding';
-import { DatingScreen } from '../screens/dating/discovery';
 import DatingMatchScreen from '../screens/dating/match/DatingMatchScreen';
-import DatingLikesScreen from '../screens/dating/likes/DatingLikesScreen';
 import { DatingProfileDetailScreen } from '../screens/dating/profile-detail';
-import DatingMyProfileScreen from '../screens/dating/profile/DatingMyProfileScreen';
-import MatchSuccessScreen from '../screens/dating/match-success/MatchSuccessScreen';
+import { MatchSuccessScreen } from '../screens/dating/match-success';
 import DatingPausedScreen from '../screens/dating/paused/DatingPausedScreen';
-import DatingChatListScreen from '../screens/dating/chat/DatingChatListScreen';
-import DatingChatRoomScreen from '../screens/dating/chat/DatingChatRoomScreen';
+import { DatingChatRoomScreen } from '../screens/dating/chat';
+import DatingNotificationsScreen from '../screens/dating/notifications/DatingNotificationsScreen';
+import DatingSettingsScreen from '../screens/dating/settings/DatingSettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -100,22 +99,22 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Followers" component={FollowersScreen} />
             <Stack.Screen name="Following" component={FollowingScreen} />
+            {/* Dating Entry Screens */}
             <Stack.Screen name="DatingSplash" component={DatingSplashScreen} />
             <Stack.Screen name="DatingPaused" component={DatingPausedScreen} />
             <Stack.Screen name="DatingOnboardingIntro" component={DatingOnboardingIntroScreen} />
             <Stack.Screen name="DatingProfileSetup" component={DatingProfileSetupScreen} />
             <Stack.Screen name="DatingPreferencesSetup" component={DatingPreferencesSetupScreen} />
             <Stack.Screen name="DatingLocationPermission" component={DatingLocationPermissionScreen} />
-            <Stack.Screen name="DatingDiscovery" component={DatingScreen} />
+
+            {/* Dating Main Tabs */}
+            <Stack.Screen name="DatingTabs" component={DatingTabNavigator} />
+
+            {/* Dating Detail/Modal Screens */}
             <Stack.Screen
               name="DatingProfileDetail"
               component={DatingProfileDetailScreen}
               options={{ animation: 'slide_from_bottom' }}
-            />
-            <Stack.Screen
-              name="DatingLikes"
-              component={DatingLikesScreen}
-              options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
               name="DatingMatch"
@@ -123,23 +122,23 @@ const RootNavigator: React.FC = () => {
               options={{ animation: 'fade_from_bottom' }}
             />
             <Stack.Screen
-              name="DatingMyProfile"
-              component={DatingMyProfileScreen}
-              options={{ animation: 'slide_from_right' }}
-            />
-            <Stack.Screen
               name="DatingMatchSuccess"
               component={MatchSuccessScreen}
               options={{ animation: 'fade_from_bottom' }}
             />
             <Stack.Screen
-              name="DatingChatList"
-              component={DatingChatListScreen}
+              name="DatingChatRoom"
+              component={DatingChatRoomScreen}
               options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
-              name="DatingChatRoom"
-              component={DatingChatRoomScreen}
+              name="DatingNotifications"
+              component={DatingNotificationsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="DatingSettings"
+              component={DatingSettingsScreen}
               options={{ animation: 'slide_from_right' }}
             />
           </>
