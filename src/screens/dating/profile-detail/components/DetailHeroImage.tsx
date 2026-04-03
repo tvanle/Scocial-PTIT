@@ -18,16 +18,26 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 interface DetailHeroImageProps {
   imageUrl: string;
   onBack: () => void;
+  onFilter?: () => void;
+  onLocation?: () => void;
+  onRefresh?: () => void;
+  onMore?: () => void;
 }
 
-const HEADER_ACTIONS: Array<{ icon: keyof typeof MaterialIcons.glyphMap; label: string }> = [
-  { icon: 'filter-list', label: 'Filter' },
-  { icon: 'place', label: 'Location' },
-  { icon: 'refresh', label: 'Refresh' },
-  { icon: 'more-vert', label: 'More options' },
-];
-
-export const DetailHeroImage = React.memo<DetailHeroImageProps>(({ imageUrl, onBack }) => {
+export const DetailHeroImage = React.memo<DetailHeroImageProps>(({
+  imageUrl,
+  onBack,
+  onFilter,
+  onLocation,
+  onRefresh,
+  onMore,
+}) => {
+  const headerActions = [
+    { icon: 'filter-list' as keyof typeof MaterialIcons.glyphMap, label: 'Filter', onPress: onFilter },
+    { icon: 'place' as keyof typeof MaterialIcons.glyphMap, label: 'Location', onPress: onLocation },
+    { icon: 'refresh' as keyof typeof MaterialIcons.glyphMap, label: 'Refresh', onPress: onRefresh },
+    { icon: 'more-vert' as keyof typeof MaterialIcons.glyphMap, label: 'More options', onPress: onMore },
+  ];
   const insets = useSafeAreaInsets();
 
   return (
@@ -57,7 +67,7 @@ export const DetailHeroImage = React.memo<DetailHeroImageProps>(({ imageUrl, onB
           </TouchableOpacity>
 
           <View style={[styles.actionsRow, { gap: layout.header.topRowGap }]}>
-            {HEADER_ACTIONS.map((action) => (
+            {headerActions.map((action) => (
               <TouchableOpacity
                 key={action.icon}
                 style={[
@@ -69,6 +79,7 @@ export const DetailHeroImage = React.memo<DetailHeroImageProps>(({ imageUrl, onB
                     backgroundColor: colors.headerBtnBg,
                   },
                 ]}
+                onPress={action.onPress}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={action.label}
