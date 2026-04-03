@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS, SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../../../constants/dating';
+import { BRAND } from '../../../../../constants/dating/design-system/colors';
 
 const layout = DATING_LAYOUT.preferences.bottomBar;
 
@@ -35,10 +37,14 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
   };
 
   return (
-    <View style={[styles.wrapper, { paddingHorizontal: layout.paddingHorizontal }]}>
-      <View style={[styles.gradient, { paddingTop: layout.paddingTop, paddingBottom: layout.paddingBottom }]}>
+    <View style={styles.wrapper}>
+      <LinearGradient
+        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)', '#fff']}
+        style={styles.gradientBg}
+      />
+      <View style={styles.content}>
         <AnimatedPressable
-          style={[styles.button, animatedStyle, loading && { opacity: 0.7 }]}
+          style={[animatedStyle, loading && { opacity: 0.7 }]}
           onPress={onFinish}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -46,19 +52,25 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
           accessibilityRole="button"
           accessibilityLabel={buttonLabel}
         >
-          {loading ? (
-            <ActivityIndicator color={DATING_COLORS.preferences.buttonText} />
-          ) : (
-            <>
-              <Text style={styles.buttonText}>{buttonLabel}</Text>
-              <MaterialIcons
-                name="check-circle"
-                size={layout.buttonIconSize}
-                color={DATING_COLORS.preferences.buttonText}
-              />
-            </>
-          )}
+          <LinearGradient
+            colors={[BRAND.primary, BRAND.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.button}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.buttonText}>{buttonLabel}</Text>
+                <View style={styles.iconWrap}>
+                  <MaterialIcons name="check" size={18} color={BRAND.primary} />
+                </View>
+              </>
+            )}
+          </LinearGradient>
         </AnimatedPressable>
+        <Text style={styles.footerText}>You can change these anytime in settings</Text>
       </View>
     </View>
   );
@@ -71,26 +83,56 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  gradient: {
-    backgroundColor: DATING_COLORS.preferences.background,
+  gradientBg: {
+    position: 'absolute',
+    top: -40,
+    left: 0,
+    right: 0,
+    height: 40,
+  },
+  content: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: layout.buttonGap,
-    height: layout.buttonHeight,
-    borderRadius: layout.buttonBorderRadius,
-    backgroundColor: DATING_COLORS.primary,
-    shadowColor: DATING_COLORS.primary,
-    shadowOffset: { width: 0, height: layout.shadowOffsetY },
-    shadowOpacity: layout.shadowOpacity,
-    shadowRadius: layout.shadowRadius,
-    elevation: layout.elevation,
+    gap: 10,
+    height: 56,
+    borderRadius: 28,
+    ...Platform.select({
+      ios: {
+        shadowColor: BRAND.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   buttonText: {
-    fontSize: layout.buttonFontSize,
+    fontSize: 17,
     fontWeight: '700',
-    color: DATING_COLORS.preferences.buttonText,
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+  iconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 14,
   },
 });

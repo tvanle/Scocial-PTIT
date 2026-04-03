@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, Platform } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { BRAND } from '../../../../../constants/dating/design-system/colors';
 
 const layout = DATING_LAYOUT.preferences.sameYear;
 const colors = DATING_COLORS.preferences;
@@ -15,32 +17,22 @@ export const PreferencesSameYearSection: React.FC<PreferencesSameYearSectionProp
   value,
   onValueChange,
 }) => (
-  <View
-    style={[
-      styles.card,
-      {
-        padding: layout.cardPadding,
-        borderRadius: layout.cardBorderRadius,
-        backgroundColor: colors.cardBg,
-        borderColor: colors.cardBorder,
-      },
-    ]}
-  >
+  <View style={styles.card}>
     <View style={styles.row}>
+      <View style={styles.iconWrap}>
+        <MaterialIcons name="school" size={20} color={BRAND.primary} />
+      </View>
       <View style={styles.textWrap}>
-        <Text style={[styles.title, { fontSize: layout.titleFontSize, color: colors.sectionTitle }]}>
-          {DATING_STRINGS.preferences.sameYearOnly}
-        </Text>
-        <Text style={[styles.hint, { fontSize: layout.hintFontSize, color: colors.sectionHint }]}>
-          {DATING_STRINGS.preferences.sameYearHint}
-        </Text>
+        <Text style={styles.title}>Same year students</Text>
+        <Text style={styles.hint}>Only show people from your enrollment year</Text>
       </View>
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: colors.toggleTrack, true: DATING_COLORS.primary }}
-        thumbColor={colors.toggleThumb}
-        accessibilityLabel={DATING_STRINGS.preferences.sameYearOnly}
+        trackColor={{ false: '#E0E0E0', true: BRAND.primary }}
+        thumbColor="#fff"
+        ios_backgroundColor="#E0E0E0"
+        accessibilityLabel="Same year only"
       />
     </View>
   </View>
@@ -48,23 +40,47 @@ export const PreferencesSameYearSection: React.FC<PreferencesSameYearSectionProp
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    marginBottom: layout.cardMarginBottom,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 14,
+  },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: BRAND.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textWrap: {
     flex: 1,
-    paddingRight: layout.textWrapPaddingRight,
   },
   title: {
+    fontSize: 17,
     fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
   },
   hint: {
-    marginTop: layout.hintMarginTop,
-    lineHeight: layout.hintLineHeight,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
   },
 });
