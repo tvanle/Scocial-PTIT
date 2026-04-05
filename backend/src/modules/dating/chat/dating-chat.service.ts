@@ -3,6 +3,14 @@ import { AppError } from '../../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../../shared/constants';
 import { CreateDatingConversationInput, SendDatingMessageInput } from './dating-chat.schema';
 
+// User is considered online if active within last 5 minutes
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isUserOnline(lastActiveAt: Date | null): boolean {
+  if (!lastActiveAt) return false;
+  return Date.now() - new Date(lastActiveAt).getTime() < ONLINE_THRESHOLD_MS;
+}
+
 export class DatingChatService {
   async getOrCreateConversation(userId: string, data: CreateDatingConversationInput) {
     const { otherUserId } = data;
@@ -47,6 +55,7 @@ export class DatingChatService {
                 id: true,
                 fullName: true,
                 avatar: true,
+                lastActiveAt: true,
               },
             },
           },
@@ -118,6 +127,7 @@ export class DatingChatService {
                 id: true,
                 fullName: true,
                 avatar: true,
+                lastActiveAt: true,
               },
             },
           },
@@ -132,15 +142,22 @@ export class DatingChatService {
       },
     });
 
-    return conversations.map((c) => ({
-      id: c.id,
-      lastMessageContent: c.lastMessageContent,
-      lastMessageSenderId: c.lastMessageSenderId,
-      lastMessageCreatedAt: c.lastMessageCreatedAt,
-      updatedAt: c.updatedAt,
-      otherUser: c.participants.find((p) => p.user.id !== userId)?.user ?? null,
-      unreadCount: c.messages.length,
-    }));
+    return conversations.map((c) => {
+      const otherParticipant = c.participants.find((p) => p.user.id !== userId);
+      const otherUser = otherParticipant?.user;
+      return {
+        id: c.id,
+        lastMessageContent: c.lastMessageContent,
+        lastMessageSenderId: c.lastMessageSenderId,
+        lastMessageCreatedAt: c.lastMessageCreatedAt,
+        updatedAt: c.updatedAt,
+        otherUser: otherUser ? {
+          ...otherUser,
+          isOnline: isUserOnline(otherUser.lastActiveAt),
+        } : null,
+        unreadCount: c.messages.length,
+      };
+    });
   }
 
   async getMessages(userId: string, conversationId: string, page = 1, limit = 30) {
@@ -200,14 +217,21 @@ export class DatingChatService {
         },
       });
 
-      await tx.conversation.update({
-        where: { id: conversationId },
-        data: {
-          lastMessageContent: data.content,
-          lastMessageSenderId: userId,
-          lastMessageCreatedAt: msg.createdAt,
-        },
-      });
+      // Update conversation and user's lastActiveAt
+      await Promise.all([
+        tx.conversation.update({
+          where: { id: conversationId },
+          data: {
+            lastMessageContent: data.content,
+            lastMessageSenderId: userId,
+            lastMessageCreatedAt: msg.createdAt,
+          },
+        }),
+        tx.user.update({
+          where: { id: userId },
+          data: { lastActiveAt: new Date() },
+        }),
+      ]);
 
       return msg;
     });
