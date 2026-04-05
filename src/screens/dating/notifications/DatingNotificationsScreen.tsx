@@ -13,12 +13,13 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -154,6 +155,8 @@ const NotificationItemRow: React.FC<NotificationItemProps> = React.memo(({ item,
 const NotificationsInner: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { theme } = useDatingTheme();
+  const queryClient = useQueryClient();
+  const [readIds, setReadIds] = React.useState<Set<string>>(new Set());
 
   const { data: matchesData, isLoading } = useQuery({
     queryKey: ['dating', 'matches'],
@@ -162,10 +165,10 @@ const NotificationsInner: React.FC = () => {
 
   const notifications = useMemo(() => {
     if (!matchesData?.data) return [];
-    return transformMatchesToNotifications(matchesData.data).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }, [matchesData?.data]);
+    return transformMatchesToNotifications(matchesData.data)
+      .map((n) => ({ ...n, isRead: readIds.has(n.id) }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [matchesData?.data, readIds]);
 
   const handleGoBack = useCallback(() => {
     navigation.goBack();
@@ -184,9 +187,30 @@ const NotificationsInner: React.FC = () => {
     [navigation]
   );
 
+  const unreadNotifications = useMemo(
+    () => notifications.filter((n) => !n.isRead),
+    [notifications]
+  );
+
   const handleClearAll = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, []);
+    if (unreadNotifications.length === 0) return;
+
+    Alert.alert(
+      'Danh dau da doc',
+      `Danh dau ${unreadNotifications.length} thong bao la da doc?`,
+      [
+        { text: 'Huy', style: 'cancel' },
+        {
+          text: 'Dong y',
+          onPress: () => {
+            const allIds = notifications.map((n) => n.id);
+            setReadIds(new Set(allIds));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  }, [notifications, unreadNotifications.length]);
 
   const renderItem = useCallback(
     ({ item, index }: { item: DatingNotificationItem; index: number }) => (
@@ -206,21 +230,21 @@ const NotificationsInner: React.FC = () => {
           <View style={styles.headerCenter}>
             <MaterialCommunityIcons name="bell" size={20} color={theme.brand.primary} />
             <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Thong bao</Text>
-            {notifications.length > 0 && (
+            {unreadNotifications.length > 0 && (
               <View style={[styles.headerBadge, { backgroundColor: theme.semantic.like.main }]}>
-                <Text style={styles.headerBadgeText}>{notifications.length}</Text>
+                <Text style={styles.headerBadgeText}>{unreadNotifications.length}</Text>
               </View>
             )}
           </View>
           <TouchableOpacity
             style={styles.headerBtn}
             onPress={handleClearAll}
-            disabled={notifications.length === 0}
+            disabled={unreadNotifications.length === 0}
           >
             <Ionicons
               name="checkmark-done"
               size={22}
-              color={notifications.length > 0 ? theme.brand.primary : theme.text.muted}
+              color={unreadNotifications.length > 0 ? theme.brand.primary : theme.text.muted}
             />
           </TouchableOpacity>
         </View>
