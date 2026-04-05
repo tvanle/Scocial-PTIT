@@ -4,7 +4,7 @@
  * Settings for dating profile, preferences, notifications, privacy
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,22 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 
 import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
 import { SPACING, TEXT_STYLES, RADIUS, DURATION } from '../../../constants/dating/design-system';
 import datingService from '../../../services/dating/datingService';
+import datingSettingsService from '../../../services/dating/datingSettingsService';
+import pushNotificationService from '../../../services/push/pushNotificationService';
 import type { RootStackParamList } from '../../../types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -145,11 +149,127 @@ const SettingsInner: React.FC = () => {
   const queryClient = useQueryClient();
   const { theme } = useDatingTheme();
 
+  const [loading, setLoading] = useState(true);
   const [notifMatches, setNotifMatches] = useState(true);
   const [notifLikes, setNotifLikes] = useState(true);
   const [notifMessages, setNotifMessages] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
   const [showActiveStatus, setShowActiveStatus] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+
+  // Load settings on mount
+  useFocusEffect(
+    useCallback(() => {
+      const loadSettings = async () => {
+        setLoading(true);
+        try {
+          // Load dating settings
+          const settings = await datingSettingsService.getSettings();
+          setNotifMatches(settings.notifications.matches);
+          setNotifLikes(settings.notifications.likes);
+          setNotifMessages(settings.notifications.messages);
+          setShowDistance(settings.privacy.showDistance);
+          setShowActiveStatus(settings.privacy.showActiveStatus);
+
+          // Check push notification permission
+          const hasPush = await pushNotificationService.checkPermission();
+          setPushEnabled(hasPush);
+
+          // Check location permission
+          const { status } = await Location.getForegroundPermissionsAsync();
+          setLocationEnabled(status === 'granted');
+        } catch (error) {
+          console.error('[Settings] Load error:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadSettings();
+    }, [])
+  );
+
+  // Handle notification toggle changes
+  const handleNotifMatchesChange = useCallback(async (value: boolean) => {
+    setNotifMatches(value);
+    await datingSettingsService.updateNotificationSettings({ matches: value });
+  }, []);
+
+  const handleNotifLikesChange = useCallback(async (value: boolean) => {
+    setNotifLikes(value);
+    await datingSettingsService.updateNotificationSettings({ likes: value });
+  }, []);
+
+  const handleNotifMessagesChange = useCallback(async (value: boolean) => {
+    setNotifMessages(value);
+    await datingSettingsService.updateNotificationSettings({ messages: value });
+  }, []);
+
+  // Handle privacy toggle changes
+  const handleShowDistanceChange = useCallback(async (value: boolean) => {
+    setShowDistance(value);
+    await datingSettingsService.updatePrivacySettings({ showDistance: value });
+  }, []);
+
+  const handleShowActiveChange = useCallback(async (value: boolean) => {
+    setShowActiveStatus(value);
+    await datingSettingsService.updatePrivacySettings({ showActiveStatus: value });
+  }, []);
+
+  // Handle push notification toggle
+  const handlePushToggle = useCallback(async (value: boolean) => {
+    if (value) {
+      const granted = await pushNotificationService.requestPermission();
+      setPushEnabled(granted);
+      if (granted) {
+        await pushNotificationService.initialize();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Alert.alert(
+          'Quyen thong bao',
+          'Vui long bat thong bao trong Cai dat de nhan thong bao hen ho.',
+          [{ text: 'Dong y' }]
+        );
+      }
+    } else {
+      await pushNotificationService.unregister();
+      setPushEnabled(false);
+    }
+  }, []);
+
+  // Handle location toggle
+  const handleLocationToggle = useCallback(async (value: boolean) => {
+    if (value) {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      const granted = status === 'granted';
+      setLocationEnabled(granted);
+
+      if (granted) {
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          await datingService.updateLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+          queryClient.invalidateQueries({ queryKey: ['dating'] });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (err) {
+          console.error('[Settings] Location update error:', err);
+        }
+      } else {
+        Alert.alert(
+          'Quyen vi tri',
+          'Vui long bat vi tri trong Cai dat de hien thi khoang cach.',
+          [{ text: 'Dong y' }]
+        );
+      }
+    } else {
+      setLocationEnabled(false);
+    }
+  }, [queryClient]);
 
   const handleGoBack = useCallback(() => {
     navigation.goBack();
@@ -164,9 +284,8 @@ const SettingsInner: React.FC = () => {
   }, [navigation]);
 
   const handleBlockedUsers = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert('Sap ra mat', 'Tinh nang quan ly nguoi dung bi chan se som co mat.');
-  }, []);
+    navigation.navigate('DatingBlockedUsers');
+  }, [navigation]);
 
   const handlePauseProfile = useCallback(() => {
     Alert.alert(
@@ -214,12 +333,12 @@ const SettingsInner: React.FC = () => {
   }, [navigation, queryClient]);
 
   const handlePrivacyPolicy = useCallback(() => {
-    Alert.alert('Chinh sach quyen rieng tu', 'Se duoc cap nhat trong phien ban tiep theo.');
-  }, []);
+    navigation.navigate('DatingLegal', { type: 'privacy' });
+  }, [navigation]);
 
   const handleTerms = useCallback(() => {
-    Alert.alert('Dieu khoan su dung', 'Se duoc cap nhat trong phien ban tiep theo.');
-  }, []);
+    navigation.navigate('DatingLegal', { type: 'terms' });
+  }, [navigation]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
@@ -233,6 +352,11 @@ const SettingsInner: React.FC = () => {
           <View style={styles.headerBtnPlaceholder} />
         </View>
 
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.brand.primary} />
+          </View>
+        ) : (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -260,11 +384,19 @@ const SettingsInner: React.FC = () => {
           <SectionHeader title="THONG BAO" index={1} />
           <View style={[styles.section, { borderColor: theme.border.subtle }]}>
             <SettingToggle
+              icon="bell-ring"
+              label="Push Notification"
+              description="Nhan thong bao day tu ung dung"
+              value={pushEnabled}
+              onValueChange={handlePushToggle}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
+            <SettingToggle
               icon="heart"
               label="Match moi"
               description="Thong bao khi co nguoi match voi ban"
               value={notifMatches}
-              onValueChange={setNotifMatches}
+              onValueChange={handleNotifMatchesChange}
             />
             <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
             <SettingToggle
@@ -272,7 +404,7 @@ const SettingsInner: React.FC = () => {
               label="Luot thich moi"
               description="Thong bao khi co nguoi thich ho so cua ban"
               value={notifLikes}
-              onValueChange={setNotifLikes}
+              onValueChange={handleNotifLikesChange}
             />
             <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
             <SettingToggle
@@ -280,19 +412,27 @@ const SettingsInner: React.FC = () => {
               label="Tin nhan moi"
               description="Thong bao khi nhan duoc tin nhan"
               value={notifMessages}
-              onValueChange={setNotifMessages}
+              onValueChange={handleNotifMessagesChange}
             />
           </View>
 
           {/* Privacy */}
-          <SectionHeader title="QUYEN RIENG TU" index={2} />
+          <SectionHeader title="QUYEN RIENG TU & VI TRI" index={2} />
           <View style={[styles.section, { borderColor: theme.border.subtle }]}>
+            <SettingToggle
+              icon="crosshairs-gps"
+              label="Quyen vi tri"
+              description="Cho phep ung dung truy cap vi tri cua ban"
+              value={locationEnabled}
+              onValueChange={handleLocationToggle}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
             <SettingToggle
               icon="map-marker"
               label="Hien thi khoang cach"
               description="Cho phep nguoi khac thay khoang cach den ban"
               value={showDistance}
-              onValueChange={setShowDistance}
+              onValueChange={handleShowDistanceChange}
             />
             <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
             <SettingToggle
@@ -300,7 +440,7 @@ const SettingsInner: React.FC = () => {
               label="Trang thai hoat dong"
               description="Hien thi khi ban dang online"
               value={showActiveStatus}
-              onValueChange={setShowActiveStatus}
+              onValueChange={handleShowActiveChange}
             />
             <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
             <SettingLink
@@ -352,6 +492,7 @@ const SettingsInner: React.FC = () => {
             </Text>
           </View>
         </ScrollView>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -371,6 +512,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Header
