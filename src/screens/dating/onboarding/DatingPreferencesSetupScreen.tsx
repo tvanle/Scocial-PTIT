@@ -1,12 +1,22 @@
+/**
+ * Dating Preferences Setup Screen
+ *
+ * Step 3 of onboarding - setup dating preferences
+ */
+
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
+import { MaterialIcons } from '@expo/vector-icons';
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
+import { SPACING, TEXT_STYLES } from '../../../constants/dating/design-system';
+import { DATING_LAYOUT } from '../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../constants/dating';
 import { RootStackParamList } from '../../../types';
 import datingService from '../../../services/dating/datingService';
+import { BRAND } from '../../../constants/dating/design-system/colors';
 import {
   OnboardingStepHeader,
   PreferencesAgeRangeSection,
@@ -25,9 +35,9 @@ type Route = RouteProp<RootStackParamList, 'DatingPreferencesSetup'>;
 
 const layoutContent = DATING_LAYOUT.preferences.content;
 const layoutAge = DATING_LAYOUT.preferences.ageRange;
-const colors = DATING_COLORS.preferences;
 
-const DatingPreferencesSetupScreen: React.FC = () => {
+const PreferencesInner: React.FC = () => {
+  const { theme } = useDatingTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<Route>();
   const [preferredGender, setPreferredGender] = useState<DatingGenderPreference | null>(null);
@@ -66,16 +76,15 @@ const DatingPreferencesSetupScreen: React.FC = () => {
       });
       navigation.navigate('DatingLocationPermission');
     } catch (err: any) {
-      const msg =
-        err?.message || DATING_STRINGS.preferences.saveFailed;
-      Alert.alert('Lỗi', msg);
+      const msg = err?.message || DATING_STRINGS.preferences.saveFailed;
+      Alert.alert('Loi', msg);
     } finally {
       setLoading(false);
     }
   }, [ageRange, preferredGender, maxDistanceKm, selectedMajors, sameYearOnly, navigation]);
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <OnboardingStepHeader
           stepIndex={3}
@@ -87,55 +96,32 @@ const DatingPreferencesSetupScreen: React.FC = () => {
         />
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingHorizontal: layoutContent.paddingHorizontal,
-              paddingTop: layoutContent.paddingTop,
-              paddingBottom: layoutContent.paddingBottom,
-            },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.intro, { marginBottom: layoutContent.sectionMarginBottom }]}>
-            <Text style={[styles.introTitle, { color: colors.sectionTitle }]}>
-              {DATING_STRINGS.preferences.findMatch}
+          <View style={styles.intro}>
+            <View style={styles.introIconWrap}>
+              <MaterialIcons name="tune" size={28} color={BRAND.primary} />
+            </View>
+            <Text style={styles.introTitle}>Find Your Perfect Match</Text>
+            <Text style={styles.introHint}>
+              Set your preferences to help us find the best matches for you
             </Text>
-            <Text style={[styles.introHint, { color: colors.sectionHint }]}>
-              {DATING_STRINGS.preferences.findMatchHint}
-            </Text>
           </View>
 
-          <View>
-            <PreferencesGenderSection value={preferredGender} onChange={setPreferredGender} />
-          </View>
-
-          <View>
-            <PreferencesDistanceSection value={maxDistanceKm} onChange={setMaxDistanceKm} />
-          </View>
-
-          <View>
-            <PreferencesAgeRangeSection value={ageRange} onChange={setAgeRange} />
-          </View>
-
-          <View>
-            <PreferencesMajorSection
-              selectedMajors={selectedMajors}
-              onAddMajor={handleAddMajor}
-              onRemoveMajor={handleRemoveMajor}
-              pickerValue={pickerValue}
-              onPickerChange={setPickerValue}
-            />
-          </View>
-
-          <View>
-            <PreferencesSameYearSection value={sameYearOnly} onValueChange={setSameYearOnly} />
-          </View>
-
-          <View>
-            <PreferencesPrivacyNote />
-          </View>
+          <PreferencesGenderSection value={preferredGender} onChange={setPreferredGender} />
+          <PreferencesDistanceSection value={maxDistanceKm} onChange={setMaxDistanceKm} />
+          <PreferencesAgeRangeSection value={ageRange} onChange={setAgeRange} />
+          <PreferencesMajorSection
+            selectedMajors={selectedMajors}
+            onAddMajor={handleAddMajor}
+            onRemoveMajor={handleRemoveMajor}
+            pickerValue={pickerValue}
+            onPickerChange={setPickerValue}
+          />
+          <PreferencesSameYearSection value={sameYearOnly} onValueChange={setSameYearOnly} />
+          <PreferencesPrivacyNote />
         </ScrollView>
       </SafeAreaView>
       <PreferencesBottomBar onFinish={handleFinish} loading={loading} />
@@ -143,10 +129,17 @@ const DatingPreferencesSetupScreen: React.FC = () => {
   );
 };
 
+const DatingPreferencesSetupScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <PreferencesInner />
+    </DatingThemeProvider>
+  );
+};
+
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: DATING_COLORS.preferences.background,
   },
   safeArea: {
     flex: 1,
@@ -157,15 +150,49 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 120,
   },
-  intro: {},
+  intro: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 8,
+  },
+  introIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: BRAND.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: BRAND.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
   introTitle: {
-    fontSize: layoutContent.introTitleFontSize,
-    fontWeight: '700',
-    marginBottom: layoutContent.introTitleMarginBottom,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
   introHint: {
-    fontSize: layoutContent.introHintFontSize,
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
 });
 

@@ -8,6 +8,7 @@ const LIKER_PASSWORD = 'Liker@123';
 const LIKER_NAME = 'Nguyễn Siêu Like';
 const LIKER_STUDENT_ID = 'B99DC999';
 
+
 async function main() {
   const passwordHash = await bcrypt.hash(LIKER_PASSWORD, 10);
 

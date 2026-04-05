@@ -1,87 +1,168 @@
+/**
+ * Dating Likes Screen
+ *
+ * Grid of profiles who liked you
+ * Using new dating design system
+ */
+
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../constants/dating/strings';
-import { DATING_SPACING } from '../../../constants/dating/tokens';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { useDatingTheme } from '../../../contexts/DatingThemeContext';
+import {
+  SPACING,
+  RADIUS,
+  TEXT_STYLES,
+  DURATION,
+  SPRING,
+} from '../../../constants/dating/design-system';
 import datingService from '../../../services/dating/datingService';
 import type { DiscoveryCard, RootStackParamList } from '../../../types';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DiscoveryBottomNav } from '../discovery/components';
 
-const colors = DATING_COLORS.discovery;
-const strings = DATING_STRINGS.discovery;
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
 
-interface LikesGridItemProps {
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const NUM_COLUMNS = 2;
+const CARD_GAP = SPACING.sm;
+const CARD_WIDTH = (SCREEN_W - SPACING.md * 2 - CARD_GAP) / NUM_COLUMNS;
+const CARD_HEIGHT = CARD_WIDTH * 1.35;
+
+// ═══════════════════════════════════════════════════════════════
+// LIKE CARD
+// ═══════════════════════════════════════════════════════════════
+
+interface LikeCardProps {
   item: DiscoveryCard;
+  index: number;
   onPress: (item: DiscoveryCard) => void;
 }
 
-const CARD_MARGIN = DATING_SPACING.md;
-const HEADER_ICON_SIZE = DATING_LAYOUT.discovery.header.iconSize;
-const NUM_COLUMNS = 2;
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
-const CARD_BORDER_RADIUS = 18;
+const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) => {
+  const { theme } = useDatingTheme();
+  const scale = useSharedValue(1);
 
-const LikesGridItem: React.FC<LikesGridItemProps> = React.memo(({ item, onPress }) => {
-  const title = useMemo(() => {
-    const name = item.user.fullName ?? strings.unknownName;
-    return `${name}, 24`;
-  }, [item.user.fullName]);
+  const name = item.user.fullName ?? 'Ai đó';
+  const age = item.user.dateOfBirth
+    ? new Date().getFullYear() - new Date(item.user.dateOfBirth).getFullYear()
+    : null;
 
-  const handlePress = useCallback(() => onPress(item), [onPress, item]);
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.95, SPRING.snappy);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, SPRING.snappy);
+  }, []);
+
+  const handlePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(item);
+  }, [item, onPress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const row = Math.floor(index / NUM_COLUMNS);
+  const col = index % NUM_COLUMNS;
+  const delay = (row + col) * 50;
 
   return (
-    <TouchableOpacity
-      style={styles.cardWrapper}
-      activeOpacity={0.8}
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={title}
+    <Animated.View
+      entering={FadeInUp.delay(delay).duration(DURATION.normal).springify()}
+      style={[styles.cardWrapper, { marginRight: col === 0 ? CARD_GAP : 0 }]}
     >
-      <View style={styles.card}>
-        <Image
-          source={{ uri: item.photos[0]?.url ?? '' }}
-          style={styles.cardImage}
-          resizeMode="cover"
-        />
-        <View style={styles.cardTopRow}>
-          <View style={styles.heartPill}>
-            <MaterialIcons name="favorite" size={14} color={colors.matchText} />
-            <Text style={styles.heartPillText}>New like</Text>
+      <Animated.View style={animatedStyle}>
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: theme.bg.surface }]}
+          activeOpacity={1}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
+        >
+          {item.photos[0]?.url ? (
+            <Image
+              source={{ uri: item.photos[0].url }}
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.cardImage, styles.cardPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+              <Ionicons name="person" size={40} color={theme.text.muted} />
+            </View>
+          )}
+
+          {/* Like badge */}
+          <View style={[styles.likeBadge, { backgroundColor: theme.semantic.like.main }]}>
+            <MaterialCommunityIcons name="heart" size={12} color="#FFFFFF" />
+            <Text style={styles.likeBadgeText}>Thích bạn</Text>
           </View>
-        </View>
-        <View style={styles.cardOverlay}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.cardSubtitle} numberOfLines={1}>
-            Xem hồ sơ
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+
+          {/* Gradient overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            style={styles.cardGradient}
+          >
+            <Text style={styles.cardName} numberOfLines={1}>
+              {name}{age ? `, ${age}` : ''}
+            </Text>
+            {item.bio && (
+              <Text style={styles.cardBio} numberOfLines={1}>
+                {item.bio}
+              </Text>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
   );
 });
 
-export const DatingLikesScreen: React.FC = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+// ═══════════════════════════════════════════════════════════════
+// INNER COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+const LikesInner: React.FC = () => {
+  const navigation = useNavigation<Nav>();
+  const { theme } = useDatingTheme();
 
   const {
     data: incomingLikes,
-    isLoading: isLoadingIncoming,
-    refetch: refetchIncoming,
+    isLoading,
+    refetch,
   } = useQuery({
     queryKey: ['dating', 'likes', 'incoming'],
-    queryFn: () => datingService.getIncomingLikes({ page: 1, limit: 20 }),
+    queryFn: () => datingService.getIncomingLikes({ page: 1, limit: 50 }),
   });
 
   const listData = incomingLikes?.data ?? [];
-  const isLoading = isLoadingIncoming;
 
   const handleCardPress = useCallback(
     (card: DiscoveryCard) => {
@@ -90,257 +171,228 @@ export const DatingLikesScreen: React.FC = () => {
     [navigation],
   );
 
-  const handleGoMyProfile = useCallback(() => {
-    navigation.navigate('DatingMyProfile');
-  }, [navigation]);
-
-  const handleBackToSocial = useCallback(() => {
+  const handleBackPress = useCallback(() => {
     navigation.navigate('Main' as any);
   }, [navigation]);
 
-  const handleInfoPress = useCallback(() => {
-    Alert.alert(
-      'Về tính năng Likes',
-      'Đây là danh sách những người đã thích hồ sơ của bạn. Nhấn vào hồ sơ để xem chi tiết và quyết định thích lại hoặc bỏ qua.',
-    );
-  }, []);
-
   const renderItem = useCallback(
-    ({ item }: { item: DiscoveryCard }) => (
-      <LikesGridItem item={item} onPress={handleCardPress} />
+    ({ item, index }: { item: DiscoveryCard; index: number }) => (
+      <LikeCard item={item} index={index} onPress={handleCardPress} />
     ),
     [handleCardPress],
   );
 
-  const handleBottomTabPress = useCallback(
-    (key: string) => {
-      if (key === 'discover') {
-        navigation.navigate('DatingDiscovery');
-        return;
-      }
-      if (key === 'likes') {
-        return;
-      }
-      if (key === 'profile') {
-        navigation.navigate('DatingMyProfile');
-        return;
-      }
-      if (key === 'chats') {
-        navigation.navigate('DatingChatList');
-      }
-    },
-    [navigation],
-  );
-
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.header}>
-          <View style={styles.headerLeftGroup}>
-            <TouchableOpacity
-              style={styles.headerIconBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Quay về mạng xã hội"
-              onPress={handleBackToSocial}
-            >
-              <MaterialIcons name="arrow-back" size={20} color={colors.subtitleColor} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerIconBtn}
-              accessibilityRole="button"
-              accessibilityLabel="My profile"
-              onPress={handleGoMyProfile}
-            >
-              <MaterialIcons name="person" size={20} color={colors.subtitleColor} />
-            </TouchableOpacity>
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: theme.border.subtle }]}>
+          <TouchableOpacity style={styles.headerBtn} onPress={handleBackPress}>
+            <Ionicons name="arrow-back" size={22} color={theme.text.primary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <MaterialCommunityIcons name="heart" size={18} color={theme.semantic.like.main} />
+            <Text style={[styles.headerTitle, { color: theme.text.primary }]}>
+              Lượt thích
+            </Text>
+            {listData.length > 0 && (
+              <View style={[styles.headerBadge, { backgroundColor: theme.semantic.like.main }]}>
+                <Text style={styles.headerBadgeText}>{listData.length}</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Likes</Text>
-            <View style={styles.headerBadge}>
-              <Text style={styles.headerBadgeText}>{listData.length}</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Likes info"
-            onPress={handleInfoPress}
-          >
-            <MaterialIcons name="info-outline" size={20} color={colors.subtitleColor} />
+          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('DatingNotifications')}>
+            <Ionicons name="notifications-outline" size={22} color={theme.text.primary} />
           </TouchableOpacity>
         </View>
 
+        {/* Content */}
         <FlatList
-          contentContainerStyle={[
-            styles.listContent,
-            listData.length === 0 && styles.emptyListContent,
-          ]}
           data={listData}
           keyExtractor={(item) => item.userId}
           numColumns={NUM_COLUMNS}
           renderItem={renderItem}
+          contentContainerStyle={[
+            styles.listContent,
+            listData.length === 0 && styles.emptyListContent,
+          ]}
+          columnWrapperStyle={styles.columnWrapper}
           refreshing={isLoading}
-          onRefresh={refetchIncoming}
+          onRefresh={refetch}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             !isLoading ? (
-              <View style={styles.emptyContainer}>
-                <MaterialIcons name="favorite-border" size={64} color={colors.navInactive} />
-                <Text style={styles.emptyTitle}>Chưa có lượt thích mới</Text>
-                <Text style={styles.emptySubtitle}>
-                  Khi ai đó thích hồ sơ của bạn, họ sẽ xuất hiện ở đây. Những người bạn đã thích
-                  lại sẽ chuyển sang mục Tin nhắn.
+              <Animated.View entering={FadeIn.duration(DURATION.slow)} style={styles.emptyContainer}>
+                <View style={[styles.emptyIconOuter, { backgroundColor: theme.semantic.like.light }]}>
+                  <MaterialCommunityIcons
+                    name="heart-outline"
+                    size={48}
+                    color={theme.semantic.like.main}
+                  />
+                </View>
+                <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>
+                  Chưa có lượt thích mới
                 </Text>
-              </View>
+                <Text style={[styles.emptySubtitle, { color: theme.text.muted }]}>
+                  Khi ai đó thích hồ sơ của bạn, họ sẽ xuất hiện ở đây
+                </Text>
+              </Animated.View>
             ) : null
           }
         />
       </SafeAreaView>
-      <DiscoveryBottomNav activeTab="likes" onTabPress={handleBottomTabPress} />
     </View>
   );
 };
 
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+export const DatingLikesScreen: React.FC = () => {
+  return <LikesInner />;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
+
 const styles = StyleSheet.create({
-  wrapper: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: DATING_SPACING.lg,
-    paddingTop: DATING_SPACING.lg,
-    paddingBottom: DATING_SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLeftGroup: {
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    gap: SPACING.xs,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.title,
+    ...TEXT_STYLES.headingMedium,
   },
   headerBadge: {
     minWidth: 24,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 9999,
-    backgroundColor: DATING_COLORS.primary,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: SPACING.xs,
   },
   headerBadgeText: {
-    fontSize: 12,
+    ...TEXT_STYLES.labelSmall,
+    color: '#FFFFFF',
     fontWeight: '700',
-    color: colors.matchText,
   },
-  headerIconBtn: {
-    width: HEADER_ICON_SIZE,
-    height: HEADER_ICON_SIZE,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
+  // List
   listContent: {
-    paddingHorizontal: CARD_MARGIN,
-    paddingBottom: DATING_SPACING.xl,
+    padding: SPACING.md,
+    paddingBottom: 100,
   },
   emptyListContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingHorizontal: DATING_SPACING.xl,
+  columnWrapper: {
+    marginBottom: CARD_GAP,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.title,
-    marginTop: DATING_SPACING.md,
-    marginBottom: DATING_SPACING.sm,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: colors.navInactive,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+
+  // Card
   cardWrapper: {
     width: CARD_WIDTH,
-    marginHorizontal: CARD_MARGIN / 2,
-    marginBottom: CARD_MARGIN,
   },
   card: {
-    borderRadius: CARD_BORDER_RADIUS,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
   },
   cardImage: {
     width: '100%',
-    aspectRatio: 3 / 4,
+    height: '100%',
   },
-  cardTopRow: {
+  cardPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  likeBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    right: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  heartPill: {
+    top: SPACING.sm,
+    left: SPACING.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: SPACING.xxs,
+    borderRadius: RADIUS.full,
+    gap: 4,
   },
-  heartPillText: {
-    marginLeft: 4,
-    fontSize: 10,
+  likeBadgeText: {
+    ...TEXT_STYLES.tiny,
+    color: '#FFFFFF',
     fontWeight: '600',
-    color: colors.matchText,
   },
-  cardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.matchText,
-  },
-  cardSubtitle: {
-    marginTop: 2,
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.navInactive,
-  },
-  cardOverlay: {
+  cardGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingTop: SPACING.xl,
+  },
+  cardName: {
+    ...TEXT_STYLES.labelLarge,
+    color: '#FFFFFF',
+  },
+  cardBio: {
+    ...TEXT_STYLES.tiny,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xxl,
+    gap: SPACING.sm,
+  },
+  emptyIconOuter: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+  },
+  emptyTitle: {
+    ...TEXT_STYLES.headingMedium,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    ...TEXT_STYLES.bodyMedium,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
 
 export default DatingLikesScreen;
-

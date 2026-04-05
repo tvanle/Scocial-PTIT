@@ -36,7 +36,7 @@ const PTITTabBar = ({ state, navigation }: any) => {
       if (!profile.isActive) {
         navigation.navigate('DatingPaused');
       } else {
-        navigation.navigate('DatingDiscovery');
+        navigation.navigate('DatingTabs');
       }
     } catch {
       navigation.navigate('DatingSplash');

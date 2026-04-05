@@ -8,11 +8,13 @@ import {
   Modal,
   FlatList,
   Pressable,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
 import { DATING_SPACING } from '../../../../../constants/dating/tokens';
+import { BRAND } from '../../../../../constants/dating/design-system/colors';
 
 const colors = DATING_COLORS.profileSetup;
 const promptStrings = DATING_STRINGS.prompts;
@@ -72,8 +74,18 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{promptStrings.sectionTitle}</Text>
-        <Text style={styles.sectionHint}>{promptStrings.sectionHint}</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.titleRow}>
+            <MaterialIcons name="chat-bubble-outline" size={20} color={BRAND.primary} />
+            <Text style={styles.sectionTitle}>Conversation Starters</Text>
+          </View>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{prompts.length}/{MAX_PROMPTS}</Text>
+          </View>
+        </View>
+        <Text style={styles.sectionHint}>
+          Add prompts to help others start a conversation with you
+        </Text>
 
         {prompts.map((prompt, index) => (
           <View key={`prompt-${index}`} style={styles.promptCard}>
@@ -83,24 +95,32 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
                 onPress={() => setPickerIndex(index)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.questionText} numberOfLines={1}>
-                  {prompt.question || promptStrings.selectQuestion}
+                <MaterialIcons name="format-quote" size={18} color={BRAND.primary} />
+                <Text style={styles.questionText} numberOfLines={2}>
+                  {prompt.question || 'Select a prompt...'}
                 </Text>
-                <MaterialIcons name="expand-more" size={20} color={colors.sectionHint} />
+                <MaterialIcons name="expand-more" size={20} color="#999" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleRemove(index)} hitSlop={8}>
-                <MaterialIcons name="close" size={20} color={colors.sectionHint} />
+              <TouchableOpacity
+                onPress={() => handleRemove(index)}
+                hitSlop={8}
+                style={styles.removeBtn}
+              >
+                <MaterialIcons name="close" size={16} color="#666" />
               </TouchableOpacity>
             </View>
             <TextInput
               style={styles.answerInput}
               value={prompt.answer}
               onChangeText={(text) => handleAnswerChange(index, text)}
-              placeholder={promptStrings.answerPlaceholder}
-              placeholderTextColor={colors.inputPlaceholder}
+              placeholder="Write your answer here..."
+              placeholderTextColor="#999"
               multiline
               maxLength={200}
             />
+            <View style={styles.charCounter}>
+              <Text style={styles.charCountText}>{prompt.answer.length}/200</Text>
+            </View>
           </View>
         ))}
 
@@ -110,8 +130,10 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
             onPress={() => setPickerIndex(prompts.length)}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="add" size={20} color={DATING_COLORS.primary} />
-            <Text style={styles.addBtnText}>Thêm câu hỏi</Text>
+            <View style={styles.addIconWrap}>
+              <MaterialIcons name="add" size={20} color={BRAND.primary} />
+            </View>
+            <Text style={styles.addBtnText}>Add a prompt</Text>
           </TouchableOpacity>
         )}
 
@@ -123,7 +145,16 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
         >
           <Pressable style={styles.modalOverlay} onPress={() => setPickerIndex(null)}>
             <View style={styles.modalSheet}>
-              <Text style={styles.modalTitle}>{promptStrings.selectQuestion}</Text>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Choose a Prompt</Text>
+                <TouchableOpacity
+                  onPress={() => setPickerIndex(null)}
+                  style={styles.modalCloseBtn}
+                >
+                  <MaterialIcons name="close" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
               <FlatList
                 data={availableQuestions}
                 keyExtractor={(item) => item}
@@ -133,9 +164,13 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
                     onPress={() => handleSelectQuestion(item)}
                     activeOpacity={0.7}
                   >
+                    <View style={styles.modalRowIcon}>
+                      <MaterialIcons name="format-quote" size={16} color={BRAND.primary} />
+                    </View>
                     <Text style={styles.modalRowText}>{item}</Text>
                   </TouchableOpacity>
                 )}
+                showsVerticalScrollIndicator={true}
               />
             </View>
           </Pressable>
@@ -147,85 +182,206 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
 
 const styles = StyleSheet.create({
   section: {
-    gap: DATING_SPACING.md,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: colors.sectionTitle,
+    color: '#1A1A1A',
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    backgroundColor: BRAND.primaryMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: BRAND.primary,
   },
   sectionHint: {
     fontSize: 13,
-    color: colors.sectionHint,
+    color: '#666',
     lineHeight: 18,
+    marginBottom: 16,
   },
   promptCard: {
-    backgroundColor: colors.inputBg,
-    borderRadius: 12,
-    padding: DATING_SPACING.md,
-    gap: DATING_SPACING.sm,
+    backgroundColor: '#F7F7F7',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   questionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: DATING_SPACING.sm,
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
   },
   questionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
+    gap: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BRAND.primaryMuted,
   },
   questionText: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: DATING_COLORS.primary,
+    color: BRAND.primary,
+    lineHeight: 18,
+  },
+  removeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E8E8E8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   answerInput: {
-    fontSize: 14,
-    color: colors.sectionTitle,
-    minHeight: 60,
+    fontSize: 15,
+    color: '#1A1A1A',
+    minHeight: 80,
     textAlignVertical: 'top',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    lineHeight: 22,
+  },
+  charCounter: {
+    alignItems: 'flex-end',
+    marginTop: 6,
+  },
+  charCountText: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '500',
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: DATING_SPACING.sm,
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: BRAND.primaryMuted,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: BRAND.primary,
+    borderStyle: 'dashed',
+    marginTop: 4,
+  },
+  addIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: DATING_COLORS.primary,
+    color: BRAND.primary,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '60%',
-    paddingTop: DATING_SPACING.lg,
-    paddingBottom: DATING_SPACING.xxl,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    alignSelf: 'center',
+    marginTop: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.sectionTitle,
-    paddingHorizontal: DATING_SPACING.lg,
-    marginBottom: DATING_SPACING.md,
+    color: '#1A1A1A',
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalRow: {
-    paddingHorizontal: DATING_SPACING.lg,
-    paddingVertical: DATING_SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  modalRowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: BRAND.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
   modalRowText: {
+    flex: 1,
     fontSize: 15,
-    color: colors.sectionTitle,
+    color: '#1A1A1A',
+    fontWeight: '500',
+    lineHeight: 22,
   },
 });

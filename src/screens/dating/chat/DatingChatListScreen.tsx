@@ -1,3 +1,10 @@
+/**
+ * Dating Chat List Screen
+ *
+ * Chat list with new matches carousel and conversations
+ * Using new dating design system
+ */
+
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   View,
@@ -11,14 +18,30 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DATING_COLORS } from '../../../constants/dating/theme';
-import { DATING_SPACING } from '../../../constants/dating/tokens';
-import { DiscoveryBottomNav } from '../discovery/components';
+
+import { useDatingTheme } from '../../../contexts/DatingThemeContext';
+import {
+  SPACING,
+  RADIUS,
+  TEXT_STYLES,
+  DURATION,
+  SPRING,
+  AVATAR,
+} from '../../../constants/dating/design-system';
 import datingChatService from '../../../services/dating/datingChatService';
 import datingService from '../../../services/dating/datingService';
 import socketService from '../../../services/socket/socketService';
@@ -26,59 +49,104 @@ import { useAuthStore } from '../../../store/slices/authSlice';
 import type { RootStackParamList } from '../../../types';
 import type { DatingConversation, MatchItem, DatingChatUser } from '../../../types/dating';
 
-const colors = DATING_COLORS.discovery;
-type Nav = NativeStackNavigationProp<RootStackParamList>;
-const { width: SCREEN_W } = Dimensions.get('window');
-const MATCH_CARD_W = 100;
-const MATCH_CARD_H = 140;
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
 
-// ─── New Match Card (vertical photo card with gradient name) ─────────
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Parse message content and return a displayable preview
+ * Handles special message types like prompt_reply
+ */
+const getMessagePreview = (content: string | null | undefined): string => {
+  if (!content) return 'Bắt đầu trò chuyện';
+
+  try {
+    const parsed = JSON.parse(content);
+    console.log('[ChatList] Parsed preview:', parsed?.type);
+    if (parsed?.type === 'prompt_reply' && parsed.reply) {
+      return `💬 ${parsed.reply}`;
+    }
+  } catch {
+    // Not JSON, return as-is
+  }
+
+  return content;
+};
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const MATCH_CARD_W = 80;
+const MATCH_CARD_H = 100;
+
+// ═══════════════════════════════════════════════════════════════
+// NEW MATCH CARD
+// ═══════════════════════════════════════════════════════════════
+
 interface NewMatchItemProps {
   match: MatchItem;
+  index: number;
   onPress: (match: MatchItem) => void;
 }
 
-const NewMatchItem: React.FC<NewMatchItemProps> = React.memo(({ match, onPress }) => {
+const NewMatchItem: React.FC<NewMatchItemProps> = React.memo(({ match, index, onPress }) => {
+  const { theme } = useDatingTheme();
   const photo = match.matchedUser.avatar;
   const firstName = match.matchedUser.fullName?.split(' ').pop() ?? 'Bạn';
 
+  const handlePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(match);
+  }, [match, onPress]);
+
   return (
-    <TouchableOpacity
-      style={styles.matchCard}
-      activeOpacity={0.85}
-      onPress={() => onPress(match)}
-    >
-      {photo ? (
-        <Image source={{ uri: photo }} style={styles.matchCardImg} />
-      ) : (
-        <View style={[styles.matchCardImg, styles.matchCardPlaceholder]}>
-          <Ionicons name="person" size={36} color="#d1d5db" />
-        </View>
-      )}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.65)']}
-        style={styles.matchCardGradient}
+    <Animated.View entering={FadeInRight.delay(index * 50).duration(DURATION.normal)}>
+      <TouchableOpacity
+        style={[styles.matchCard, { backgroundColor: theme.bg.surface }]}
+        activeOpacity={0.85}
+        onPress={handlePress}
       >
-        <Text style={styles.matchCardName} numberOfLines={1}>
-          {firstName}
-        </Text>
-      </LinearGradient>
-      <View style={styles.matchNewBadge}>
-        <Text style={styles.matchNewBadgeText}>MỚI</Text>
-      </View>
-    </TouchableOpacity>
+        {photo ? (
+          <Image source={{ uri: photo }} style={styles.matchCardImg} />
+        ) : (
+          <View style={[styles.matchCardImg, styles.matchCardPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+            <Ionicons name="person" size={28} color={theme.text.muted} />
+          </View>
+        )}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.matchCardGradient}
+        >
+          <Text style={styles.matchCardName} numberOfLines={1}>
+            {firstName}
+          </Text>
+        </LinearGradient>
+        <View style={[styles.matchNewBadge, { backgroundColor: theme.brand.primary }]}>
+          <MaterialCommunityIcons name="heart" size={10} color="#FFFFFF" />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 });
 
-// ─── Conversation Row ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// CONVERSATION ITEM
+// ═══════════════════════════════════════════════════════════════
+
 interface ConvItemProps {
   item: DatingConversation;
+  index: number;
   onPress: (item: DatingConversation) => void;
   onAvatarPress: (user: DatingChatUser) => void;
 }
 
 const ConversationItem: React.FC<ConvItemProps> = React.memo(
-  ({ item, onPress, onAvatarPress }) => {
+  ({ item, index, onPress, onAvatarPress }) => {
+    const { theme } = useDatingTheme();
     const other = item.otherUser;
     const hasUnread = item.unreadCount > 0;
 
@@ -89,68 +157,102 @@ const ConversationItem: React.FC<ConvItemProps> = React.memo(
       const diffMs = now.getTime() - d.getTime();
       const diffMin = Math.floor(diffMs / 60000);
       if (diffMin < 1) return 'Vừa xong';
-      if (diffMin < 60) return `${diffMin} phút`;
+      if (diffMin < 60) return `${diffMin}ph`;
       const diffH = Math.floor(diffMin / 60);
-      if (diffH < 24) return `${diffH} giờ`;
+      if (diffH < 24) return `${diffH}h`;
       const diffD = Math.floor(diffH / 24);
-      if (diffD < 7) return `${diffD} ngày`;
+      if (diffD < 7) return `${diffD}d`;
       return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     }, [item.lastMessageCreatedAt]);
 
-    return (
-      <TouchableOpacity
-        style={[styles.convRow, hasUnread && styles.convRowUnread]}
-        activeOpacity={0.6}
-        onPress={() => onPress(item)}
-      >
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => other && onAvatarPress(other)}
-          style={styles.convAvatarWrap}
-        >
-          {other?.avatar ? (
-            <Image source={{ uri: other.avatar }} style={styles.convAvatar} />
-          ) : (
-            <View style={[styles.convAvatar, styles.convAvatarPlaceholder]}>
-              <Ionicons name="person" size={26} color="#d1d5db" />
-            </View>
-          )}
-        </TouchableOpacity>
+    const handlePress = useCallback(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress(item);
+    }, [item, onPress]);
 
-        <View style={styles.convBody}>
-          <View style={styles.convTopRow}>
-            <Text
-              style={[styles.convName, hasUnread && styles.convNameUnread]}
-              numberOfLines={1}
-            >
-              {other?.fullName ?? 'Người dùng'}
-            </Text>
-            {timeLabel ? (
-              <Text style={[styles.convTime, hasUnread && styles.convTimeUnread]}>
-                {timeLabel}
-              </Text>
-            ) : null}
-          </View>
-          <View style={styles.convBottomRow}>
-            <Text
-              style={[styles.convPreview, hasUnread && styles.convPreviewUnread]}
-              numberOfLines={1}
-            >
-              {item.lastMessageContent ?? 'Bắt đầu trò chuyện nào! 💬'}
-            </Text>
-            {hasUnread && (
-              <View style={styles.unreadDot} />
+    return (
+      <Animated.View entering={FadeInDown.delay(index * 30).duration(DURATION.normal)}>
+        <TouchableOpacity
+          style={[
+            styles.convRow,
+            { backgroundColor: hasUnread ? theme.brand.primaryMuted : 'transparent' },
+          ]}
+          activeOpacity={0.6}
+          onPress={handlePress}
+        >
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => other && onAvatarPress(other)}
+            style={styles.convAvatarWrap}
+          >
+            {other?.avatar ? (
+              <Image source={{ uri: other.avatar }} style={styles.convAvatar} />
+            ) : (
+              <View style={[styles.convAvatar, styles.convAvatarPlaceholder, { backgroundColor: theme.bg.elevated }]}>
+                <Ionicons name="person" size={24} color={theme.text.muted} />
+              </View>
             )}
+            {hasUnread && (
+              <View style={[styles.unreadDot, { backgroundColor: theme.semantic.online, borderColor: theme.bg.base }]} />
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.convBody}>
+            <View style={styles.convTopRow}>
+              <Text
+                style={[
+                  styles.convName,
+                  { color: hasUnread ? theme.text.primary : theme.text.secondary },
+                  hasUnread && styles.convNameUnread,
+                ]}
+                numberOfLines={1}
+              >
+                {other?.fullName ?? 'Người dùng'}
+              </Text>
+              {timeLabel ? (
+                <Text
+                  style={[
+                    styles.convTime,
+                    { color: hasUnread ? theme.brand.primary : theme.text.muted },
+                  ]}
+                >
+                  {timeLabel}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.convBottomRow}>
+              <Text
+                style={[
+                  styles.convPreview,
+                  { color: hasUnread ? theme.text.secondary : theme.text.muted },
+                  hasUnread && styles.convPreviewUnread,
+                ]}
+                numberOfLines={1}
+              >
+                {getMessagePreview(item.lastMessageContent)}
+              </Text>
+              {hasUnread && (
+                <View style={[styles.unreadBadge, { backgroundColor: theme.brand.primary }]}>
+                  <Text style={styles.unreadBadgeText}>
+                    {item.unreadCount > 9 ? '9+' : item.unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   },
 );
 
-// ─── Main Screen ─────────────────────────────────────────────────────
-const DatingChatListScreen: React.FC = () => {
+// ═══════════════════════════════════════════════════════════════
+// INNER COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+const ChatListInner: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const { theme } = useDatingTheme();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -246,22 +348,18 @@ const DatingChatListScreen: React.FC = () => {
     [navigation],
   );
 
-  const handleBottomTabPress = useCallback(
-    (key: string) => {
-      if (key === 'discover') navigation.navigate('DatingDiscovery');
-      else if (key === 'likes') navigation.navigate('DatingLikes');
-      else if (key === 'profile') navigation.navigate('DatingMyProfile');
-    },
-    [navigation],
-  );
-
-  const handleBackToSocial = useCallback(() => {
+  const handleBackPress = useCallback(() => {
     navigation.navigate('Main' as any);
   }, [navigation]);
 
   const renderConv = useCallback(
-    ({ item }: { item: DatingConversation }) => (
-      <ConversationItem item={item} onPress={handleConvPress} onAvatarPress={handleAvatarPress} />
+    ({ item, index }: { item: DatingConversation; index: number }) => (
+      <ConversationItem
+        item={item}
+        index={index}
+        onPress={handleConvPress}
+        onAvatarPress={handleAvatarPress}
+      />
     ),
     [handleConvPress, handleAvatarPress],
   );
@@ -271,33 +369,39 @@ const DatingChatListScreen: React.FC = () => {
   const hasContent = newMatches.length > 0 || convList.length > 0;
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.headerBtn} onPress={handleBackToSocial}>
-            <Ionicons name="arrow-back" size={22} color={DATING_COLORS.profileDetail.name} />
+        <View style={[styles.header, { borderBottomColor: theme.border.subtle }]}>
+          <TouchableOpacity style={styles.headerBtn} onPress={handleBackPress}>
+            <Ionicons name="arrow-back" size={22} color={theme.text.primary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Ionicons name="heart" size={18} color={DATING_COLORS.primary} />
-            <Text style={styles.headerTitle}>Tin nhắn</Text>
+            <MaterialCommunityIcons name="heart" size={18} color={theme.brand.primary} />
+            <Text style={[styles.headerTitle, { color: theme.text.primary }]}>
+              Tin nhắn
+            </Text>
           </View>
-          <View style={styles.headerBtnPlaceholder} />
+          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('DatingNotifications')}>
+            <Ionicons name="notifications-outline" size={22} color={theme.text.primary} />
+          </TouchableOpacity>
         </View>
 
         {isLoading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={DATING_COLORS.primary} />
+            <ActivityIndicator size="large" color={theme.brand.primary} />
           </View>
         ) : !hasContent ? (
           <View style={styles.center}>
-            <View style={styles.emptyIconOuter}>
-              <View style={styles.emptyIconInner}>
-                <Ionicons name="chatbubble-ellipses" size={40} color={DATING_COLORS.primary} />
+            <Animated.View entering={FadeIn.duration(DURATION.slow)} style={styles.emptyIconOuter}>
+              <View style={[styles.emptyIconInner, { backgroundColor: theme.brand.primaryMuted }]}>
+                <MaterialCommunityIcons name="message-text-outline" size={40} color={theme.brand.primary} />
               </View>
-            </View>
-            <Text style={styles.emptyTitle}>Chưa có cuộc trò chuyện</Text>
-            <Text style={styles.emptySubtext}>
+            </Animated.View>
+            <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>
+              Chưa có cuộc trò chuyện
+            </Text>
+            <Text style={[styles.emptySubtext, { color: theme.text.muted }]}>
               Khi bạn match với ai đó, cuộc trò chuyện sẽ xuất hiện ở đây
             </Text>
           </View>
@@ -311,11 +415,13 @@ const DatingChatListScreen: React.FC = () => {
             ListHeaderComponent={
               <>
                 {newMatches.length > 0 && (
-                  <View style={styles.matchSection}>
+                  <View style={[styles.matchSection, { borderBottomColor: theme.border.subtle }]}>
                     <View style={styles.sectionHeader}>
-                      <Ionicons name="sparkles" size={16} color={DATING_COLORS.primary} />
-                      <Text style={styles.sectionLabel}>Kết nối mới</Text>
-                      <View style={styles.sectionCount}>
+                      <MaterialCommunityIcons name="star-four-points" size={16} color={theme.brand.primary} />
+                      <Text style={[styles.sectionLabel, { color: theme.text.primary }]}>
+                        Kết nối mới
+                      </Text>
+                      <View style={[styles.sectionCount, { backgroundColor: theme.brand.primary }]}>
                         <Text style={styles.sectionCountText}>{newMatches.length}</Text>
                       </View>
                     </View>
@@ -324,8 +430,8 @@ const DatingChatListScreen: React.FC = () => {
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.matchCarousel}
                     >
-                      {newMatches.map((m) => (
-                        <NewMatchItem key={m.id} match={m} onPress={handleMatchPress} />
+                      {newMatches.map((m, i) => (
+                        <NewMatchItem key={m.id} match={m} index={i} onPress={handleMatchPress} />
                       ))}
                     </ScrollView>
                   </View>
@@ -333,8 +439,10 @@ const DatingChatListScreen: React.FC = () => {
 
                 {convList.length > 0 && (
                   <View style={styles.sectionHeader}>
-                    <Ionicons name="chatbubbles" size={16} color={DATING_COLORS.primary} />
-                    <Text style={styles.sectionLabel}>Cuộc trò chuyện</Text>
+                    <MaterialCommunityIcons name="message-text" size={16} color={theme.brand.primary} />
+                    <Text style={[styles.sectionLabel, { color: theme.text.primary }]}>
+                      Cuộc trò chuyện
+                    </Text>
                   </View>
                 )}
               </>
@@ -342,42 +450,55 @@ const DatingChatListScreen: React.FC = () => {
             ListEmptyComponent={
               newMatches.length > 0 ? (
                 <View style={styles.noConvsYet}>
-                  <Ionicons name="chatbubble-outline" size={28} color="#d1d5db" />
-                  <Text style={styles.noConvsTitle}>Chưa có tin nhắn nào</Text>
-                  <Text style={styles.noConvsText}>
-                    Nhấn vào một kết nối mới ở trên để bắt đầu trò chuyện!
+                  <MaterialCommunityIcons name="message-outline" size={28} color={theme.text.muted} />
+                  <Text style={[styles.noConvsTitle, { color: theme.text.secondary }]}>
+                    Chưa có tin nhắn nào
+                  </Text>
+                  <Text style={[styles.noConvsText, { color: theme.text.muted }]}>
+                    Nhấn vào một kết nối mới để bắt đầu trò chuyện!
                   </Text>
                 </View>
               ) : null
             }
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         )}
       </SafeAreaView>
-      <DiscoveryBottomNav activeTab="chats" onTabPress={handleBottomTabPress} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: '#fafafa' },
-  safeArea: { flex: 1 },
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
 
-  // ── Header
+export const DatingChatListScreen: React.FC = () => {
+  return <ChatListInner />;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: DATING_SPACING.md,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#efefef',
-    backgroundColor: '#fff',
   },
   headerBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -386,101 +507,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: SPACING.xs,
   },
   headerTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: DATING_COLORS.profileDetail.name,
-    letterSpacing: -0.3,
+    ...TEXT_STYLES.headingMedium,
   },
-  headerBtnPlaceholder: { width: 38 },
 
-  // ── Center / Empty
+  // Center / Empty
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 48,
-    gap: 10,
+    paddingHorizontal: SPACING.xxl,
+    gap: SPACING.sm,
   },
   emptyIconOuter: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(232,48,48,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.md,
   },
   emptyIconInner: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(232,48,48,0.1)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f2937',
+    ...TEXT_STYLES.headingMedium,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
+    ...TEXT_STYLES.bodyMedium,
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: 22,
   },
 
-  // ── Section headers
-  listContent: { paddingBottom: DATING_SPACING.xl },
+  // Section headers
+  listContent: {
+    paddingBottom: 100,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 12,
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   sectionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1f2937',
-    letterSpacing: -0.1,
+    ...TEXT_STYLES.labelLarge,
   },
   sectionCount: {
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: DATING_COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: SPACING.xs,
   },
   sectionCountText: {
-    fontSize: 11,
+    ...TEXT_STYLES.tiny,
+    color: '#FFFFFF',
     fontWeight: '700',
-    color: '#fff',
   },
 
-  // ── Match carousel
+  // Match carousel
   matchSection: {
-    backgroundColor: '#fff',
-    paddingBottom: 16,
+    paddingBottom: SPACING.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#efefef',
   },
   matchCarousel: {
-    paddingHorizontal: 16,
-    gap: 10,
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
   },
   matchCard: {
     width: MATCH_CARD_W,
     height: MATCH_CARD_H,
-    borderRadius: 14,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    backgroundColor: '#f3f4f6',
   },
   matchCardImg: {
     width: '100%',
@@ -489,129 +591,124 @@ const styles = StyleSheet.create({
   matchCardPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
   },
   matchCardGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: 50,
+    height: 40,
     justifyContent: 'flex-end',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingHorizontal: SPACING.xs,
+    paddingBottom: SPACING.xs,
   },
   matchCardName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#fff',
+    ...TEXT_STYLES.labelSmall,
+    color: '#FFFFFF',
   },
   matchNewBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: DATING_COLORS.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  matchNewBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-
-  // ── Conversation rows
-  convRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-  },
-  convRowUnread: {
-    backgroundColor: 'rgba(232,48,48,0.03)',
-  },
-  convAvatarWrap: { marginRight: 14 },
-  convAvatar: { width: 54, height: 54, borderRadius: 27 },
-  convAvatarPlaceholder: {
-    backgroundColor: '#f3f4f6',
+    top: SPACING.xs,
+    right: SPACING.xs,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  convBody: { flex: 1 },
+
+  // Conversation rows
+  convRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    marginHorizontal: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.xxs,
+  },
+  convAvatarWrap: {
+    marginRight: SPACING.sm,
+    position: 'relative',
+  },
+  convAvatar: {
+    width: AVATAR.lg,
+    height: AVATAR.lg,
+    borderRadius: AVATAR.lg / 2,
+  },
+  convAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+  },
+  convBody: {
+    flex: 1,
+  },
   convTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: SPACING.xxs,
   },
   convName: {
-    fontSize: 15.5,
-    fontWeight: '500',
-    color: '#374151',
+    ...TEXT_STYLES.bodyMedium,
     flex: 1,
-    marginRight: 8,
+    marginRight: SPACING.xs,
   },
   convNameUnread: {
     fontWeight: '700',
-    color: '#111827',
   },
   convTime: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
-  convTimeUnread: {
-    color: DATING_COLORS.primary,
-    fontWeight: '600',
+    ...TEXT_STYLES.tiny,
   },
   convBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   convPreview: {
-    fontSize: 14,
-    color: '#9ca3af',
+    ...TEXT_STYLES.bodySmall,
     flex: 1,
-    lineHeight: 19,
   },
   convPreviewUnread: {
-    color: '#4b5563',
     fontWeight: '500',
   },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: DATING_COLORS.primary,
-    marginLeft: 8,
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xs,
+    marginLeft: SPACING.xs,
+  },
+  unreadBadgeText: {
+    ...TEXT_STYLES.tiny,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 
-  // ── Separator
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#f0f0f0',
-    marginLeft: 88,
-  },
-
-  // ── No convs placeholder
+  // No convs placeholder
   noConvsYet: {
     alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 40,
-    gap: 8,
+    paddingVertical: SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
+    gap: SPACING.xs,
   },
   noConvsTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6b7280',
+    ...TEXT_STYLES.labelLarge,
   },
   noConvsText: {
-    fontSize: 13,
-    color: '#9ca3af',
+    ...TEXT_STYLES.bodySmall,
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 20,
   },
 });
 

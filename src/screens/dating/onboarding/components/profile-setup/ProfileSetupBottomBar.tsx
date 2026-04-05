@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating';
+import { BRAND } from '../../../../../constants/dating/design-system/colors';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 interface ProfileSetupBottomBarProps {
@@ -13,7 +16,7 @@ interface ProfileSetupBottomBarProps {
   loading?: boolean;
   disabled?: boolean;
   hint?: string | null;
-   label?: string;
+  label?: string;
 }
 
 const layout = DATING_LAYOUT.profileSetup.bottomBar;
@@ -32,84 +35,135 @@ export const ProfileSetupBottomBar: React.FC<ProfileSetupBottomBarProps> = ({
   const isInactive = loading || disabled;
 
   return (
-    <View
-      style={[
-        styles.bottomBar,
-        {
-          paddingHorizontal: layout.paddingHorizontal,
-          paddingTop: layout.paddingTop,
-          paddingBottom: layout.paddingBottom + layout.safeAreaBottom,
-          backgroundColor: colors.bottomBarBg,
-          borderTopColor: colors.bottomBarBorder,
-        },
-      ]}
-    >
-      {hint && (
-        <Text style={styles.hint}>{hint}</Text>
-      )}
-      <Pressable
-        onPress={onContinue}
-        onPressIn={isInactive ? undefined : onPressIn}
-        onPressOut={isInactive ? undefined : onPressOut}
-        disabled={isInactive}
-      >
-        <Animated.View
-          style={[
-            styles.continueButton,
-            animatedButtonStyle,
-            {
-              height: layout.buttonHeight,
-              borderRadius: layout.buttonBorderRadius,
-              shadowOpacity: isInactive ? 0 : layout.shadowOpacity,
-              shadowRadius: layout.shadowRadius,
-              elevation: isInactive ? 0 : layout.elevation,
-              backgroundColor: isInactive ? '#ccc' : DATING_COLORS.primary,
-            },
-          ]}
+    <View style={styles.wrapper}>
+      <LinearGradient
+        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.9)', '#fff']}
+        style={styles.gradient}
+      />
+      <View style={styles.bottomBar}>
+        {hint && (
+          <View style={styles.hintRow}>
+            <MaterialIcons name="info-outline" size={16} color={BRAND.primary} />
+            <Text style={styles.hint}>{hint}</Text>
+          </View>
+        )}
+        <Pressable
+          onPress={onContinue}
+          onPressIn={isInactive ? undefined : onPressIn}
+          onPressOut={isInactive ? undefined : onPressOut}
+          disabled={isInactive}
         >
-          {loading ? (
-            <ActivityIndicator color={colors.buttonText} />
-          ) : (
-            <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-              {label ?? DATING_STRINGS.profileSetup.continue}
-            </Text>
-          )}
-        </Animated.View>
-      </Pressable>
+          <Animated.View style={animatedButtonStyle}>
+            {isInactive ? (
+              <View style={styles.buttonDisabled}>
+                {loading ? (
+                  <ActivityIndicator color="#999" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonTextDisabled}>
+                      {label ?? DATING_STRINGS.profileSetup.continue}
+                    </Text>
+                    <MaterialIcons name="arrow-forward" size={20} color="#999" />
+                  </>
+                )}
+              </View>
+            ) : (
+              <LinearGradient
+                colors={[BRAND.primary, BRAND.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.button}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>
+                      {label ?? DATING_STRINGS.profileSetup.continue}
+                    </Text>
+                    <MaterialIcons name="arrow-forward" size={20} color="#fff" />
+                  </>
+                )}
+              </LinearGradient>
+            )}
+          </Animated.View>
+        </Pressable>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+  },
+  gradient: {
+    position: 'absolute',
+    top: -30,
+    left: 0,
+    right: 0,
+    height: 30,
+  },
   bottomBar: {
-    borderTopWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-      },
-    }),
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    backgroundColor: '#fff',
+  },
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 12,
+    backgroundColor: BRAND.primaryMuted,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
   },
   hint: {
     fontSize: 13,
-    color: DATING_COLORS.primary,
-    textAlign: 'center',
-    marginBottom: 8,
+    color: BRAND.primary,
     fontWeight: '500',
   },
-  continueButton: {
-    width: '100%',
+  button: {
+    height: 56,
+    borderRadius: 28,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: DATING_COLORS.primary,
+    gap: 8,
     ...Platform.select({
       ios: {
-        shadowOffset: { width: 0, height: 4 },
+        shadowColor: BRAND.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
       },
     }),
   },
-  continueButtonText: {
-    fontSize: 18,
+  buttonDisabled: {
+    height: 56,
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#E8E8E8',
+  },
+  buttonText: {
+    fontSize: 17,
     fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+  buttonTextDisabled: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#999',
+    letterSpacing: 0.3,
   },
 });

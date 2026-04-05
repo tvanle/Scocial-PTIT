@@ -1,5 +1,10 @@
+/**
+ * Dating Onboarding Intro Screen
+ *
+ * First step of dating onboarding flow
+ */
+
 import React, { useCallback } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -7,116 +12,135 @@ import {
   ImageBackground,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MaterialIcons } from '@expo/vector-icons';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../constants/dating/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+
+import { DatingThemeProvider, useDatingTheme } from '../../../contexts/DatingThemeContext';
+import { SPACING, TEXT_STYLES, RADIUS, DURATION } from '../../../constants/dating/design-system';
 import { DATING_STRINGS } from '../../../constants/dating/strings';
 import { DATING_ASSETS } from '../../../constants/dating/assets';
 import { RootStackParamList } from '../../../types';
 import { useFadeSlideIn, usePressScale } from '../hooks';
 import { OnboardingStepHeader } from './components';
 
-const DatingOnboardingIntroScreen: React.FC = () => {
+type Nav = NativeStackNavigationProp<RootStackParamList, 'DatingOnboardingIntro'>;
+
+const OnboardingIntroInner: React.FC = () => {
+  const { theme } = useDatingTheme();
+  const navigation = useNavigation<Nav>();
+
   const animatedIllustrationStyle = useFadeSlideIn({ delay: 150, initialTranslateY: 40 });
   const animatedTextStyle = useFadeSlideIn({ delay: 350, initialTranslateY: 30 });
   const animatedFooterStyle = useFadeSlideIn({ delay: 500, initialTranslateY: 40 });
   const { animatedStyle: animatedButtonStyle, handlePressIn, handlePressOut } = usePressScale();
 
-  const navigation = useNavigation<
-    NativeStackNavigationProp<RootStackParamList, 'DatingOnboardingIntro'>
-  >();
   const handleNextPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('DatingProfileSetup', { from: 'onboarding' });
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <OnboardingStepHeader
-        stepIndex={1}
-        totalSteps={3}
-        title=""
-        showBackButton={false}
-      />
-      <View style={styles.container}>
-        <View style={styles.contentContainer}>
-          <Animated.View style={[styles.illustrationCard, animatedIllustrationStyle]}>
-            <View style={styles.illustrationBackground}>
-              <ImageBackground
-                source={{ uri: DATING_ASSETS.onboardingStep1Illustration }}
-                style={styles.illustrationImage}
-                resizeMode="cover"
-              />
-            </View>
-            <View style={styles.decorCircleBottomRight} />
-            <View style={styles.decorCircleTopLeft} />
-          </Animated.View>
+    <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <OnboardingStepHeader
+          stepIndex={1}
+          totalSteps={3}
+          title=""
+          showBackButton={false}
+        />
 
-          <Animated.View style={[styles.textBlock, animatedTextStyle]}>
-            <Text style={styles.title}>{DATING_STRINGS.onboarding.step1Title}</Text>
-            <Text style={styles.description}>{DATING_STRINGS.onboarding.step1Description}</Text>
+        <View style={styles.content}>
+          <View style={styles.contentContainer}>
+            <Animated.View style={[styles.illustrationCard, animatedIllustrationStyle]}>
+              <View style={[styles.illustrationBackground, { backgroundColor: theme.brand.primaryMuted }]}>
+                <ImageBackground
+                  source={{ uri: DATING_ASSETS.onboardingStep1Illustration }}
+                  style={styles.illustrationImage}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={[styles.decorCircleBottomRight, { backgroundColor: theme.brand.primary }]} />
+              <View style={[styles.decorCircleTopLeft, { backgroundColor: theme.semantic.superLike.main }]} />
+            </Animated.View>
+
+            <Animated.View style={[styles.textBlock, animatedTextStyle]}>
+              <Text style={[styles.title, { color: theme.text.primary }]}>
+                {DATING_STRINGS.onboarding.step1Title}
+              </Text>
+              <Text style={[styles.description, { color: theme.text.secondary }]}>
+                {DATING_STRINGS.onboarding.step1Description}
+              </Text>
+            </Animated.View>
+          </View>
+
+          <Animated.View style={[styles.footer, animatedFooterStyle]}>
+            <Pressable
+              onPress={handleNextPress}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+            >
+              <Animated.View style={[
+                styles.nextButton,
+                { backgroundColor: theme.brand.primary },
+                animatedButtonStyle,
+              ]}>
+                <Text style={styles.nextButtonText}>{DATING_STRINGS.onboarding.next}</Text>
+                <Ionicons name="arrow-forward" size={22} color="#FFFFFF" style={styles.nextIcon} />
+              </Animated.View>
+            </Pressable>
+
+            <View style={styles.handleContainer}>
+              <View style={[styles.handle, { backgroundColor: theme.border.medium }]} />
+            </View>
           </Animated.View>
         </View>
-
-        <Animated.View style={[styles.footer, animatedFooterStyle]}>
-          <Pressable
-            onPress={handleNextPress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-          >
-            <Animated.View style={[styles.nextButton, animatedButtonStyle]}>
-              <Text style={styles.nextButtonText}>{DATING_STRINGS.onboarding.next}</Text>
-              <MaterialIcons
-                name="arrow-forward"
-                size={22}
-                color={DATING_COLORS.onboarding.buttonText}
-                style={styles.nextIcon}
-              />
-            </Animated.View>
-          </Pressable>
-
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
-          </View>
-        </Animated.View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
 
-const { spacing, illustration, handle, nextButton, typography } = DATING_LAYOUT;
-const colors = DATING_COLORS.onboarding;
+export const DatingOnboardingIntroScreen: React.FC = () => {
+  return (
+    <DatingThemeProvider>
+      <OnboardingIntroInner />
+    </DatingThemeProvider>
+  );
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
     justifyContent: 'space-between',
   },
   contentContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: SPACING.md,
     minHeight: 0,
   },
   illustrationCard: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: illustration.borderRadius,
+    borderRadius: RADIUS.xl,
     overflow: 'hidden',
-    marginBottom: spacing.lg,
+    marginBottom: SPACING.lg,
   },
   illustrationBackground: {
     flex: 1,
-    backgroundColor: colors.illustrationOverlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -126,81 +150,72 @@ const styles = StyleSheet.create({
   },
   decorCircleBottomRight: {
     position: 'absolute',
-    right: -illustration.decorCircleOffset,
-    bottom: -spacing.md,
-    width: illustration.decorCircleBottomSize,
-    height: illustration.decorCircleBottomSize,
-    borderRadius: illustration.decorCircleBottomSize / 2,
-    backgroundColor: colors.decorCirclePrimary,
+    right: -30,
+    bottom: -SPACING.md,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    opacity: 0.3,
   },
   decorCircleTopLeft: {
     position: 'absolute',
-    left: -illustration.decorCircleOffset,
-    top: -spacing.md,
-    width: illustration.decorCircleTopSize,
-    height: illustration.decorCircleTopSize,
-    borderRadius: illustration.decorCircleTopSize / 2,
-    backgroundColor: colors.decorCircleSecondary,
+    left: -30,
+    top: -SPACING.md,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    opacity: 0.5,
   },
   textBlock: {
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: SPACING.sm,
     flexShrink: 0,
   },
   title: {
-    fontSize: typography.titleFontSize,
+    fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
-    letterSpacing: typography.titleLetterSpacing,
-    color: colors.title,
-    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+    marginBottom: SPACING.sm,
   },
   description: {
-    fontSize: typography.descriptionFontSize,
-    fontWeight: '500',
+    ...TEXT_STYLES.bodyMedium,
     textAlign: 'center',
-    lineHeight: typography.descriptionLineHeight,
-    color: colors.description,
+    lineHeight: 24,
   },
   footer: {
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.sm,
   },
   nextButton: {
-    height: nextButton.height,
-    borderRadius: nextButton.borderRadius,
-    backgroundColor: DATING_COLORS.primary,
+    height: 56,
+    borderRadius: RADIUS.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: nextButton.paddingHorizontal,
-    shadowColor: DATING_COLORS.primary,
-    shadowOffset: { width: 0, height: nextButton.shadowOffsetY },
-    shadowOpacity: nextButton.shadowOpacity,
-    shadowRadius: nextButton.shadowRadius,
-    elevation: nextButton.elevation,
+    paddingHorizontal: SPACING.xl,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   nextButtonText: {
-    color: colors.buttonText,
-    fontSize: typography.buttonFontSize,
-    fontWeight: '700',
-    letterSpacing: typography.buttonLetterSpacing,
+    ...TEXT_STYLES.labelLarge,
+    color: '#FFFFFF',
   },
   nextIcon: {
-    marginLeft: nextButton.iconMarginLeft,
-    marginTop: nextButton.iconMarginTop,
+    marginLeft: SPACING.xs,
+    marginTop: 2,
   },
   handleContainer: {
-    marginTop: spacing.md,
+    marginTop: SPACING.md,
     alignItems: 'center',
   },
   handle: {
-    width: handle.width,
-    height: handle.height,
-    borderRadius: handle.borderRadius,
-    backgroundColor: colors.handle,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
   },
 });
 
 export default DatingOnboardingIntroScreen;
-

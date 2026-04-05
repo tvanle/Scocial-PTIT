@@ -1,1 +1,1 @@
-export { default as MatchSuccessScreen } from './MatchSuccessScreen';
+export { MatchSuccessScreen } from './MatchSuccessScreen';

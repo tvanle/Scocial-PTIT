@@ -263,6 +263,9 @@ export class SwipeService {
           select: { url: true, order: true },
           orderBy: { order: 'asc' },
         },
+        prompts: {
+          select: { question: true, answer: true },
+        },
         user: {
           select: {
             id: true,
@@ -284,6 +287,7 @@ export class SwipeService {
       userId: p.userId,
       bio: p.bio,
       photos: p.photos,
+      prompts: p.prompts,
       user: p.user,
       lifestyle: p.lifestyle,
       distanceKm: null as number | null,

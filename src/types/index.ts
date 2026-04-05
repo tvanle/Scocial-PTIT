@@ -264,18 +264,20 @@ export type RootStackParamList = {
   DatingProfileSetup: { from?: 'onboarding' | 'settings' } | undefined;
   DatingPreferencesSetup: { from?: 'onboarding' | 'settings' } | undefined;
   DatingLocationPermission: undefined;
-  DatingDiscovery: undefined;
+  DatingTabs: { screen?: 'DatingDiscoverTab' | 'DatingLikesTab' | 'DatingChatsTab' | 'DatingProfileTab' } | undefined;
   DatingProfileDetail: { profile: import('./dating').DiscoveryCard };
   DatingMatch: { profile: import('./dating').DiscoveryCard; source: 'discovery' | 'detail' };
-  DatingLikes: undefined;
-  DatingMyProfile: undefined;
   DatingMatchSuccess: { match: import('./dating').MatchItem };
   DatingPaused: undefined;
-  DatingChatList: undefined;
   DatingChatRoom: {
     conversationId: string;
     otherUser?: import('./dating').DatingChatUser | null;
+    prefillMessage?: string;
   };
+  DatingNotifications: undefined;
+  DatingSettings: undefined;
+  DatingBlockedUsers: undefined;
+  DatingLegal: { type: 'privacy' | 'terms' };
 };
 
 export type AuthStackParamList = {

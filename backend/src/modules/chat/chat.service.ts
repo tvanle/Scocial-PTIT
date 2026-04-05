@@ -4,14 +4,29 @@ import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constants';
 import { parsePagination, paginate } from '../../shared/utils';
 import { MessageType } from './chat.types';
 
+// User is considered online if active within last 5 minutes
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isUserOnline(lastActiveAt: Date | null): boolean {
+  if (!lastActiveAt) return false;
+  return Date.now() - new Date(lastActiveAt).getTime() < ONLINE_THRESHOLD_MS;
+}
+
 export class ChatService {
   // Helper: flatten ConversationParticipant[] into User[] for frontend compatibility
+  // Also computes isOnline from lastActiveAt
   private flattenConversation(conversation: any) {
     if (!conversation) return conversation;
     const { participants, ...rest } = conversation;
     return {
       ...rest,
-      participants: (participants || []).map((p: any) => p.user || p),
+      participants: (participants || []).map((p: any) => {
+        const user = p.user || p;
+        return {
+          ...user,
+          isOnline: isUserOnline(user.lastActiveAt),
+        };
+      }),
     };
   }
 
@@ -40,7 +55,7 @@ export class ChatService {
         participants: {
           include: {
             user: {
-              select: { id: true, fullName: true, avatar: true },
+              select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
             },
           },
         },
@@ -71,7 +86,7 @@ export class ChatService {
           participants: {
             include: {
               user: {
-                select: { id: true, fullName: true, avatar: true },
+                select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
               },
             },
           },
@@ -89,7 +104,7 @@ export class ChatService {
         participants: {
           include: {
             user: {
-              select: { id: true, fullName: true, avatar: true },
+              select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
             },
           },
         },
@@ -108,12 +123,13 @@ export class ChatService {
     return this.flattenConversation(conversation);
   }
 
-  // Get user conversations
+  // Get user conversations (only SOCIAL context - exclude dating conversations)
   async getConversations(userId: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
     const conversations = await prisma.conversation.findMany({
       where: {
+        context: 'SOCIAL',
         participants: {
           some: { userId: userId },
         },
@@ -123,7 +139,7 @@ export class ChatService {
           where: { userId: { not: userId } },
           include: {
             user: {
-              select: { id: true, fullName: true, avatar: true },
+              select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
             },
           },
         },
@@ -135,6 +151,7 @@ export class ChatService {
 
     const total = await prisma.conversation.count({
       where: {
+        context: 'SOCIAL',
         participants: {
           some: { userId: userId },
         },
@@ -195,7 +212,7 @@ export class ChatService {
       take: l,
       include: {
         sender: {
-          select: { id: true, fullName: true, avatar: true },
+          select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
         },
         readBy: true,
       },
@@ -254,23 +271,29 @@ export class ChatService {
         },
       });
 
-      // 3. Update conversation's lastMessage
-      await tx.conversation.update({
-        where: { id: conversationId },
-        data: {
-          lastMessageContent: content,
-          lastMessageSenderId: senderId,
-          lastMessageCreatedAt: message.createdAt,
-          updatedAt: new Date(),
-        },
-      });
+      // 3. Update conversation's lastMessage and user's lastActiveAt
+      await Promise.all([
+        tx.conversation.update({
+          where: { id: conversationId },
+          data: {
+            lastMessageContent: content,
+            lastMessageSenderId: senderId,
+            lastMessageCreatedAt: message.createdAt,
+            updatedAt: new Date(),
+          },
+        }),
+        tx.user.update({
+          where: { id: senderId },
+          data: { lastActiveAt: new Date() },
+        }),
+      ]);
 
       // 4. Single fetch with all relations
       return tx.message.findUnique({
         where: { id: message.id },
         include: {
           sender: {
-            select: { id: true, fullName: true, avatar: true },
+            select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
           },
           readBy: true,
         },
@@ -331,13 +354,14 @@ export class ChatService {
     });
   }
 
-  // Get unread count
+  // Get unread count (only SOCIAL context - exclude dating messages)
   async getUnreadCount(userId: string) {
     const count = await prisma.message.count({
       where: {
         senderId: { not: userId },
         readBy: { none: { userId: userId } },
         conversation: {
+          context: 'SOCIAL',
           participants: { some: { userId: userId } },
         },
       },

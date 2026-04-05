@@ -19,6 +19,9 @@ const CANDIDATE_SELECT = {
     select: { url: true, order: true },
     orderBy: { order: 'asc' as const },
   },
+  prompts: {
+    select: { question: true, answer: true },
+  },
   user: {
     select: {
       id: true,

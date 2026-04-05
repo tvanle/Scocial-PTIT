@@ -1,1 +1,1 @@
-export { default as DatingProfileDetailScreen } from './DatingProfileDetailScreen';
+export { DatingProfileDetailScreen } from './DatingProfileDetailScreen';

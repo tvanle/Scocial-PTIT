@@ -1,9 +1,12 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Pressable, Platform } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { BRAND } from '../../../../../constants/dating/design-system/colors';
 
 const layout = DATING_LAYOUT.preferences.ageRange;
 const colors = DATING_COLORS.preferences;
@@ -132,114 +135,195 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
   const rightThumbLeft = trackWidth > 0 ? (trackWidth * rightPercent) / 100 - layout.thumbSize / 2 : 0;
 
   return (
-    <View style={[styles.section, { marginBottom: DATING_LAYOUT.preferences.content.sectionMarginBottom }]}>
-      <View style={styles.labelRow}>
-        <Text style={[styles.label, { fontSize: layout.labelFontSize, color: colors.sectionTitle }]}>
-          {DATING_STRINGS.preferences.ageRange}
-        </Text>
-        <View style={[styles.pill, { backgroundColor: colors.agePillBg }]}>
-          <Text style={styles.pillText}>
-            {DATING_STRINGS.preferences.ageDisplay(value.min, value.max)}
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <View style={styles.iconWrap}>
+          <MaterialIcons name="cake" size={20} color={BRAND.primary} />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Age Range</Text>
+          <Text style={styles.hint}>Set your preferred age range</Text>
+        </View>
+        <View style={styles.ageDisplay}>
+          <Text style={styles.ageDisplayText}>
+            {value.min} - {value.max}
           </Text>
         </View>
       </View>
-      <View
-        style={[styles.trackWrap, { height: layout.trackHeight + layout.thumbSize }]}
-        onLayout={handleTrackLayout}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleTrackPress} />
+
+      <View style={styles.sliderContainer}>
         <View
-          style={[
-            styles.trackBg,
-            {
-              height: layout.trackHeight,
-              borderRadius: layout.trackHeight / 2,
-              backgroundColor: colors.trackBg,
-            },
-          ]}
+          style={styles.trackWrap}
+          onLayout={handleTrackLayout}
         >
-          <View
-            style={[
-              styles.trackFill,
-              {
-                left: (trackWidth * leftPercent) / 100,
-                width: (trackWidth * (rightPercent - leftPercent)) / 100,
-                height: layout.trackHeight,
-                borderRadius: layout.trackHeight / 2,
-                backgroundColor: colors.trackFill,
-              },
-            ]}
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleTrackPress} />
+          <View style={styles.trackBg}>
+            <LinearGradient
+              colors={[BRAND.primaryLight, BRAND.primary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[
+                styles.trackFill,
+                {
+                  left: (trackWidth * leftPercent) / 100,
+                  width: Math.max(0, (trackWidth * (rightPercent - leftPercent)) / 100),
+                },
+              ]}
+            />
+          </View>
+          <GestureDetector gesture={leftPanGesture}>
+            <View style={[styles.thumb, thumbStyle, { left: leftThumbLeft }]}>
+              <View style={styles.thumbInner}>
+                <View style={styles.thumbLines}>
+                  <View style={styles.thumbLine} />
+                  <View style={styles.thumbLine} />
+                </View>
+              </View>
+            </View>
+          </GestureDetector>
+          <GestureDetector gesture={rightPanGesture}>
+            <View style={[styles.thumb, thumbStyle, { left: rightThumbLeft }]}>
+              <View style={styles.thumbInner}>
+                <View style={styles.thumbLines}>
+                  <View style={styles.thumbLine} />
+                  <View style={styles.thumbLine} />
+                </View>
+              </View>
+            </View>
+          </GestureDetector>
         </View>
-        <GestureDetector gesture={leftPanGesture}>
-          <View style={[styles.thumb, thumbStyle, { left: leftThumbLeft }]} />
-        </GestureDetector>
-        <GestureDetector gesture={rightPanGesture}>
-          <View style={[styles.thumb, thumbStyle, { left: rightThumbLeft }]} />
-        </GestureDetector>
-      </View>
-      <View style={styles.labels}>
-        <Text style={styles.axisLabel}>{layout.ageMinDefault}</Text>
-        <Text style={styles.axisLabel}>{layout.ageMaxCap}+</Text>
+        <View style={styles.labels}>
+          <Text style={styles.axisLabel}>{layout.ageMinDefault}</Text>
+          <Text style={styles.axisLabel}>{layout.ageMaxCap}+</Text>
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  section: {},
-  labelRow: {
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 14,
+    marginBottom: 24,
+  },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: BRAND.primaryMuted,
     alignItems: 'center',
-    marginBottom: layout.labelRowMarginBottom,
+    justifyContent: 'center',
   },
-  label: {
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 17,
     fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
   },
-  pill: {
-    paddingHorizontal: layout.pillPaddingH,
-    paddingVertical: layout.pillPaddingV,
-    borderRadius: layout.pillBorderRadius,
+  hint: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
   },
-  pillText: {
-    fontSize: layout.pillFontSize,
+  ageDisplay: {
+    backgroundColor: BRAND.primaryMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  ageDisplayText: {
+    fontSize: 15,
     fontWeight: '700',
-    color: DATING_COLORS.primary,
+    color: BRAND.primary,
+  },
+  sliderContainer: {
+    paddingHorizontal: 4,
   },
   trackWrap: {
     width: '100%',
+    height: 44,
     justifyContent: 'center',
     position: 'relative',
   },
   trackBg: {
     width: '100%',
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E8E8E8',
     position: 'absolute',
-    left: 0,
-    right: 0,
+    overflow: 'hidden',
   },
   trackFill: {
     position: 'absolute',
     top: 0,
+    height: 6,
+    borderRadius: 3,
   } as const,
   thumb: {
     position: 'absolute',
-    top: (layout.trackHeight + layout.thumbSize) / 2 - layout.thumbSize / 2,
-    shadowColor: layout.thumbShadowColor,
-    shadowOffset: { width: 0, height: layout.thumbShadowOffsetY },
-    shadowOpacity: layout.thumbShadowOpacity,
-    shadowRadius: layout.thumbShadowRadius,
-    elevation: layout.thumbElevation,
+    top: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  thumbInner: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    borderWidth: 3,
+    borderColor: BRAND.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbLines: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  thumbLine: {
+    width: 2,
+    height: 10,
+    borderRadius: 1,
+    backgroundColor: BRAND.primary,
   },
   labels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: layout.axisLabelsMarginTop,
-    paddingHorizontal: 0,
+    marginTop: 8,
   },
   axisLabel: {
-    fontSize: layout.axisLabelFontSize,
+    fontSize: 12,
     fontWeight: '500',
-    color: colors.sectionHint,
+    color: '#999',
   },
 });
