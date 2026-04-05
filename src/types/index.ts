@@ -276,6 +276,8 @@ export type RootStackParamList = {
   };
   DatingNotifications: undefined;
   DatingSettings: undefined;
+  DatingBlockedUsers: undefined;
+  DatingLegal: { type: 'privacy' | 'terms' };
 };
 
 export type AuthStackParamList = {

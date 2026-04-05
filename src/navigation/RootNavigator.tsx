@@ -7,6 +7,7 @@ import { DatingTabNavigator } from './DatingTabNavigator';
 import { ChatListScreen, ChatRoomScreen } from '../screens/chat';
 import { useAuthStore } from '../store/slices/authSlice';
 import socketService from '../services/socket/socketService';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { RootStackParamList } from '../types';
 import { Colors } from '../constants/theme';
 import { FullScreenLoading } from '../components/common';
@@ -29,6 +30,7 @@ import DatingPausedScreen from '../screens/dating/paused/DatingPausedScreen';
 import { DatingChatRoomScreen } from '../screens/dating/chat';
 import DatingNotificationsScreen from '../screens/dating/notifications/DatingNotificationsScreen';
 import DatingSettingsScreen from '../screens/dating/settings/DatingSettingsScreen';
+import { DatingBlockedUsersScreen, DatingLegalScreen } from '../screens/dating/settings';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -39,6 +41,9 @@ const FollowingScreen = () => null;
 
 const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading, user } = useAuthStore();
+
+  // Initialize push notifications
+  usePushNotifications();
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -139,6 +144,16 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen
               name="DatingSettings"
               component={DatingSettingsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="DatingBlockedUsers"
+              component={DatingBlockedUsersScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="DatingLegal"
+              component={DatingLegalScreen}
               options={{ animation: 'slide_from_right' }}
             />
           </>
