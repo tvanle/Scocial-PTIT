@@ -5,10 +5,21 @@
  */
 
 import React, { useCallback, useRef, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 
 import {
@@ -18,6 +29,7 @@ import {
   ProfileData,
   SwipeDirection,
 } from '../components';
+import { DatingFilterForm } from '../components/DatingFilterForm';
 import { DiscoveryHeader } from './components/DiscoveryHeader';
 import { DiscoveryEmptyState } from './components/DiscoveryEmptyState';
 import { useDatingTheme } from '../../../contexts/DatingThemeContext';
@@ -25,10 +37,14 @@ import {
   SPACING,
   ACTION_BAR,
   TAB_BAR,
+  RADIUS,
 } from '../../../constants/dating/design-system';
 import { useDiscoveryFeed } from '../discovery/hooks/useDiscoveryFeed';
 import { calculateAge } from '../../../utils/dating';
+import datingService from '../../../services/dating/datingService';
 import type { RootStackParamList, DiscoveryCard } from '../../../types';
+import type { DatingFilterValues } from '../../../types/dating';
+import { useDatingDistance } from '../../../hooks/useDatingDistance';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -46,7 +62,6 @@ const transformToProfileData = (card: DiscoveryCard): ProfileData => ({
   age: calculateAge(card.user.dateOfBirth),
   images: card.photos.map((p) => p.url),
   isVerified: true, // TODO: Add verification status
-  isOnline: false, // TODO: Add online status
   distance: card.distanceKm,
   education: card.lifestyle?.education ?? undefined,
   bio: card.bio ?? undefined,
@@ -60,8 +75,14 @@ const transformToProfileData = (card: DiscoveryCard): ProfileData => ({
 const DiscoveryScreenInner: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { theme } = useDatingTheme();
+  const queryClient = useQueryClient();
   const cardStackRef = useRef<CardStackRef>(null);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState<Partial<DatingFilterValues> | null>(null);
+
+  // Location/Distance hook
+  const { requestAndUpdate: updateLocation, hasPermission } = useDatingDistance();
 
   // Use existing hook
   const {
@@ -77,11 +98,16 @@ const DiscoveryScreenInner: React.FC = () => {
     refresh,
   } = useDiscoveryFeed();
 
-  // Refresh on focus
+  // Refresh on focus and update location
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+
+      // Update location if permission granted
+      if (hasPermission) {
+        updateLocation();
+      }
+    }, [refresh, hasPermission, updateLocation]),
   );
 
   // Handle match
@@ -173,8 +199,45 @@ const DiscoveryScreenInner: React.FC = () => {
   }, [navigation]);
 
   const handleFilterPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFilterVisible(true);
   }, []);
+
+  const handleFilterClose = useCallback(() => {
+    setFilterVisible(false);
+  }, []);
+
+  const handleFilterApply = useCallback(async (values: DatingFilterValues) => {
+    setFilterLoading(true);
+    try {
+      // Update preferences in backend
+      await datingService.updatePreferences({
+        ageMin: values.ageMin,
+        ageMax: values.ageMax,
+        gender: values.preferredGender ?? undefined,
+        maxDistance: values.maxDistanceKm,
+        preferredMajors: values.preferredMajor ? [values.preferredMajor] : [],
+        sameYearOnly: values.sameYearOnly,
+      });
+
+      // Save current filter state
+      setCurrentFilter(values);
+
+      // Invalidate feed to refresh with new filters
+      queryClient.invalidateQueries({ queryKey: ['dating', 'feed'] });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setFilterVisible(false);
+
+      // Refresh feed
+      refresh();
+    } catch (error) {
+      console.error('Failed to apply filter:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setFilterLoading(false);
+    }
+  }, [queryClient, refresh]);
 
   const handleNotificationsPress = useCallback(() => {
     navigation.navigate('DatingNotifications');
@@ -247,6 +310,39 @@ const DiscoveryScreenInner: React.FC = () => {
           />
         </View>
       )}
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleFilterClose}
+      >
+        <Pressable style={styles.modalOverlay} onPress={handleFilterClose}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalContentWrap}
+          >
+            <Pressable
+              style={[styles.modalContent, { backgroundColor: theme.bg.base }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <ScrollView
+                style={styles.modalScroll}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                <DatingFilterForm
+                  initialValues={currentFilter ?? undefined}
+                  onApply={handleFilterApply}
+                  loading={filterLoading}
+                />
+              </ScrollView>
+            </Pressable>
+          </KeyboardAvoidingView>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -300,6 +396,33 @@ const styles = StyleSheet.create({
   errorSubtitle: {
     fontSize: 15,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContentWrap: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    maxHeight: '85%',
+    paddingBottom: SPACING.xl,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    alignSelf: 'center',
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  modalScroll: {
+    paddingHorizontal: SPACING.md,
   },
 });
 
