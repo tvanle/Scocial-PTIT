@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Linking,
   TextInput,
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import { showAlert } from '../../utils/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -79,7 +79,7 @@ const SettingsScreen: React.FC = () => {
   const [changingPassword, setChangingPassword] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
+    showAlert(
       'Đăng xuất',
       'Bạn có chắc chắn muốn đăng xuất?',
       [
@@ -87,9 +87,7 @@ const SettingsScreen: React.FC = () => {
         {
           text: 'Đăng xuất',
           style: 'destructive',
-          onPress: async () => {
-            await logout();
-          },
+          onPress: () => { logout(); },
         },
       ]
     );
@@ -97,29 +95,29 @@ const SettingsScreen: React.FC = () => {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      showAlert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
+      showAlert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      showAlert('Lỗi', 'Mật khẩu xác nhận không khớp');
       return;
     }
 
     setChangingPassword(true);
     try {
       await authService.changePassword(currentPassword, newPassword);
-      Alert.alert('Thành công', 'Đổi mật khẩu thành công!');
+      showAlert('Thành công', 'Đổi mật khẩu thành công!');
       setShowPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
       const msg = error?.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.';
-      Alert.alert('Lỗi', msg);
+      showAlert('Lỗi', msg);
     } finally {
       setChangingPassword(false);
     }
@@ -127,7 +125,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleOpenUrl = (url: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert('Lỗi', 'Không thể mở liên kết');
+      showAlert('Lỗi', 'Không thể mở liên kết');
     });
   };
 

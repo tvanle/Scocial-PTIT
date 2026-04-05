@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { User, LoginCredentials, RegisterData } from '../../types';
 import { authService } from '../../services/auth/authService';
+import {
+  saveTokens,
+  getTokens,
+  clearTokens,
+  saveUserData,
+  getUserData,
+} from '../../utils/tokenStorage';
 
 interface AuthStore {
   // State
@@ -9,8 +16,10 @@ interface AuthStore {
   refreshTokenValue: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
   // Actions
+  initializeAuth: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -27,7 +36,68 @@ export const useAuthStore = create<AuthStore>()(
       refreshTokenValue: null,
       isAuthenticated: false,
       isLoading: false,
+      isInitialized: false,
       error: null,
+
+      initializeAuth: async () => {
+        if (get().isInitialized) return;
+        try {
+          const { accessToken, refreshToken } = await getTokens();
+          if (!accessToken || !refreshToken) {
+            set({ isInitialized: true });
+            return;
+          }
+
+          // Restore tokens and cached user data immediately
+          const cachedUser = await getUserData();
+          set({
+            accessToken,
+            refreshTokenValue: refreshToken,
+            isAuthenticated: true,
+            user: cachedUser,
+          });
+
+          // Verify token with server and get fresh user data
+          try {
+            const user = await authService.getCurrentUser();
+            set({ user });
+            await saveUserData(user);
+          } catch {
+            // Access token expired — try refreshing
+            try {
+              const response = await authService.refreshToken(refreshToken);
+              set({
+                accessToken: response.accessToken,
+                refreshTokenValue: response.refreshToken,
+              });
+              await saveTokens(response.accessToken, response.refreshToken);
+
+              const user = await authService.getCurrentUser();
+              set({ user });
+              await saveUserData(user);
+            } catch {
+              // Refresh also failed — session is truly expired
+              set({
+                user: null,
+                accessToken: null,
+                refreshTokenValue: null,
+                isAuthenticated: false,
+              });
+              await clearTokens();
+            }
+          }
+        } catch {
+          // Storage read failed — start fresh
+          set({
+            user: null,
+            accessToken: null,
+            refreshTokenValue: null,
+            isAuthenticated: false,
+          });
+        } finally {
+          set({ isInitialized: true });
+        }
+      },
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null });
@@ -40,6 +110,8 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          await saveTokens(response.accessToken, response.refreshToken);
+          await saveUserData(response.user);
         } catch (error: any) {
           set({
             isLoading: false,
@@ -60,6 +132,8 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          await saveTokens(response.accessToken, response.refreshToken);
+          await saveUserData(response.user);
         } catch (error: any) {
           set({
             isLoading: false,
@@ -70,20 +144,20 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        set({ isLoading: true });
+        const { refreshTokenValue } = get();
+        set({
+          user: null,
+          accessToken: null,
+          refreshTokenValue: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+        await clearTokens();
         try {
-          await authService.logout();
+          await authService.logout(refreshTokenValue || undefined);
         } catch (error) {
-          // Ignore logout errors
-        } finally {
-          set({
-            user: null,
-            accessToken: null,
-            refreshTokenValue: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-          });
+          // Ignore logout errors — state is already cleared
         }
       },
 
@@ -99,6 +173,7 @@ export const useAuthStore = create<AuthStore>()(
             accessToken: response.accessToken,
             refreshTokenValue: response.refreshToken,
           });
+          await saveTokens(response.accessToken, response.refreshToken);
         } catch (error) {
           // If refresh fails, logout user
           get().logout();
@@ -109,7 +184,9 @@ export const useAuthStore = create<AuthStore>()(
       updateUser: (userData: Partial<User>) => {
         const { user } = get();
         if (user) {
-          set({ user: { ...user, ...userData } });
+          const updatedUser = { ...user, ...userData };
+          set({ user: updatedUser });
+          saveUserData(updatedUser).catch(() => {});
         }
       },
 

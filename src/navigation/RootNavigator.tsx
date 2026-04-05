@@ -6,6 +6,7 @@ import MainTabNavigator from './MainTabNavigator';
 import { DatingTabNavigator } from './DatingTabNavigator';
 import { ChatListScreen, ChatRoomScreen } from '../screens/chat';
 import { useAuthStore } from '../store/slices/authSlice';
+import { useAuthInitializer } from '../hooks';
 import socketService from '../services/socket/socketService';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { RootStackParamList } from '../types';
@@ -40,7 +41,9 @@ const FollowersScreen = () => null;
 const FollowingScreen = () => null;
 
 const RootNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const { isInitialized } = useAuthInitializer();
 
   // Initialize push notifications
   usePushNotifications();
@@ -54,7 +57,7 @@ const RootNavigator: React.FC = () => {
     return () => socketService.disconnect();
   }, [isAuthenticated, user?.id]);
 
-  if (isLoading) {
+  if (!isInitialized) {
     return <FullScreenLoading />;
   }
 

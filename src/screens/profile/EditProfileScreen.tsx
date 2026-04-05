@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Image,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { showAlert } from '../../utils/alert';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
@@ -36,7 +36,7 @@ const EditProfileScreen: React.FC = () => {
   const pickAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
+      showAlert('Thông báo', 'Cần quyền truy cập thư viện ảnh');
       return;
     }
 
@@ -54,7 +54,7 @@ const EditProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Lỗi', 'Tên không được để trống');
+      showAlert('Lỗi', 'Tên không được để trống');
       return;
     }
 
@@ -69,11 +69,11 @@ const EditProfileScreen: React.FC = () => {
       const updatedUser = await userService.updateProfile({ fullName, bio, phone, faculty, className });
       updateUser({ ...updatedUser, avatar: avatarUrl });
 
-      Alert.alert('Thành công', 'Đã cập nhật trang cá nhân', [
+      showAlert('Thành công', 'Đã cập nhật trang cá nhân', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch {
-      Alert.alert('Lỗi', 'Không thể cập nhật. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể cập nhật. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
