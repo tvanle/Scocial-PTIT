@@ -21,7 +21,6 @@ export interface ProfileData {
   age: number;
   images: string[];
   isVerified?: boolean;
-  isOnline?: boolean;
   distance?: number | null;
   education?: string;
   bio?: string;
@@ -57,7 +56,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
         name={profile.name}
         age={profile.age}
         isVerified={profile.isVerified}
-        isOnline={profile.isOnline}
         distance={profile.distance}
         education={profile.education}
         bio={profile.bio}

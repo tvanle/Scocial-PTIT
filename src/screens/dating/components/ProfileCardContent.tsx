@@ -30,7 +30,6 @@ interface ProfileCardContentProps {
   name: string;
   age: number;
   isVerified?: boolean;
-  isOnline?: boolean;
   distance?: number | null; // in km
   education?: string;
   bio?: string;
@@ -66,7 +65,6 @@ export const ProfileCardContent: React.FC<ProfileCardContentProps> = ({
   name,
   age,
   isVerified = false,
-  isOnline = false,
   distance,
   education,
   bio,
@@ -95,14 +93,6 @@ export const ProfileCardContent: React.FC<ProfileCardContentProps> = ({
       locations={[0, 0.5, 1]}
     >
       <View style={styles.content}>
-        {/* Online indicator */}
-        {isOnline && (
-          <View style={styles.onlineContainer}>
-            <View style={[styles.onlineDot, { backgroundColor: theme.semantic.online }]} />
-            <Text style={styles.onlineText}>Online</Text>
-          </View>
-        )}
-
         {/* Name & Age */}
         <View style={styles.nameRow}>
           <Text style={styles.name}>{name}</Text>
@@ -189,23 +179,6 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.md,
     paddingBottom: SPACING.lg,
-  },
-
-  // Online indicator
-  onlineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: SPACING.xxs,
-  },
-  onlineText: {
-    ...TEXT_STYLES.caption,
-    color: 'rgba(255,255,255,0.9)',
   },
 
   // Name row

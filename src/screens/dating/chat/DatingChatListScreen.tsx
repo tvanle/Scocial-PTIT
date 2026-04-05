@@ -193,7 +193,7 @@ const ConversationItem: React.FC<ConvItemProps> = React.memo(
               </View>
             )}
             {hasUnread && (
-              <View style={[styles.onlineDot, { backgroundColor: theme.semantic.online, borderColor: theme.bg.base }]} />
+              <View style={[styles.unreadDot, { backgroundColor: theme.semantic.online, borderColor: theme.bg.base }]} />
             )}
           </TouchableOpacity>
 
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  onlineDot: {
+  unreadDot: {
     position: 'absolute',
     bottom: 0,
     right: 0,

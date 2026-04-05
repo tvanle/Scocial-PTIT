@@ -542,13 +542,11 @@ const ChatRoomInner: React.FC = () => {
                   <Ionicons name="person" size={18} color={theme.text.muted} />
                 </View>
               )}
-              <View style={[styles.onlineDot, { backgroundColor: theme.semantic.online, borderColor: theme.bg.base }]} />
             </View>
             <View style={styles.headerInfo}>
               <Text style={[styles.headerName, { color: theme.text.primary }]} numberOfLines={1}>
                 {otherUser?.fullName ?? 'Nguoi dung'}
               </Text>
-              <Text style={[styles.headerStatus, { color: theme.semantic.online }]}>Dang hoat dong</Text>
             </View>
           </TouchableOpacity>
 
@@ -751,24 +749,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-  },
   headerInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   headerName: {
     ...TEXT_STYLES.labelLarge,
-  },
-  headerStatus: {
-    ...TEXT_STYLES.tiny,
-    marginTop: 1,
   },
   headerAction: {
     width: 44,
