@@ -22,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   CardStack,
   CardStackRef,
@@ -42,6 +43,7 @@ import {
 import { useDiscoveryFeed } from '../discovery/hooks/useDiscoveryFeed';
 import { calculateAge } from '../../../utils/dating';
 import datingService from '../../../services/dating/datingService';
+import datingPaymentService from '../../../services/dating/datingPaymentService';
 import type { RootStackParamList, DiscoveryCard } from '../../../types';
 import type { DatingFilterValues } from '../../../types/dating';
 import { useDatingDistance } from '../../../hooks/useDatingDistance';
@@ -83,6 +85,15 @@ const DiscoveryScreenInner: React.FC = () => {
 
   // Location/Distance hook
   const { requestAndUpdate: updateLocation, hasPermission } = useDatingDistance();
+
+  // Subscription status for premium features
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['dating', 'subscription'],
+    queryFn: () => datingPaymentService.getSubscriptionInfo(),
+  });
+
+  const canRewind = subscriptionData?.usage?.canRewind ?? false;
+  const canSuperLike = subscriptionData?.usage?.canSuperLike ?? true;
 
   // Use existing hook
   const {
@@ -182,16 +193,44 @@ const DiscoveryScreenInner: React.FC = () => {
   const handleSuperLike = useCallback(async () => {
     if (!currentCard) return;
 
+    // If can't super like, navigate to upgrade screen
+    if (!canSuperLike) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      navigation.navigate('DatingPremium');
+      return;
+    }
+
     // Haptic for super like
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
-      // TODO: Implement super like API
-      await swipe({ targetUserId: currentCard.userId, action: 'LIKE' });
+      await swipe({ targetUserId: currentCard.userId, action: 'SUPER_LIKE' });
     } catch {
       // Silently ignore errors
     }
-  }, [currentCard, swipe]);
+  }, [currentCard, swipe, canSuperLike, navigation]);
+
+  const handleRewind = useCallback(async () => {
+    // If not premium, navigate to upgrade screen
+    if (!canRewind) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      navigation.navigate('DatingPremium');
+      return;
+    }
+
+    try {
+      const result = await datingService.rewind();
+      if (result.success && result.rewindedProfile) {
+        // Haptic for rewind
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Refresh to show the rewound profile
+        refresh();
+      }
+    } catch (error: any) {
+      // Show error via haptic
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [refresh, canRewind, navigation]);
 
   // Navigation handlers
   const handleBackToSocial = useCallback(() => {
@@ -303,6 +342,7 @@ const DiscoveryScreenInner: React.FC = () => {
       {!isEmpty && !isProfileMissing && profiles.length > 0 && (
         <View style={styles.actionBarWrapper}>
           <ActionButtonsBar
+            onUndo={handleRewind}
             onNope={handleNope}
             onSuperLike={handleSuperLike}
             onLike={handleLike}

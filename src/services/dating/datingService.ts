@@ -122,6 +122,15 @@ class DatingService {
     return response.data;
   }
 
+  async rewind(): Promise<{
+    success: boolean;
+    rewindedProfile: DiscoveryCard | null;
+    message: string;
+  }> {
+    const response = await apiClient.post(ENDPOINTS.DATING.REWIND);
+    return response.data;
+  }
+
   // --- Match ---
 
   async getMatches(params?: MatchQuery): Promise<PaginatedResponse<MatchItem>> {

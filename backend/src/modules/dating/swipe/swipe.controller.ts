@@ -40,6 +40,16 @@ export class SwipeController {
       next(error);
     }
   }
+
+  async rewind(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const result = await swipeService.rewind(userId);
+      sendSuccess(res, result, result.message, HTTP_STATUS.OK);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const swipeController = new SwipeController();
