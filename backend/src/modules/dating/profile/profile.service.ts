@@ -300,6 +300,34 @@ export class ProfileService {
     });
   }
 
+  // Replace photo at a specific order (delete old + add new in transaction)
+  async replacePhoto(userId: string, data: { url: string; order: number }) {
+    const profileId = await this.getProfileIdByUserId(userId);
+
+    // Use transaction to ensure atomicity
+    const photo = await prisma.$transaction(async (tx) => {
+      // Delete existing photo at this order if exists
+      await tx.datingProfilePhoto.deleteMany({
+        where: {
+          profileId,
+          order: data.order,
+        },
+      });
+
+      // Create new photo
+      return tx.datingProfilePhoto.create({
+        data: {
+          profileId,
+          url: data.url,
+          order: data.order,
+        },
+        select: PHOTO_SELECT,
+      });
+    });
+
+    return photo;
+  }
+
   // Update prompts (transactional)
   async updatePrompts(userId: string, data: UpdatePromptsInput) {
     const profileId = await this.getProfileIdByUserId(userId);

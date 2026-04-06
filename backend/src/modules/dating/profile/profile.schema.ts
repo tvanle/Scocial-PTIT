@@ -29,6 +29,12 @@ export const addPhotoSchema = z.object({
   order: z.number().int().min(0).max(5, 'Thứ tự phải từ 0 đến 5').optional(),
 });
 
+// Replace photo (required order)
+export const replacePhotoSchema = z.object({
+  url: z.string().url('URL không hợp lệ'),
+  order: z.number().int().min(0).max(5, 'Thứ tự phải từ 0 đến 5'),
+});
+
 // Update prompts (max 3)
 export const updatePromptsSchema = z.object({
   prompts: z
@@ -82,6 +88,7 @@ export const userIdParamSchema = z.object({
 export type CreateDatingProfileInput = z.infer<typeof createDatingProfileSchema>;
 export type UpdateDatingProfileInput = z.infer<typeof updateDatingProfileSchema>;
 export type AddPhotoInput = z.infer<typeof addPhotoSchema>;
+export type ReplacePhotoInput = z.infer<typeof replacePhotoSchema>;
 export type UpdatePromptsInput = z.infer<typeof updatePromptsSchema>;
 export type UpdateLifestyleInput = z.infer<typeof updateLifestyleSchema>;
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;

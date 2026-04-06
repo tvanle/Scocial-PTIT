@@ -34,6 +34,8 @@ const MAX_PROMPTS = 3;
 export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionProps>(
   ({ prompts, onChange }) => {
     const [pickerIndex, setPickerIndex] = useState<number | null>(null);
+    const [showCustomInput, setShowCustomInput] = useState(false);
+    const [customQuestion, setCustomQuestion] = useState('');
 
     const usedQuestions = prompts.map((p) => p.question);
     const availableQuestions = promptStrings.questions.filter(
@@ -71,6 +73,26 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
       },
       [prompts, onChange],
     );
+
+    const handleCustomQuestion = useCallback(() => {
+      if (!customQuestion.trim() || pickerIndex === null) return;
+      const next = [...prompts];
+      if (pickerIndex < next.length) {
+        next[pickerIndex] = { ...next[pickerIndex], question: customQuestion.trim() };
+      } else {
+        next.push({ question: customQuestion.trim(), answer: '' });
+      }
+      onChange(next);
+      setCustomQuestion('');
+      setShowCustomInput(false);
+      setPickerIndex(null);
+    }, [customQuestion, pickerIndex, prompts, onChange]);
+
+    const handleCloseModal = useCallback(() => {
+      setPickerIndex(null);
+      setShowCustomInput(false);
+      setCustomQuestion('');
+    }, []);
 
     return (
       <View style={styles.section}>
@@ -141,37 +163,86 @@ export const ProfileSetupPromptsSection = React.memo<ProfileSetupPromptsSectionP
           visible={pickerIndex !== null}
           transparent
           animationType="slide"
-          onRequestClose={() => setPickerIndex(null)}
+          onRequestClose={handleCloseModal}
         >
-          <Pressable style={styles.modalOverlay} onPress={() => setPickerIndex(null)}>
+          <Pressable style={styles.modalOverlay} onPress={handleCloseModal}>
             <View style={styles.modalSheet}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Choose a Prompt</Text>
+                <Text style={styles.modalTitle}>
+                  {showCustomInput ? 'Viết câu hỏi của bạn' : 'Chọn câu hỏi'}
+                </Text>
                 <TouchableOpacity
-                  onPress={() => setPickerIndex(null)}
+                  onPress={handleCloseModal}
                   style={styles.modalCloseBtn}
                 >
                   <MaterialIcons name="close" size={20} color="#666" />
                 </TouchableOpacity>
               </View>
-              <FlatList
-                data={availableQuestions}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.modalRow}
-                    onPress={() => handleSelectQuestion(item)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.modalRowIcon}>
-                      <MaterialIcons name="format-quote" size={16} color={BRAND.primary} />
-                    </View>
-                    <Text style={styles.modalRowText}>{item}</Text>
-                  </TouchableOpacity>
-                )}
-                showsVerticalScrollIndicator={true}
-              />
+
+              {showCustomInput ? (
+                <View style={styles.customInputContainer}>
+                  <TextInput
+                    style={styles.customInput}
+                    value={customQuestion}
+                    onChangeText={setCustomQuestion}
+                    placeholder="Nhập câu hỏi của bạn..."
+                    placeholderTextColor="#999"
+                    maxLength={100}
+                    autoFocus
+                  />
+                  <View style={styles.customInputActions}>
+                    <TouchableOpacity
+                      style={styles.customBackBtn}
+                      onPress={() => setShowCustomInput(false)}
+                    >
+                      <Text style={styles.customBackBtnText}>Quay lại</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.customSubmitBtn,
+                        !customQuestion.trim() && styles.customSubmitBtnDisabled,
+                      ]}
+                      onPress={handleCustomQuestion}
+                      disabled={!customQuestion.trim()}
+                    >
+                      <Text style={styles.customSubmitBtnText}>Xác nhận</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <FlatList
+                  data={availableQuestions}
+                  keyExtractor={(item) => item}
+                  ListHeaderComponent={
+                    <TouchableOpacity
+                      style={[styles.modalRow, styles.customOptionRow]}
+                      onPress={() => setShowCustomInput(true)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.modalRowIcon, styles.customOptionIcon]}>
+                        <MaterialIcons name="edit" size={16} color="#fff" />
+                      </View>
+                      <Text style={[styles.modalRowText, styles.customOptionText]}>
+                        Tự viết câu hỏi của bạn...
+                      </Text>
+                    </TouchableOpacity>
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.modalRow}
+                      onPress={() => handleSelectQuestion(item)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.modalRowIcon}>
+                        <MaterialIcons name="format-quote" size={16} color={BRAND.primary} />
+                      </View>
+                      <Text style={styles.modalRowText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                  showsVerticalScrollIndicator={true}
+                />
+              )}
             </View>
           </Pressable>
         </Modal>
@@ -383,5 +454,61 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontWeight: '500',
     lineHeight: 22,
+  },
+  customOptionRow: {
+    backgroundColor: BRAND.primaryMuted,
+    borderBottomWidth: 2,
+    borderBottomColor: BRAND.primary,
+  },
+  customOptionIcon: {
+    backgroundColor: BRAND.primary,
+  },
+  customOptionText: {
+    color: BRAND.primary,
+    fontWeight: '700',
+  },
+  customInputContainer: {
+    padding: 20,
+  },
+  customInput: {
+    fontSize: 16,
+    color: '#1A1A1A',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    minHeight: 50,
+  },
+  customInputActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 16,
+  },
+  customBackBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#F0F0F0',
+  },
+  customBackBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+  },
+  customSubmitBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: BRAND.primary,
+  },
+  customSubmitBtnDisabled: {
+    opacity: 0.5,
+  },
+  customSubmitBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

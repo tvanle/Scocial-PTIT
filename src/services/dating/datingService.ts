@@ -79,6 +79,11 @@ class DatingService {
     await apiClient.delete(ENDPOINTS.DATING.DELETE_PHOTO(photoId));
   }
 
+  async replacePhoto(data: { url: string; order: number }): Promise<DatingPhoto> {
+    const response = await apiClient.put(ENDPOINTS.DATING.REPLACE_PHOTO, data);
+    return response.data;
+  }
+
   async updatePrompts(data: UpdatePromptsInput): Promise<DatingPrompt[]> {
     const response = await apiClient.put(ENDPOINTS.DATING.UPDATE_PROMPTS, data);
     return response.data;

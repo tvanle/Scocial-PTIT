@@ -164,24 +164,26 @@ const ProfileSetupInner: React.FC = () => {
         }
       }
 
+      // Delete photos that were removed
       if (existingProfile) {
         const removed = existingProfile.photos.filter(
-          (p) => !photos.some((slot) => slot.id === p.id),
+          (p) => !photos.some((slot) => slot.id === p.id && slot.isExisting),
         );
         for (const photo of removed) {
           try {
             await datingService.deletePhoto(photo.id);
           } catch {
-            // ignore delete errors here, will surface if add fails
+            // ignore delete errors - photo might already be deleted
           }
         }
       }
 
+      // Upload new photos using replacePhoto
       for (const photo of photos) {
         if (photo.isExisting) continue;
         setUploadingSlot(photo.order);
         const url = await datingService.uploadMedia(photo.uri);
-        await datingService.addPhoto({ url, order: photo.order });
+        await datingService.replacePhoto({ url, order: photo.order });
       }
       setUploadingSlot(null);
 
@@ -230,24 +232,27 @@ const ProfileSetupInner: React.FC = () => {
         }
       }
 
+      // Delete photos that were removed (not in current photos array)
       if (existingProfile) {
         const removed = existingProfile.photos.filter(
-          (p) => !photos.some((slot) => slot.id === p.id),
+          (p) => !photos.some((slot) => slot.id === p.id && slot.isExisting),
         );
         for (const photo of removed) {
           try {
             await datingService.deletePhoto(photo.id);
           } catch {
-            // ignore delete errors here
+            // ignore delete errors - photo might already be deleted
           }
         }
       }
 
+      // Upload new photos using replacePhoto (handles both add and replace atomically)
       for (const photo of photos) {
         if (photo.isExisting) continue;
         setUploadingSlot(photo.order);
         const url = await datingService.uploadMedia(photo.uri);
-        await datingService.addPhoto({ url, order: photo.order });
+        // Use replacePhoto to handle both new and replacement cases
+        await datingService.replacePhoto({ url, order: photo.order });
       }
       setUploadingSlot(null);
 
@@ -296,24 +301,26 @@ const ProfileSetupInner: React.FC = () => {
         }
       }
 
+      // Delete photos that were removed
       if (existingProfile) {
         const removed = existingProfile.photos.filter(
-          (p) => !photos.some((slot) => slot.id === p.id),
+          (p) => !photos.some((slot) => slot.id === p.id && slot.isExisting),
         );
         for (const photo of removed) {
           try {
             await datingService.deletePhoto(photo.id);
           } catch {
-            // ignore delete errors here
+            // ignore delete errors - photo might already be deleted
           }
         }
       }
 
+      // Upload new photos using replacePhoto
       for (const photo of photos) {
         if (photo.isExisting) continue;
         setUploadingSlot(photo.order);
         const url = await datingService.uploadMedia(photo.uri);
-        await datingService.addPhoto({ url, order: photo.order });
+        await datingService.replacePhoto({ url, order: photo.order });
       }
       setUploadingSlot(null);
 

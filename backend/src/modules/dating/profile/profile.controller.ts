@@ -106,6 +106,16 @@ export class ProfileController {
       next(error);
     }
   }
+
+  async replacePhoto(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const photo = await profileService.replacePhoto(userId, req.body);
+      sendSuccess(res, photo, 'Đã thay thế ảnh thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const profileController = new ProfileController();

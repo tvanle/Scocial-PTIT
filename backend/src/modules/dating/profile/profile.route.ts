@@ -5,6 +5,7 @@ import {
   createDatingProfileSchema,
   updateDatingProfileSchema,
   addPhotoSchema,
+  replacePhotoSchema,
   updatePromptsSchema,
   updateLifestyleSchema,
   updatePreferencesSchema,
@@ -26,6 +27,7 @@ router.get('/:userId', validateParams(userIdParamSchema), profileController.getP
 
 // Photo routes
 router.post('/photos', validateBody(addPhotoSchema), profileController.addPhoto);
+router.put('/photos', validateBody(replacePhotoSchema), profileController.replacePhoto);
 router.delete('/photos/:id', validateParams(photoIdParamSchema), profileController.deletePhoto);
 
 // Prompts, Lifestyle, Preferences routes

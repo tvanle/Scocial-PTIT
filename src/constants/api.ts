@@ -114,6 +114,7 @@ export const ENDPOINTS = {
     PROFILE_BY_USER: (userId: string) => `/dating/profile/${userId}`,
     UPDATE_PROFILE: '/dating/profile',
     ADD_PHOTO: '/dating/profile/photos',
+    REPLACE_PHOTO: '/dating/profile/photos',
     DELETE_PHOTO: (photoId: string) => `/dating/profile/photos/${photoId}`,
     UPDATE_PROMPTS: '/dating/profile/prompts',
     UPDATE_LIFESTYLE: '/dating/profile/lifestyle',
