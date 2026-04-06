@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,15 +16,15 @@ import { Strings, DEFAULT_AVATAR } from '../../constants/strings';
 import { User } from '../../types';
 
 const mockUsers: User[] = [
-  { id: '2', fullName: 'Trần Văn B', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '3', fullName: 'Lê Thị C', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '4', fullName: 'Phạm Văn D', avatar: DEFAULT_AVATAR, studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '2', fullName: 'Tran Van B', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '3', fullName: 'Le Thi C', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
+  { id: '4', fullName: 'Pham Van D', avatar: DEFAULT_AVATAR, studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
 ];
 
 const recentSearches = [
-  { id: '1', text: 'Lập trình React Native', type: 'keyword' },
-  { id: '2', text: 'Trần Văn B', type: 'user' },
-  { id: '3', text: 'CLB Lập trình', type: 'group' },
+  { id: '1', text: 'Lap trinh React Native', type: 'keyword' },
+  { id: '2', text: 'Tran Van B', type: 'user' },
+  { id: '3', text: 'CLB Lap trinh', type: 'group' },
 ];
 
 interface SearchScreenProps {
@@ -34,6 +35,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [recentList, setRecentList] = useState(recentSearches);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -63,7 +65,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
         </Text>
       </View>
       <TouchableOpacity style={styles.followButton}>
-        <Text style={styles.followButtonText}>Theo dõi</Text>
+        <Text style={styles.followButtonText}>Theo doi</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -71,10 +73,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
   const renderRecentSearches = () => (
     <View style={styles.recentContainer}>
       <View style={styles.recentHeader}>
-        <Text style={styles.sectionTitle}>Gần đây</Text>
+        <Text style={styles.sectionTitle}>Gan day</Text>
         {recentList.length > 0 && (
           <TouchableOpacity onPress={handleClearRecent}>
-            <Text style={styles.clearText}>Xóa tất cả</Text>
+            <Text style={styles.clearText}>Xoa tat ca</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -105,45 +107,50 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 
   const renderSearchResults = () => (
     <View style={styles.resultsContainer}>
-      <Text style={styles.sectionTitle}>Mọi người</Text>
+      <Text style={styles.sectionTitle}>Moi nguoi</Text>
       {mockUsers.map(renderUserItem)}
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Search Bar as primary header */}
-      <View style={styles.searchContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={Colors.textTertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm bạn bè, bài viết..."
-            placeholderTextColor={Colors.textTertiary}
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-          {searchQuery.length > 0 ? (
-            <TouchableOpacity onPress={() => handleSearch('')}>
-              <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          ) : (
-            <Ionicons name="mic-outline" size={20} color={Colors.textTertiary} />
-          )}
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={[styles.searchBar, isFocused && styles.searchBarFocused]}>
+            <Ionicons name="search" size={20} color={isFocused ? Colors.primary : Colors.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tim kiem ban be, bai viet..."
+              placeholderTextColor={Colors.textTertiary}
+              value={searchQuery}
+              onChangeText={handleSearch}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+            />
+            {searchQuery.length > 0 ? (
+              <TouchableOpacity onPress={() => handleSearch('')}>
+                <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+              </TouchableOpacity>
+            ) : (
+              <Ionicons name="mic-outline" size={20} color={Colors.textTertiary} />
+            )}
+          </View>
         </View>
-      </View>
 
-      <FlatList
-        data={[]}
-        renderItem={null}
-        ListHeaderComponent={isSearching ? renderSearchResults : renderRecentSearches}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
-    </SafeAreaView>
+        <FlatList
+          data={[]}
+          renderItem={null}
+          ListHeaderComponent={isSearching ? renderSearchResults : renderRecentSearches}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -152,12 +159,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
+  safeArea: {
+    flex: 1,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     gap: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray100,
   },
   backButton: {
     padding: Spacing.xxs,
@@ -170,8 +182,12 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.lg,
     height: 44,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 1.5,
+    borderColor: Colors.gray200,
+  },
+  searchBarFocused: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
   },
   searchInput: {
     flex: 1,
@@ -211,9 +227,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   recentIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',

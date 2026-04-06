@@ -104,7 +104,7 @@ export class UserController {
       const filePath = path.join(config.upload.dir, filename);
 
       await fs.writeFile(filePath, req.file.buffer);
-      const avatarUrl = `/uploads/${filename}`;
+      const avatarUrl = `${config.baseUrl}/uploads/${filename}`;
 
       const result = await userService.updateAvatar(req.user!.userId, avatarUrl);
       sendSuccess(res, result);
@@ -124,7 +124,7 @@ export class UserController {
       const filePath = path.join(config.upload.dir, filename);
 
       await fs.writeFile(filePath, req.file.buffer);
-      const coverUrl = `/uploads/${filename}`;
+      const coverUrl = `${config.baseUrl}/uploads/${filename}`;
 
       const result = await userService.updateCoverImage(req.user!.userId, coverUrl);
       sendSuccess(res, result);

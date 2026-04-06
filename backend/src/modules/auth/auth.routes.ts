@@ -7,6 +7,7 @@ import {
   refreshTokenSchema,
   changePasswordSchema,
   verifyEmailSchema,
+  verifyEmailPublicSchema,
   resendVerificationSchema,
   forgotPasswordSchema,
   verifyResetCodeSchema,
@@ -29,6 +30,7 @@ router.post('/logout', authController.logout);
 
 // Email verification (public - for resend by email)
 router.post('/resend-verification', validateBody(resendVerificationSchema), authController.resendVerificationByEmail);
+router.post('/verify-email-public', validateBody(verifyEmailPublicSchema), authController.verifyEmailByEmail);
 
 // Forgot password flow
 router.post('/forgot-password', validateBody(forgotPasswordSchema), authController.forgotPassword);

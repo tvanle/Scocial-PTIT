@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Image, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Layout } from '../../constants/theme';
+import { getImageUrl } from '../../utils/image';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'profile';
 
@@ -84,6 +85,8 @@ const Avatar: React.FC<AvatarProps> = ({
     }
   };
 
+  const imageUrl = getImageUrl(uri);
+
   const renderAvatar = () => (
     <View
       style={[
@@ -96,9 +99,9 @@ const Avatar: React.FC<AvatarProps> = ({
         style,
       ]}
     >
-      {uri ? (
+      {imageUrl ? (
         <Image
-          source={{ uri }}
+          source={{ uri: imageUrl }}
           style={[
             styles.image,
             {

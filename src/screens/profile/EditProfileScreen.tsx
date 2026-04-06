@@ -20,6 +20,7 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../
 import { useAuthStore } from '../../store/slices/authSlice';
 import { userService } from '../../services/user/userService';
 import { DEFAULT_AVATAR } from '../../constants/strings';
+import { getImageUrl } from '../../utils/image';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -60,14 +61,20 @@ const EditProfileScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Upload avatar if changed
-      let avatarUrl = avatar;
-      if (avatar && avatar !== user?.avatar && avatar.startsWith('file://')) {
-        avatarUrl = await userService.uploadAvatar(avatar);
+      // Upload avatar if user picked a new image
+      let newAvatarUrl: string | undefined;
+      if (avatar && avatar.startsWith('file://')) {
+        newAvatarUrl = await userService.uploadAvatar(avatar);
       }
 
       const updatedUser = await userService.updateProfile({ fullName, bio, phone, faculty, className });
-      updateUser({ ...updatedUser, avatar: avatarUrl });
+
+      // Only override avatar if we uploaded a new one
+      if (newAvatarUrl) {
+        updateUser({ ...updatedUser, avatar: newAvatarUrl });
+      } else {
+        updateUser(updatedUser);
+      }
 
       showAlert('Thành công', 'Đã cập nhật trang cá nhân', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -108,7 +115,7 @@ const EditProfileScreen: React.FC = () => {
           {/* Avatar */}
           <TouchableOpacity style={styles.avatarSection} onPress={pickAvatar}>
             <Image
-              source={{ uri: avatar || DEFAULT_AVATAR }}
+              source={{ uri: avatar.startsWith('file://') ? avatar : (getImageUrl(avatar) || DEFAULT_AVATAR) }}
               style={styles.avatar}
             />
             <View style={styles.cameraIcon}>

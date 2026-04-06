@@ -58,13 +58,13 @@ const ProfileSetupInner: React.FC = () => {
   const from = route.params?.from ?? 'onboarding';
   const isEditing = from === 'settings';
 
-  const { data: existingProfile } = useQuery<DatingProfile | undefined>({
+  const { data: existingProfile } = useQuery<DatingProfile | null>({
     queryKey: ['dating', 'me'],
     queryFn: async () => {
       try {
         return await datingService.getMyProfile();
       } catch {
-        return undefined;
+        return null;
       }
     },
   });
@@ -161,6 +161,14 @@ const ProfileSetupInner: React.FC = () => {
   }, []);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
+
+  const handleSkip = useCallback(() => {
+    // Navigate back to main tabs (Home)
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Main' }],
+    });
+  }, [navigation]);
 
   const handleContinue = useCallback(async () => {
     if (!canContinue) return;
@@ -422,8 +430,8 @@ const ProfileSetupInner: React.FC = () => {
           showBackButton
           onBack={handleBack}
           hideProgress={isEditing || !!existingProfile}
-          rightActionLabel={isEditing ? 'Preview' : undefined}
-          onRightAction={isEditing ? handlePreview : undefined}
+          rightActionLabel={isEditing ? 'Preview' : 'Bỏ qua'}
+          onRightAction={isEditing ? handlePreview : handleSkip}
         />
 
         <ScrollView

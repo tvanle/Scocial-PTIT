@@ -40,6 +40,10 @@ class NotificationService {
     await apiClient.delete(ENDPOINTS.NOTIFICATION.DELETE(notificationId));
   }
 
+  async clearAll(): Promise<void> {
+    await apiClient.delete(ENDPOINTS.NOTIFICATION.CLEAR_ALL);
+  }
+
   async getSettings(): Promise<NotificationSettings> {
     const response = await apiClient.get(ENDPOINTS.NOTIFICATION.SETTINGS);
     return response.data;

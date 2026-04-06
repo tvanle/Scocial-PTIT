@@ -170,6 +170,11 @@ export class AuthService {
       throw new AppError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
 
+    // Check if email is verified
+    if (!user.isVerified) {
+      throw new AppError('Vui lòng xác thực email trước khi đăng nhập', HTTP_STATUS.FORBIDDEN);
+    }
+
     // Check password
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
@@ -361,20 +366,57 @@ export class AuthService {
     });
   }
 
+  async verifyEmailByEmail(email: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (user.isEmailVerified) {
+      throw new AppError(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Verify the code
+    await this.verifyCode(code, 'EMAIL_VERIFY', user.id);
+
+    // Mark email as verified
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        isVerified: true,
+      },
+    });
+  }
+
   // ==================== FORGOT PASSWORD / RESET ====================
 
   async forgotPassword(email: string) {
+    console.log('[ForgotPassword] Request for email:', email);
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     // Always return success (don't reveal if email exists)
     if (!user) {
+      console.log('[ForgotPassword] User not found:', email);
       return;
     }
 
+    console.log('[ForgotPassword] User found, creating code...');
     const code = await this.createVerificationCode(user.id, 'PASSWORD_RESET');
-    await emailService.sendPasswordResetEmail(user.email, user.fullName, code);
+    console.log('[ForgotPassword] Code created, sending email...');
+
+    try {
+      await emailService.sendPasswordResetEmail(user.email, user.fullName, code);
+      console.log('[ForgotPassword] Email sent successfully');
+    } catch (err: any) {
+      console.error('[ForgotPassword] Email failed:', err.message);
+    }
   }
 
   async verifyResetCode(email: string, code: string) {
@@ -506,8 +548,10 @@ export class AuthService {
       data: { twoFactorEnabled: true },
     });
 
-    // Send confirmation email
-    await emailService.send2FAEnabledEmail(user.email, user.fullName);
+    // Send confirmation email (non-blocking)
+    emailService.send2FAEnabledEmail(user.email, user.fullName).catch((err) => {
+      console.warn('Failed to send 2FA enabled email:', err.message);
+    });
 
     // Generate backup codes (simple random codes)
     const backupCodes = Array.from({ length: 8 }, () =>
@@ -590,7 +634,14 @@ export class AuthService {
       throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    return user;
+    // Transform _count to frontend-expected format
+    const { _count, ...userData } = user;
+    return {
+      ...userData,
+      postsCount: _count.posts,
+      followersCount: _count.followers,
+      followingCount: _count.following,
+    };
   }
 }
 

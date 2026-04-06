@@ -1,6 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 import { GATEWAY_URL, API_CONFIG } from '../../constants/api';
-import { useAuthStore } from '../../store/slices/authSlice';
+
+// Lazy import to avoid circular dependency
+// authSlice -> authService -> apiClient -> authSlice
+const getAuthStore = () => require('../../store/slices/authSlice').useAuthStore;
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -14,7 +17,7 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   async (config) => {
-    const { accessToken } = useAuthStore.getState();
+    const { accessToken } = getAuthStore().getState();
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -46,11 +49,11 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { refreshTokenValue } = useAuthStore.getState();
+        const { refreshTokenValue } = getAuthStore().getState();
 
         if (refreshTokenValue) {
-          await useAuthStore.getState().refreshToken();
-          const { accessToken } = useAuthStore.getState();
+          await getAuthStore().getState().refreshToken();
+          const { accessToken } = getAuthStore().getState();
 
           if (accessToken && originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -60,7 +63,7 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         // Refresh token failed, logout user
-        useAuthStore.getState().logout();
+        getAuthStore().getState().logout();
         return Promise.reject(refreshError);
       }
     }

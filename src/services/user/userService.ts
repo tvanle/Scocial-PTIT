@@ -69,7 +69,7 @@ class UserService {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.url;
+    return response.data.avatar;
   }
 
   async uploadCover(uri: string): Promise<string> {
@@ -85,7 +85,7 @@ class UserService {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.url;
+    return response.data.coverImage;
   }
 
   async getSuggestions(params?: PaginationParams): Promise<PaginatedResponse<User>> {

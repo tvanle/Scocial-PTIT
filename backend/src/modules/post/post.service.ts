@@ -312,6 +312,68 @@ export class PostService {
     );
   }
 
+  // Get user replies (comments)
+  async getUserReplies(userId: string, currentUserId?: string, page?: string, limit?: string) {
+    const { page: p, limit: l, skip } = parsePagination(page, limit);
+
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: { authorId: userId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              avatar: true,
+              isVerified: true,
+            },
+          },
+          post: {
+            include: postInclude,
+          },
+        },
+        skip,
+        take: l,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.comment.count({ where: { authorId: userId } }),
+    ]);
+
+    // Get liked status for posts
+    let likedPostIds = new Set<string>();
+    let sharedPostIds = new Set<string>();
+    if (currentUserId) {
+      const postIds = comments.map((c) => c.post.id);
+      const [liked, shared] = await Promise.all([
+        prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+        prisma.share.findMany({
+          where: { userId: currentUserId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+      ]);
+      likedPostIds = new Set(liked.map((l) => l.postId));
+      sharedPostIds = new Set(shared.map((s) => s.postId));
+    }
+
+    const data = comments.map((comment) => ({
+      comment: {
+        id: comment.id,
+        content: comment.content,
+        createdAt: comment.createdAt,
+        author: comment.author,
+      },
+      post: this.transformPost(comment.post, {
+        isLiked: likedPostIds.has(comment.post.id),
+        isShared: sharedPostIds.has(comment.post.id),
+      }),
+    }));
+
+    return paginate(data, total, p, l);
+  }
+
   // Like post
   async likePost(userId: string, postId: string) {
     const post = await prisma.post.findUnique({
@@ -410,7 +472,7 @@ export class PostService {
   }
 
   // Get comments
-  async getComments(postId: string, page?: string, limit?: string) {
+  async getComments(postId: string, currentUserId?: string, page?: string, limit?: string) {
     const { page: p, limit: l, skip } = parsePagination(page, limit);
 
     const where = {
@@ -427,6 +489,13 @@ export class PostService {
               id: true,
               fullName: true,
               avatar: true,
+              isVerified: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              replies: true,
             },
           },
           replies: {
@@ -436,10 +505,18 @@ export class PostService {
                   id: true,
                   fullName: true,
                   avatar: true,
+                  isVerified: true,
+                },
+              },
+              _count: {
+                select: {
+                  likes: true,
+                  replies: true,
                 },
               },
             },
             orderBy: { createdAt: 'asc' },
+            take: 3, // Only show first 3 replies initially
           },
         },
         skip,
@@ -449,7 +526,140 @@ export class PostService {
       prisma.comment.count({ where }),
     ]);
 
-    return paginate(comments, total, p, l);
+    // Get liked status for comments and replies
+    let likedCommentIds = new Set<string>();
+    if (currentUserId) {
+      const allCommentIds = comments.flatMap(c => [c.id, ...c.replies.map(r => r.id)]);
+      const liked = await prisma.commentLike.findMany({
+        where: { userId: currentUserId, commentId: { in: allCommentIds } },
+        select: { commentId: true },
+      });
+      likedCommentIds = new Set(liked.map(l => l.commentId));
+    }
+
+    // Transform comments to include likesCount and isLiked
+    const transformedComments = comments.map(comment => ({
+      ...comment,
+      likesCount: comment._count.likes,
+      repliesCount: comment._count.replies,
+      isLiked: likedCommentIds.has(comment.id),
+      _count: undefined,
+      replies: comment.replies.map(reply => ({
+        ...reply,
+        likesCount: reply._count.likes,
+        repliesCount: reply._count.replies,
+        isLiked: likedCommentIds.has(reply.id),
+        _count: undefined,
+      })),
+    }));
+
+    return paginate(transformedComments, total, p, l);
+  }
+
+  // Get comment replies
+  async getCommentReplies(commentId: string, currentUserId?: string, page?: string, limit?: string) {
+    const { page: p, limit: l, skip } = parsePagination(page, limit);
+
+    const [replies, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: { parentId: commentId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              avatar: true,
+              isVerified: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              replies: true,
+            },
+          },
+        },
+        skip,
+        take: l,
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.comment.count({ where: { parentId: commentId } }),
+    ]);
+
+    // Get liked status
+    let likedCommentIds = new Set<string>();
+    if (currentUserId) {
+      const liked = await prisma.commentLike.findMany({
+        where: { userId: currentUserId, commentId: { in: replies.map(r => r.id) } },
+        select: { commentId: true },
+      });
+      likedCommentIds = new Set(liked.map(l => l.commentId));
+    }
+
+    const transformedReplies = replies.map(reply => ({
+      ...reply,
+      likesCount: reply._count.likes,
+      repliesCount: reply._count.replies,
+      isLiked: likedCommentIds.has(reply.id),
+      _count: undefined,
+    }));
+
+    return paginate(transformedReplies, total, p, l);
+  }
+
+  // Like comment
+  async likeComment(userId: string, commentId: string) {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new AppError(ERROR_MESSAGES.COMMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const existingLike = await prisma.commentLike.findUnique({
+      where: {
+        userId_commentId: { userId, commentId },
+      },
+    });
+
+    if (existingLike) {
+      throw new AppError(ERROR_MESSAGES.ALREADY_LIKED, HTTP_STATUS.CONFLICT);
+    }
+
+    await prisma.commentLike.create({
+      data: { userId, commentId },
+    });
+
+    // Create notification (if not own comment)
+    if (comment.authorId !== userId) {
+      await prisma.notification.create({
+        data: {
+          type: 'LIKE',
+          senderId: userId,
+          receiverId: comment.authorId,
+          referenceId: comment.postId,
+          content: 'liked your comment',
+        },
+      });
+    }
+  }
+
+  // Unlike comment
+  async unlikeComment(userId: string, commentId: string) {
+    const like = await prisma.commentLike.findUnique({
+      where: {
+        userId_commentId: { userId, commentId },
+      },
+    });
+
+    if (!like) {
+      throw new AppError(ERROR_MESSAGES.NOT_LIKED, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    await prisma.commentLike.delete({
+      where: { id: like.id },
+    });
   }
 
   // Delete comment

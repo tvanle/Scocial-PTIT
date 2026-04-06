@@ -16,8 +16,10 @@ import { FullScreenLoading } from '../components/common';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
 import PostDetailScreen from '../screens/home/PostDetailScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
+import SecurityScreen from '../screens/settings/SecurityScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
+import FollowersScreen from '../screens/profile/FollowersScreen';
 import { DatingSplashScreen } from '../screens/dating/splash/DatingSplashScreen';
 import {
   DatingOnboardingIntroScreen,
@@ -39,7 +41,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Placeholder screens (low priority)
 const ImageViewerScreen = () => null;
-const FollowersScreen = () => null;
 const FollowingScreen = () => null;
 
 // Deep linking configuration
@@ -164,6 +165,7 @@ const RootNavigator: React.FC = () => {
               }}
             />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
             <Stack.Screen name="Followers" component={FollowersScreen} />
             <Stack.Screen name="Following" component={FollowingScreen} />
             {/* Dating Entry Screens */}

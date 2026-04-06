@@ -49,7 +49,15 @@ export class UserService {
       isFollowing = !!follow;
     }
 
-    return { ...user, isFollowing };
+    // Transform _count to frontend-expected format
+    const { _count, ...userData } = user;
+    return {
+      ...userData,
+      isFollowing,
+      postsCount: _count.posts,
+      followersCount: _count.followers,
+      followingCount: _count.following,
+    };
   }
 
   // Update profile

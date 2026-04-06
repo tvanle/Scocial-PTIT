@@ -49,6 +49,19 @@ class PostService {
     await apiClient.delete(ENDPOINTS.POST.DELETE_COMMENT(postId, commentId));
   }
 
+  async likeComment(commentId: string): Promise<void> {
+    await apiClient.post(ENDPOINTS.POST.LIKE_COMMENT(commentId));
+  }
+
+  async unlikeComment(commentId: string): Promise<void> {
+    await apiClient.delete(ENDPOINTS.POST.LIKE_COMMENT(commentId));
+  }
+
+  async getCommentReplies(commentId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
+    const response = await apiClient.get(ENDPOINTS.POST.COMMENT_REPLIES(commentId), { params });
+    return response.data;
+  }
+
   async sharePost(postId: string): Promise<void> {
     await apiClient.post(ENDPOINTS.POST.SHARE(postId));
   }
@@ -81,6 +94,11 @@ class PostService {
 
   async getUserPosts(userId: string, params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.USER_POSTS(userId), { params });
+    return response.data;
+  }
+
+  async getUserReplies(userId: string, params?: PaginationParams): Promise<PaginatedResponse<{ comment: Comment; post: Post }>> {
+    const response = await apiClient.get(ENDPOINTS.POST.USER_REPLIES(userId), { params });
     return response.data;
   }
 
