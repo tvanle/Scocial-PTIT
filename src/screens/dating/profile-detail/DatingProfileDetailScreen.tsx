@@ -32,6 +32,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import datingChatService from '../../../services/dating/datingChatService';
 import * as Haptics from 'expo-haptics';
@@ -324,6 +325,12 @@ const ProfileDetailInner: React.FC = () => {
   const [replyModalVisible, setReplyModalVisible] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<{ question: string; answer: string } | null>(null);
   const [sendingReply, setSendingReply] = useState(false);
+  const [playingSong, setPlayingSong] = useState<{
+    title: string;
+    artist: string;
+    artworkUrl: string | null;
+    embedUrl: string;
+  } | null>(null);
   const scrollViewRef = useRef<Animated.ScrollView>(null);
   const imageListRef = useRef<ScrollView>(null);
 
@@ -530,6 +537,12 @@ const ProfileDetailInner: React.FC = () => {
   const bio = profile?.bio;
   const education = profile?.lifestyle?.education;
   const prompts = (profile as any)?.prompts || [];
+  const songs = (profile as any)?.songs || [];
+
+  // Debug: log songs data
+  React.useEffect(() => {
+    console.log('[ProfileDetail] Songs:', JSON.stringify(songs, null, 2));
+  }, [songs]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
@@ -674,6 +687,43 @@ const ProfileDetailInner: React.FC = () => {
                 onReply={() => handlePromptReply(prompt)}
               />
             ))}
+          </Section>
+        )}
+
+        {/* Songs Section */}
+        {songs.length > 0 && (
+          <Section title="My Anthem" icon="music">
+            <View style={styles.songsGrid}>
+              {songs.map((song: any, index: number) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.songCard}
+                  onPress={() => setPlayingSong(song)}
+                  activeOpacity={0.8}
+                >
+                  {song.artworkUrl ? (
+                    <Image source={{ uri: song.artworkUrl }} style={styles.songArtwork} />
+                  ) : (
+                    <View style={[styles.songArtwork, styles.songArtworkPlaceholder]}>
+                      <MaterialCommunityIcons name="music-note" size={20} color="#999" />
+                    </View>
+                  )}
+                  <View style={styles.songPlayOverlay}>
+                    <View style={styles.songPlayIcon}>
+                      <MaterialCommunityIcons name="play" size={16} color="#fff" />
+                    </View>
+                  </View>
+                  <View style={styles.songInfo}>
+                    <Text style={[styles.songTitle, { color: theme.text.primary }]} numberOfLines={1}>
+                      {song.title}
+                    </Text>
+                    <Text style={[styles.songArtist, { color: theme.text.secondary }]} numberOfLines={1}>
+                      {song.artist}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </Section>
         )}
 
@@ -832,6 +882,93 @@ const ProfileDetailInner: React.FC = () => {
         sending={sendingReply}
         otherUserName={user?.fullName?.split(' ').pop()}
       />
+
+      {/* Music Player Modal */}
+      <Modal
+        visible={!!playingSong}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPlayingSong(null)}
+      >
+        <View style={styles.playerOverlay}>
+          <View style={styles.playerSheet}>
+            <View style={styles.playerHeader}>
+              <View style={styles.playerHandle} />
+              <TouchableOpacity
+                onPress={() => setPlayingSong(null)}
+                style={styles.playerCloseBtn}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {playingSong && (
+              <>
+                <View style={styles.playerInfo}>
+                  {playingSong.artworkUrl ? (
+                    <Image
+                      source={{ uri: playingSong.artworkUrl }}
+                      style={styles.playerArtwork}
+                    />
+                  ) : (
+                    <View style={[styles.playerArtwork, styles.playerArtworkPlaceholder]}>
+                      <MaterialCommunityIcons name="music-note" size={40} color="#666" />
+                    </View>
+                  )}
+                  <Text style={styles.playerTitle} numberOfLines={2}>
+                    {playingSong.title}
+                  </Text>
+                  <Text style={styles.playerArtist} numberOfLines={1}>
+                    {playingSong.artist}
+                  </Text>
+                </View>
+
+                {playingSong.embedUrl ? (
+                  <View style={styles.webviewContainer}>
+                    <WebView
+                      source={{
+                        html: `
+                          <!DOCTYPE html>
+                          <html>
+                            <head>
+                              <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+                              <style>
+                                * { margin: 0; padding: 0; }
+                                html, body { width: 100%; height: 100%; background: #1a1a1a; overflow: hidden; }
+                                iframe { width: 100%; height: 166px; border: none; }
+                              </style>
+                            </head>
+                            <body>
+                              <iframe
+                                scrolling="no"
+                                frameborder="no"
+                                allow="autoplay; encrypted-media"
+                                src="${playingSong.embedUrl.split('&')[0]}&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
+                              ></iframe>
+                            </body>
+                          </html>
+                        `,
+                      }}
+                      style={styles.webview}
+                      allowsInlineMediaPlayback={true}
+                      mediaPlaybackRequiresUserAction={false}
+                      javaScriptEnabled={true}
+                      domStorageEnabled={true}
+                      mixedContentMode="always"
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.webviewContainer}>
+                    <Text style={{ color: '#999', textAlign: 'center', padding: 20 }}>
+                      Không thể phát bài hát này
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1017,6 +1154,134 @@ const styles = StyleSheet.create({
   promptReplyText: {
     ...TEXT_STYLES.labelSmall,
     fontWeight: '600',
+  },
+
+  // Songs
+  songsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  songCard: {
+    width: 100,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+  },
+  songArtwork: {
+    width: 100,
+    height: 100,
+    backgroundColor: '#E8E8E8',
+  },
+  songArtworkPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  songInfo: {
+    padding: SPACING.xs,
+    gap: 1,
+  },
+  songTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  songArtist: {
+    fontSize: 10,
+  },
+  songPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  songPlayIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Music Player Modal
+  playerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'flex-end',
+  },
+  playerSheet: {
+    backgroundColor: '#1A1A1A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 34,
+  },
+  playerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    position: 'relative',
+  },
+  playerHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#444',
+  },
+  playerCloseBtn: {
+    position: 'absolute',
+    right: 16,
+    top: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playerInfo: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  playerArtwork: {
+    width: 180,
+    height: 180,
+    borderRadius: 16,
+    backgroundColor: '#333',
+    marginBottom: 20,
+  },
+  playerArtworkPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  playerArtist: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
+  webviewContainer: {
+    height: 166,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
   },
 
   // Photos

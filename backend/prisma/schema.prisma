@@ -411,6 +411,7 @@ model DatingProfile {
   // Relations
   photos      DatingProfilePhoto[]
   prompts     DatingProfilePrompt[]
+  songs       DatingProfileSong[]
   lifestyle   DatingProfileLifestyle?
   preferences DatingPreferences?
 
@@ -448,6 +449,27 @@ model DatingProfilePrompt {
 
   @@index([profileId])
   @@index([profileId, order])
+}
+
+model DatingProfileSong {
+  id          String         @id @default(uuid())
+  profileId   String
+  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  title       String
+  artist      String
+  artworkUrl  String?
+  embedUrl    String         // SoundCloud embed URL
+
+  order       Int       @default(0)     // 0-2 for ordering songs (max 3)
+  startTime   Int?           // Start time in seconds
+  endTime     Int?           // End time in seconds
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([profileId, order])
+  @@index([profileId])
 }
 
 model DatingProfileLifestyle {

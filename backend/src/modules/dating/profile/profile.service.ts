@@ -8,6 +8,7 @@ import {
   UpdatePromptsInput,
   UpdateLifestyleInput,
   UpdatePreferencesInput,
+  UpdateSongsInput,
   validateAge,
 } from './profile.schema';
 
@@ -57,6 +58,19 @@ const PREFERENCES_SELECT = {
   gender: true,
   preferredMajors: true,
   sameYearOnly: true,
+  updatedAt: true,
+} as const;
+
+const SONG_SELECT = {
+  id: true,
+  title: true,
+  artist: true,
+  artworkUrl: true,
+  embedUrl: true,
+  order: true,
+  startTime: true,
+  endTime: true,
+  createdAt: true,
   updatedAt: true,
 } as const;
 
@@ -177,6 +191,10 @@ export class ProfileService {
           select: { id: true, question: true, answer: true, order: true },
           orderBy: { order: 'asc' },
         },
+        songs: {
+          select: SONG_SELECT,
+          orderBy: { order: 'asc' },
+        },
         lifestyle: {
           select: LIFESTYLE_SELECT,
         },
@@ -211,6 +229,10 @@ export class ProfileService {
         },
         prompts: {
           select: PROMPT_SELECT,
+          orderBy: { order: 'asc' },
+        },
+        songs: {
+          select: SONG_SELECT,
           orderBy: { order: 'asc' },
         },
         lifestyle: {
@@ -405,6 +427,42 @@ export class ProfileService {
     });
 
     return preferences;
+  }
+
+  // Update songs (transactional - max 3 songs)
+  async updateSongs(userId: string, data: UpdateSongsInput) {
+    const profileId = await this.getProfileIdByUserId(userId);
+
+    // Transaction: delete old + create new
+    await prisma.$transaction(async (tx) => {
+      await tx.datingProfileSong.deleteMany({
+        where: { profileId },
+      });
+
+      if (data.songs && data.songs.length > 0) {
+        await tx.datingProfileSong.createMany({
+          data: data.songs.map((song, index) => ({
+            profileId,
+            title: song.title,
+            artist: song.artist,
+            artworkUrl: song.artworkUrl ?? null,
+            embedUrl: song.embedUrl,
+            order: index,
+            startTime: song.startTime ?? null,
+            endTime: song.endTime ?? null,
+          })),
+        });
+      }
+    });
+
+    // Return updated songs
+    const songs = await prisma.datingProfileSong.findMany({
+      where: { profileId },
+      select: SONG_SELECT,
+      orderBy: { order: 'asc' },
+    });
+
+    return songs;
   }
 }
 

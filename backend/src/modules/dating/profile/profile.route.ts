@@ -9,6 +9,7 @@ import {
   updatePromptsSchema,
   updateLifestyleSchema,
   updatePreferencesSchema,
+  updateSongsSchema,
   photoIdParamSchema,
   userIdParamSchema,
 } from './profile.schema';
@@ -34,5 +35,8 @@ router.delete('/photos/:id', validateParams(photoIdParamSchema), profileControll
 router.put('/prompts', validateBody(updatePromptsSchema), profileController.updatePrompts);
 router.put('/lifestyle', validateBody(updateLifestyleSchema), profileController.updateLifestyle);
 router.put('/preferences', validateBody(updatePreferencesSchema), profileController.updatePreferences);
+
+// Songs routes
+router.put('/songs', validateBody(updateSongsSchema), profileController.updateSongs);
 
 export default router;

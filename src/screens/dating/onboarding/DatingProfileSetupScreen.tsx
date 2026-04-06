@@ -25,9 +25,10 @@ import {
   ProfileSetupBioSection,
   ProfileSetupInterestsSection,
   ProfileSetupPromptsSection,
+  ProfileSetupSongSection,
   ProfileSetupBottomBar,
 } from './components';
-import type { PhotoSlot, PromptValue } from './components';
+import type { PhotoSlot, PromptValue, SongValue } from './components';
 
 const PROFILE_SETUP_STAGGER = 60;
 const PROFILE_SETUP_DURATION = 320;
@@ -49,6 +50,7 @@ const ProfileSetupInner: React.FC = () => {
     new Set(DATING_STRINGS.profileSetup.defaults.defaultSelectedInterestIds),
   );
   const [prompts, setPrompts] = useState<PromptValue[]>([]);
+  const [songs, setSongs] = useState<SongValue[]>([]);
   const { animatedStyle: buttonAnimatedStyle, handlePressIn, handlePressOut } = usePressScale({
     scaleDown: 0.98,
   });
@@ -89,6 +91,19 @@ const ProfileSetupInner: React.FC = () => {
       return existingProfile.prompts.map((p) => ({
         question: p.question,
         answer: p.answer,
+      }));
+    });
+
+    setSongs((prev: SongValue[]) => {
+      if (prev.length) return prev;
+      if (!existingProfile.songs?.length) return prev;
+      return existingProfile.songs.map((s) => ({
+        title: s.title,
+        artist: s.artist,
+        artworkUrl: s.artworkUrl,
+        embedUrl: s.embedUrl,
+        startTime: s.startTime,
+        endTime: s.endTime,
       }));
     });
   }, [existingProfile]);
@@ -192,6 +207,9 @@ const ProfileSetupInner: React.FC = () => {
         await datingService.updatePrompts({ prompts: validPrompts });
       }
 
+      // Save songs
+      await datingService.updateSongs({ songs });
+
       navigation.navigate('DatingPreferencesSetup', { from: 'onboarding' });
     } catch (err: any) {
       setUploadingSlot(null);
@@ -208,7 +226,7 @@ const ProfileSetupInner: React.FC = () => {
     } finally {
       setCreating(false);
     }
-  }, [canContinue, photos, bio, navigation, existingProfile]);
+  }, [canContinue, photos, bio, navigation, existingProfile, prompts, songs]);
 
   const handleSave = useCallback(async () => {
     if (!canContinue) {
@@ -259,6 +277,9 @@ const ProfileSetupInner: React.FC = () => {
       const validPrompts = prompts.filter((p) => p.question && p.answer.trim());
       await datingService.updatePrompts({ prompts: validPrompts });
 
+      // Save songs
+      await datingService.updateSongs({ songs });
+
       queryClient.invalidateQueries({ queryKey: ['dating', 'me'] });
       Alert.alert('Thành công', 'Đã lưu hồ sơ hẹn hò của bạn.');
       navigation.goBack();
@@ -277,7 +298,7 @@ const ProfileSetupInner: React.FC = () => {
     } finally {
       setCreating(false);
     }
-  }, [canContinue, validationHint, existingProfile, bio, photos, navigation, queryClient]);
+  }, [canContinue, validationHint, existingProfile, bio, photos, navigation, queryClient, prompts, songs]);
 
   const handlePreview = useCallback(async () => {
     if (!canContinue) {
@@ -324,12 +345,24 @@ const ProfileSetupInner: React.FC = () => {
       }
       setUploadingSlot(null);
 
+      // Save songs before preview
+      await datingService.updateSongs({ songs });
+
       const latest = await datingService.getMyProfile();
       const card: DiscoveryCard = {
         userId: latest.userId,
         bio: latest.bio,
         photos: latest.photos.map((p) => ({ url: p.url, order: p.order })),
         prompts: latest.prompts?.map((p) => ({ question: p.question, answer: p.answer })) ?? [],
+        songs: latest.songs?.map((s) => ({
+          title: s.title,
+          artist: s.artist,
+          artworkUrl: s.artworkUrl,
+          embedUrl: s.embedUrl,
+          order: s.order,
+          startTime: s.startTime,
+          endTime: s.endTime,
+        })),
         user: {
           id: latest.user?.id ?? latest.userId,
           fullName: latest.user?.fullName ?? 'Bạn',
@@ -359,7 +392,7 @@ const ProfileSetupInner: React.FC = () => {
     } finally {
       setCreating(false);
     }
-  }, [canContinue, validationHint, existingProfile, bio, photos, navigation]);
+  }, [canContinue, validationHint, existingProfile, bio, photos, navigation, songs]);
 
   const layout = DATING_LAYOUT.profileSetup;
 
@@ -412,6 +445,12 @@ const ProfileSetupInner: React.FC = () => {
               value={bio}
               onChangeText={setBio}
               counterText={counterText}
+            />
+          </Animated.View>
+          <Animated.View style={bioStyle}>
+            <ProfileSetupSongSection
+              songs={songs}
+              onChange={setSongs}
             />
           </Animated.View>
           <Animated.View style={interestsStyle}>
