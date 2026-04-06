@@ -2,6 +2,7 @@ import { prisma } from '../../../config/database';
 import { AppError } from '../../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../../shared/constants';
 import { CreateDatingConversationInput, SendDatingMessageInput } from './dating-chat.schema';
+import { pushNotificationService } from '../../../services/push';
 
 // User is considered online if active within last 5 minutes
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -240,6 +241,17 @@ export class DatingChatService {
       where: { conversationId },
       select: { userId: true },
     });
+
+    // Send push notification to other participants (async, don't wait)
+    const otherParticipantIds = participants
+      .map((p) => p.userId)
+      .filter((id) => id !== userId);
+
+    for (const receiverId of otherParticipantIds) {
+      pushNotificationService
+        .sendMessageNotification(receiverId, userId, conversationId, data.content)
+        .catch(console.error);
+    }
 
     return { message, participantIds: participants.map((p) => p.userId) };
   }
