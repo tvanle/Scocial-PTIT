@@ -340,6 +340,10 @@ const SettingsInner: React.FC = () => {
     navigation.navigate('DatingLegal', { type: 'terms' });
   }, [navigation]);
 
+  const handleSubscription = useCallback(() => {
+    navigation.navigate('DatingSubscription');
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bg.base }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -451,8 +455,19 @@ const SettingsInner: React.FC = () => {
             />
           </View>
 
+          {/* Subscription */}
+          <SectionHeader title="GOI DICH VU" index={3} />
+          <View style={[styles.section, { borderColor: theme.border.subtle }]}>
+            <SettingLink
+              icon="diamond-stone"
+              label="Quan ly goi dich vu"
+              description="Xem trang thai Premium, lich su giao dich"
+              onPress={handleSubscription}
+            />
+          </View>
+
           {/* Account */}
-          <SectionHeader title="TAI KHOAN" index={3} />
+          <SectionHeader title="TAI KHOAN" index={4} />
           <View style={[styles.section, { borderColor: theme.border.subtle }]}>
             <SettingLink
               icon="pause-circle-outline"
@@ -471,7 +486,7 @@ const SettingsInner: React.FC = () => {
           </View>
 
           {/* Legal */}
-          <SectionHeader title="PHAP LY" index={4} />
+          <SectionHeader title="PHAP LY" index={5} />
           <View style={[styles.section, { borderColor: theme.border.subtle }]}>
             <SettingLink
               icon="shield-check"
@@ -485,6 +500,56 @@ const SettingsInner: React.FC = () => {
               onPress={handleTerms}
             />
           </View>
+
+          {/* Developer - Test Notifications */}
+          {__DEV__ && (
+            <>
+              <SectionHeader title="DEVELOPER" index={6} />
+              <View style={[styles.section, { borderColor: theme.border.subtle }]}>
+                <SettingLink
+                  icon="bell-ring"
+                  label="Test Match Notification"
+                  description="Gui thong bao match test"
+                  onPress={() => {
+                    pushNotificationService.scheduleLocalNotification(
+                      'Ban co Match moi! 🎉',
+                      'Ban va ai do da match. Bat dau tro chuyen ngay!',
+                      { type: 'match', matchedUserId: 'test-123' }
+                    );
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
+                />
+                <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
+                <SettingLink
+                  icon="star"
+                  label="Test Super Like Notification"
+                  description="Gui thong bao super like test"
+                  onPress={() => {
+                    pushNotificationService.scheduleLocalNotification(
+                      'Ban nhan duoc Super Like! 🌟',
+                      'Ai do da Super Like ban!',
+                      { type: 'super_like', fromUserId: 'test-123' }
+                    );
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
+                />
+                <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
+                <SettingLink
+                  icon="chat"
+                  label="Test Message Notification"
+                  description="Gui thong bao tin nhan test"
+                  onPress={() => {
+                    pushNotificationService.scheduleLocalNotification(
+                      'Nguyen Van A',
+                      'Xin chao! Ban khoe khong?',
+                      { type: 'message', fromUserId: 'test-123', conversationId: 'conv-456' }
+                    );
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
+                />
+              </View>
+            </>
+          )}
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.text.muted }]}>
