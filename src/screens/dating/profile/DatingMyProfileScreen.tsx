@@ -205,11 +205,13 @@ const MyProfileInner: React.FC = () => {
   }, [addPhotoMutation]);
 
   const handleMenuPress = useCallback(
-    (key: 'profile' | 'criteria' | 'pause' | 'delete') => {
+    (key: 'profile' | 'criteria' | 'premium' | 'pause' | 'delete') => {
       if (key === 'profile') {
         navigation.navigate('DatingProfileSetup', { from: 'settings' });
       } else if (key === 'criteria') {
         navigation.navigate('DatingPreferencesSetup', { from: 'settings' });
+      } else if (key === 'premium') {
+        navigation.navigate('DatingSubscription');
       } else if (key === 'pause') {
         Alert.alert(
           'Tam dung hen ho',
@@ -331,8 +333,9 @@ const MyProfileInner: React.FC = () => {
             <View style={styles.menuSection}>
               <MenuItem icon="heart-outline" label="Ho so Hen ho" onPress={() => handleMenuPress('profile')} index={0} />
               <MenuItem icon="tune-variant" label="Tieu chi hen ho" onPress={() => handleMenuPress('criteria')} index={1} />
-              <MenuItem icon="pause-circle-outline" label="Tam dung hen ho" onPress={() => handleMenuPress('pause')} index={2} />
-              <MenuItem icon="delete-outline" label="Xoa ho so hen ho" onPress={() => handleMenuPress('delete')} danger index={3} />
+              <MenuItem icon="diamond-stone" label="Quan ly Premium" onPress={() => handleMenuPress('premium')} index={2} />
+              <MenuItem icon="pause-circle-outline" label="Tam dung hen ho" onPress={() => handleMenuPress('pause')} index={3} />
+              <MenuItem icon="delete-outline" label="Xoa ho so hen ho" onPress={() => handleMenuPress('delete')} danger index={4} />
             </View>
 
             {/* Photo Grid Preview */}

@@ -11,4 +11,8 @@ router.post('/:notificationId/read', authenticate, notificationController.markAs
 router.delete('/:notificationId', authenticate, notificationController.deleteNotification);
 router.delete('/', authenticate, notificationController.clearAll);
 
+// Device token management
+router.post('/device', authenticate, notificationController.registerDevice);
+router.delete('/device', authenticate, notificationController.unregisterDevice);
+
 export default router;

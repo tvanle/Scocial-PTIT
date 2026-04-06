@@ -70,9 +70,17 @@ model User {
   matchesAsA               DatingMatch[]  @relation("MatchUserA")
   matchesAsB               DatingMatch[]  @relation("MatchUserB")
 
+  // Dating Subscription & Payment
+  datingSubscription       DatingSubscription?
+  datingUsageDaily         DatingUsageDaily[]
+  paymentTransactions      PaymentTransaction[]
+
   // Block
   blockedUsers             UserBlock[]    @relation("BlockedBy")
   blockedByUsers           UserBlock[]    @relation("BlockedUser")
+
+  // Push Notifications
+  deviceTokens             DeviceToken[]
 
   @@index([email])
   @@index([studentId])
@@ -90,6 +98,22 @@ model VerificationCode {
 
   @@index([userId, type])
   @@index([code, type])
+}
+
+// ============== PUSH NOTIFICATIONS ==============
+
+model DeviceToken {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  platform    String   // 'ios' | 'android'
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
 }
 
 model RefreshToken {
@@ -265,6 +289,7 @@ enum NotificationType {
   MENTION
   SYSTEM
   MATCH_CREATED
+  SUPER_LIKE
 }
 
 // ============== CHAT ==============
@@ -493,6 +518,7 @@ model DatingMatch {
 enum SwipeAction {
   LIKE
   UNLIKE
+  SUPER_LIKE
 }
 
 enum FrequencyLevel {
@@ -514,4 +540,105 @@ model UserBlock {
   @@unique([blockerId, blockedUserId])
   @@index([blockerId])
   @@index([blockedUserId])
+}
+
+// ============== DATING SUBSCRIPTION & PAYMENT ==============
+
+model DatingSubscription {
+  id              String             @id @default(uuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier            SubscriptionTier   @default(FREE)
+  status          SubscriptionStatus @default(ACTIVE)
+
+  // Thời gian Premium
+  startDate       DateTime?
+  endDate         DateTime?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  transactions    PaymentTransaction[]
+
+  @@index([userId])
+  @@index([status, endDate])
+}
+
+model PaymentTransaction {
+  id                String             @id @default(uuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String
+  subscription      DatingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // VNPay fields
+  vnpTxnRef         String             @unique  // Mã giao dịch của mình
+  vnpTransactionNo  String?            // Mã giao dịch VNPay
+  vnpBankCode       String?            // Ngân hàng
+  vnpCardType       String?            // Loại thẻ
+
+  // Payment info
+  amount            Int                // VND
+  description       String
+  planType          PaymentPlanType    // MONTHLY, QUARTERLY, YEARLY
+  status            TransactionStatus  @default(PENDING)
+
+  // Metadata
+  ipAddress         String?
+  vnpResponseCode   String?
+  rawResponse       Json?              // Lưu response từ VNPay
+
+  // Timestamps
+  paidAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([vnpTxnRef])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DatingUsageDaily {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime @db.Date  // Chỉ lưu ngày
+  swipeCount      Int      @default(0)
+  superLikeCount  Int      @default(0)
+  rewindCount     Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+enum PaymentPlanType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }

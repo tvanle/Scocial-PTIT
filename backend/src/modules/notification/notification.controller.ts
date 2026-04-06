@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { notificationService } from './notification.service';
+import { pushNotificationService } from '../../services/push';
 import { AuthRequest } from '../../shared/types';
 import { sendSuccess } from '../../shared/utils';
 
@@ -60,6 +61,27 @@ export class NotificationController {
     try {
       await notificationService.clearAll(req.user!.userId);
       sendSuccess(res, null);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Device token management
+  async registerDevice(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { token, platform } = req.body;
+      await pushNotificationService.registerDevice(req.user!.userId, token, platform);
+      sendSuccess(res, { success: true }, 'Device registered successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unregisterDevice(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { token } = req.body;
+      await pushNotificationService.unregisterDevice(req.user!.userId, token);
+      sendSuccess(res, { success: true }, 'Device unregistered successfully');
     } catch (error) {
       next(error);
     }

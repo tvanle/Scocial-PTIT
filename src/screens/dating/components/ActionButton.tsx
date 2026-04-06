@@ -142,9 +142,9 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         };
       case 'undo':
         return {
-          border: theme.border.medium,
-          icon: theme.text.muted,
-          activeBg: theme.bg.surface,
+          border: theme.brand.primary,
+          icon: theme.brand.primary,
+          activeBg: theme.brand.primaryMuted,
           glow: null,
         };
       default:

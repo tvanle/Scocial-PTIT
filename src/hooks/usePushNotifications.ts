@@ -26,10 +26,11 @@ export function usePushNotifications() {
       // Refresh relevant data
       if (data?.type === 'match') {
         queryClient.invalidateQueries({ queryKey: ['dating', 'matches'] });
-      } else if (data?.type === 'like') {
+      } else if (data?.type === 'like' || data?.type === 'super_like') {
         queryClient.invalidateQueries({ queryKey: ['dating', 'likes'] });
       } else if (data?.type === 'message') {
         queryClient.invalidateQueries({ queryKey: ['dating', 'chat'] });
+        queryClient.invalidateQueries({ queryKey: ['chat'] });
       }
 
       // Always refresh notifications count
@@ -57,10 +58,12 @@ export function usePushNotifications() {
           queryClient.invalidateQueries({ queryKey: ['dating', 'matches'] });
           break;
         case 'like':
+        case 'super_like':
           queryClient.invalidateQueries({ queryKey: ['dating', 'likes'] });
           break;
         case 'message':
           queryClient.invalidateQueries({ queryKey: ['dating', 'chat'] });
+          queryClient.invalidateQueries({ queryKey: ['chat'] });
           break;
       }
     },

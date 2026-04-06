@@ -23,4 +23,9 @@ router.get(
   swipeController.getSentLikes,
 );
 
+router.post(
+  '/rewind',
+  swipeController.rewind,
+);
+
 export default router;

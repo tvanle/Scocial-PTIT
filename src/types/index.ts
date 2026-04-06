@@ -278,6 +278,9 @@ export type RootStackParamList = {
   DatingSettings: undefined;
   DatingBlockedUsers: undefined;
   DatingLegal: { type: 'privacy' | 'terms' };
+  DatingPremium: undefined;
+  DatingPaymentResult: { vnpayParams?: Record<string, string> };
+  DatingSubscription: undefined;
 };
 
 export type AuthStackParamList = {

@@ -40,6 +40,7 @@ import {
   SPRING,
 } from '../../../constants/dating/design-system';
 import datingService from '../../../services/dating/datingService';
+import datingPaymentService from '../../../services/dating/datingPaymentService';
 import type { DiscoveryCard, RootStackParamList } from '../../../types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -59,16 +60,19 @@ const CARD_HEIGHT = CARD_WIDTH * 1.35;
 // ═══════════════════════════════════════════════════════════════
 
 interface LikeCardProps {
-  item: DiscoveryCard;
+  item: DiscoveryCard & { isBlurred?: boolean; isSuperLike?: boolean };
   index: number;
   onPress: (item: DiscoveryCard) => void;
+  isBlurred?: boolean;
+  isSuperLike?: boolean;
+  onUpgradePress?: () => void;
 }
 
-const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) => {
+const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress, isBlurred, isSuperLike, onUpgradePress }) => {
   const { theme } = useDatingTheme();
   const scale = useSharedValue(1);
 
-  const name = item.user.fullName ?? 'Ai đó';
+  const name = isBlurred ? '???' : (item.user.fullName ?? 'Ai đó');
   const age = item.user.dateOfBirth
     ? new Date().getFullYear() - new Date(item.user.dateOfBirth).getFullYear()
     : null;
@@ -83,8 +87,12 @@ const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) 
 
   const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress(item);
-  }, [item, onPress]);
+    if (isBlurred && onUpgradePress) {
+      onUpgradePress();
+    } else {
+      onPress(item);
+    }
+  }, [item, onPress, isBlurred, onUpgradePress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -112,6 +120,7 @@ const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) 
               source={{ uri: item.photos[0].url }}
               style={styles.cardImage}
               resizeMode="cover"
+              blurRadius={isBlurred ? 25 : 0}
             />
           ) : (
             <View style={[styles.cardImage, styles.cardPlaceholder, { backgroundColor: theme.bg.elevated }]}>
@@ -120,10 +129,29 @@ const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) 
           )}
 
           {/* Like badge */}
-          <View style={[styles.likeBadge, { backgroundColor: theme.semantic.like.main }]}>
-            <MaterialCommunityIcons name="heart" size={12} color="#FFFFFF" />
-            <Text style={styles.likeBadgeText}>Thích bạn</Text>
+          <View style={[
+            styles.likeBadge,
+            { backgroundColor: isSuperLike ? '#F59E0B' : theme.semantic.like.main }
+          ]}>
+            <MaterialCommunityIcons
+              name={isSuperLike ? 'star' : 'heart'}
+              size={12}
+              color="#FFFFFF"
+            />
+            <Text style={styles.likeBadgeText}>
+              {isSuperLike ? 'Super Like' : 'Thích bạn'}
+            </Text>
           </View>
+
+          {/* Blurred overlay with lock icon */}
+          {isBlurred && (
+            <View style={styles.blurOverlay}>
+              <View style={[styles.lockContainer, { backgroundColor: theme.brand.primary }]}>
+                <Ionicons name="lock-closed" size={24} color="#FFFFFF" />
+              </View>
+              <Text style={styles.unlockText}>Mở khóa</Text>
+            </View>
+          )}
 
           {/* Gradient overlay */}
           <LinearGradient
@@ -131,9 +159,9 @@ const LikeCard: React.FC<LikeCardProps> = React.memo(({ item, index, onPress }) 
             style={styles.cardGradient}
           >
             <Text style={styles.cardName} numberOfLines={1}>
-              {name}{age ? `, ${age}` : ''}
+              {name}{!isBlurred && age ? `, ${age}` : ''}
             </Text>
-            {item.bio && (
+            {!isBlurred && item.bio && (
               <Text style={styles.cardBio} numberOfLines={1}>
                 {item.bio}
               </Text>
@@ -162,6 +190,13 @@ const LikesInner: React.FC = () => {
     queryFn: () => datingService.getIncomingLikes({ page: 1, limit: 50 }),
   });
 
+  // Check subscription status
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['dating', 'subscription'],
+    queryFn: () => datingPaymentService.getSubscriptionInfo(),
+  });
+
+  const canSeeLikes = subscriptionData?.subscription?.limits?.canSeeLikes ?? false;
   const listData = incomingLikes?.data ?? [];
 
   const handleCardPress = useCallback(
@@ -175,11 +210,23 @@ const LikesInner: React.FC = () => {
     navigation.navigate('Main' as any);
   }, [navigation]);
 
+  const handleUpgradePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('DatingPremium');
+  }, [navigation]);
+
   const renderItem = useCallback(
-    ({ item, index }: { item: DiscoveryCard; index: number }) => (
-      <LikeCard item={item} index={index} onPress={handleCardPress} />
+    ({ item, index }: { item: DiscoveryCard & { isBlurred?: boolean; isSuperLike?: boolean }; index: number }) => (
+      <LikeCard
+        item={item}
+        index={index}
+        onPress={handleCardPress}
+        isBlurred={item.isBlurred || !canSeeLikes}
+        isSuperLike={item.isSuperLike}
+        onUpgradePress={handleUpgradePress}
+      />
     ),
-    [handleCardPress],
+    [handleCardPress, canSeeLikes, handleUpgradePress],
   );
 
   return (
@@ -205,6 +252,28 @@ const LikesInner: React.FC = () => {
             <Ionicons name="notifications-outline" size={22} color={theme.text.primary} />
           </TouchableOpacity>
         </View>
+
+        {/* Premium Banner */}
+        {!canSeeLikes && listData.length > 0 && (
+          <TouchableOpacity
+            style={[styles.premiumBanner, { backgroundColor: theme.brand.primary }]}
+            onPress={handleUpgradePress}
+            activeOpacity={0.9}
+          >
+            <View style={styles.premiumBannerContent}>
+              <Ionicons name="diamond" size={24} color="#FFFFFF" />
+              <View style={styles.premiumBannerText}>
+                <Text style={styles.premiumBannerTitle}>
+                  {listData.length} người đã thích bạn!
+                </Text>
+                <Text style={styles.premiumBannerSubtitle}>
+                  Nâng cấp Premium để xem họ là ai
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
 
         {/* Content */}
         <FlatList
@@ -365,6 +434,57 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   cardBio: {
+    ...TEXT_STYLES.tiny,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+
+  // Blur overlay
+  blurOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  lockContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
+  unlockText: {
+    ...TEXT_STYLES.labelSmall,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+
+  // Premium banner
+  premiumBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  premiumBannerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  premiumBannerText: {
+    flex: 1,
+  },
+  premiumBannerTitle: {
+    ...TEXT_STYLES.labelLarge,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  premiumBannerSubtitle: {
     ...TEXT_STYLES.tiny,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
