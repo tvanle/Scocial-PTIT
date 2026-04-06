@@ -22,9 +22,12 @@ Notifications.setNotificationHandler({
 });
 
 export interface PushNotificationData {
-  type: 'match' | 'like' | 'message' | 'general';
+  type: 'match' | 'like' | 'super_like' | 'message' | 'general';
   targetId?: string;
   userId?: string;
+  fromUserId?: string;
+  conversationId?: string;
+  matchedUserId?: string;
   title?: string;
   body?: string;
 }
