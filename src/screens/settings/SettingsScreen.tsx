@@ -158,6 +158,11 @@ const SettingsScreen: React.FC = () => {
           <SettingRow
             title="Change Password"
             onPress={() => setShowPasswordModal(true)}
+          />
+          <SettingRow
+            title="Security"
+            value="2FA, Sessions"
+            onPress={() => navigation.navigate('Security')}
             isLast
           />
         </Section>

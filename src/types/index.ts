@@ -255,6 +255,7 @@ export type RootStackParamList = {
   CreatePostModal: undefined;
   ImageViewer: { images: Media[]; initialIndex: number };
   Settings: undefined;
+  Security: undefined;
   Search: undefined;
   Notifications: undefined;
   Followers: { userId: string };
