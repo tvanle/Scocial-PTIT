@@ -45,7 +45,7 @@ export const DatingPaymentResultScreen: React.FC = () => {
           return;
         }
 
-        const result = await datingPaymentService.verifyPayment(vnpayParams);
+        const result = await datingPaymentService.verifyVNPayReturn(vnpayParams);
 
         setSuccess(result.success);
         setMessage(result.message);

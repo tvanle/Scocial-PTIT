@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import datingService from '../../../../services/dating/datingService';
 import { DATING_LAYOUT } from '../../../../constants/dating/theme';
-import type { DiscoveryCard } from '../../../../types';
+import type { DiscoveryCard, SwipeAction } from '../../../../types';
 
 const QUERY_KEY = ['dating', 'discovery'] as const;
 const { pageSize, prefetchThreshold } = DATING_LAYOUT.discovery.feed;
@@ -81,7 +81,7 @@ export function useDiscoveryFeed() {
   }, []);
 
   const swipeMutation = useMutation({
-    mutationFn: (params: { targetUserId: string; action: 'LIKE' | 'UNLIKE' }) =>
+    mutationFn: (params: { targetUserId: string; action: SwipeAction }) =>
       datingService.swipe(params),
     onSuccess: (data: { matched?: boolean | null }) => {
       // Không invalidate discovery feed để tránh refetch reset cards + currentIdx

@@ -1,7 +1,7 @@
 
 export type DatingSmokingDrinkingExercise = 'NEVER' | 'SOMETIMES' | 'REGULARLY';
 export type DatingGenderPreference = 'MALE' | 'FEMALE' | 'OTHER';
-export type SwipeAction = 'LIKE' | 'UNLIKE';
+export type SwipeAction = 'LIKE' | 'UNLIKE' | 'SUPER_LIKE';
 
 // --- Shared: user snippet in dating responses ---
 

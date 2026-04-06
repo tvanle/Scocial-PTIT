@@ -152,7 +152,14 @@ const MyProfileInner: React.FC = () => {
     isRefetching,
   } = useQuery({
     queryKey: ['dating', 'me'],
-    queryFn: () => datingService.getMyProfile(),
+    queryFn: async () => {
+      try {
+        return await datingService.getMyProfile();
+      } catch {
+        // Return null if profile not found (user hasn't created dating profile yet)
+        return null;
+      }
+    },
   });
 
   const addPhotoMutation = useMutation({
