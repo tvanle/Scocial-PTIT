@@ -18,7 +18,7 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, Media, RootStackParamList, UserProfile } from '../../types';
+import { Post, Media, RootStackParamList, UserProfile, Comment } from '../../types';
 import { userService } from '../../services/user/userService';
 import { postService } from '../../services/post/postService';
 import { formatTimeAgo } from '../../utils/dateUtils';
@@ -293,6 +293,190 @@ const cardStyles = StyleSheet.create({
   },
 });
 
+// Reply Card component for showing user's comments (thread style)
+const ReplyCard: React.FC<{
+  reply: { comment: Comment; post: Post };
+  onPress: () => void;
+}> = React.memo(({ reply, onPress }) => {
+  const { comment, post } = reply;
+  const commentTime = formatTimeAgo(comment.createdAt);
+  const postTime = formatTimeAgo(post.createdAt);
+
+  return (
+    <TouchableOpacity style={replyStyles.replyCard} onPress={onPress} activeOpacity={0.7}>
+      {/* Original post (top part of thread) */}
+      <View style={replyStyles.threadTop}>
+        <View style={replyStyles.threadAvatarCol}>
+          <Image
+            source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
+            style={replyStyles.threadAvatarSmall}
+          />
+          <View style={replyStyles.threadLine} />
+        </View>
+        <View style={replyStyles.threadContent}>
+          <View style={replyStyles.threadHeader}>
+            <Text style={replyStyles.threadAuthor}>{post.author.fullName}</Text>
+            {post.author.isVerified && (
+              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+            )}
+            <Text style={replyStyles.threadTime}> · {postTime}</Text>
+          </View>
+          <Text style={replyStyles.threadPostText} numberOfLines={2}>{post.content}</Text>
+        </View>
+      </View>
+
+      {/* Reply (bottom part of thread) */}
+      <View style={replyStyles.threadBottom}>
+        <Image
+          source={{ uri: comment.author.avatar || DEFAULT_AVATAR }}
+          style={replyStyles.threadAvatarMain}
+        />
+        <View style={replyStyles.threadReplyContent}>
+          <View style={replyStyles.threadHeader}>
+            <Text style={replyStyles.threadReplyAuthor}>{comment.author.fullName}</Text>
+            {comment.author.isVerified && (
+              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+            )}
+            <Text style={replyStyles.threadTime}> · {commentTime}</Text>
+          </View>
+          <Text style={replyStyles.replyingTo}>
+            Đang trả lời <Text style={replyStyles.replyingToName}>@{post.author.fullName}</Text>
+          </Text>
+          <Text style={replyStyles.threadReplyText}>{comment.content}</Text>
+
+          {/* Actions */}
+          <View style={replyStyles.threadActions}>
+            <View style={replyStyles.threadAction}>
+              <Ionicons
+                name={comment.isLiked ? 'heart' : 'heart-outline'}
+                size={16}
+                color={comment.isLiked ? Colors.like : Colors.textTertiary}
+              />
+              {(comment.likesCount || 0) > 0 && (
+                <Text style={[replyStyles.threadActionText, comment.isLiked && { color: Colors.like }]}>
+                  {comment.likesCount}
+                </Text>
+              )}
+            </View>
+            <View style={replyStyles.threadAction}>
+              <Ionicons name="chatbubble-outline" size={15} color={Colors.textTertiary} />
+            </View>
+            <View style={replyStyles.threadAction}>
+              <Ionicons name="arrow-redo-outline" size={16} color={Colors.textTertiary} />
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+const replyStyles = StyleSheet.create({
+  replyCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  threadTop: {
+    flexDirection: 'row',
+  },
+  threadAvatarCol: {
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  threadAvatarSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.gray200,
+  },
+  threadLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: Colors.gray200,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+    borderRadius: 1,
+  },
+  threadContent: {
+    flex: 1,
+    paddingBottom: Spacing.sm,
+  },
+  threadHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  threadAuthor: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  threadTime: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+  },
+  threadPostText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xxs,
+    lineHeight: 20,
+  },
+  threadBottom: {
+    flexDirection: 'row',
+  },
+  threadAvatarMain: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.gray200,
+    marginRight: Spacing.md,
+  },
+  threadReplyContent: {
+    flex: 1,
+  },
+  threadReplyAuthor: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  replyingTo: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  replyingToName: {
+    color: Colors.primary,
+  },
+  threadReplyText: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+    lineHeight: 22,
+  },
+  threadActions: {
+    flexDirection: 'row',
+    marginTop: Spacing.md,
+    gap: Spacing.xl,
+  },
+  threadAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  threadActionText: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+  },
+});
+
 const UserProfileScreen: React.FC = () => {
   const navigation = useNavigation<UserProfileNavigationProp>();
   const route = useRoute<UserProfileRouteProp>();
@@ -302,6 +486,7 @@ const UserProfileScreen: React.FC = () => {
   const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [sharedPosts, setSharedPosts] = useState<Post[]>([]);
+  const [replies, setReplies] = useState<{ comment: Comment; post: Post }[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
@@ -318,9 +503,11 @@ const UserProfileScreen: React.FC = () => {
       const results = await Promise.allSettled([
         postService.getUserPosts(userId, { page: 1, limit: 20 }),
         postService.getSharedPosts(userId, { page: 1, limit: 20 }),
+        postService.getUserReplies(userId, { page: 1, limit: 20 }),
       ]);
       setPosts(results[0].status === 'fulfilled' ? results[0].value?.data || [] : []);
       setSharedPosts(results[1].status === 'fulfilled' ? results[1].value?.data || [] : []);
+      setReplies(results[2].status === 'fulfilled' ? results[2].value?.data || [] : []);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
       showAlert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
@@ -634,12 +821,22 @@ const UserProfileScreen: React.FC = () => {
                 <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
               </View>
             )
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
-              <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
-            </View>
-          )}
+          ) : activeTab === 'replies' ? (
+            replies.length > 0 ? (
+              replies.map((reply) => (
+                <ReplyCard
+                  key={reply.comment.id}
+                  reply={reply}
+                  onPress={() => navigation.navigate('PostDetail', { postId: reply.post.id })}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
+                <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
+              </View>
+            )
+          ) : null}
         </View>
 
         <View style={{ height: 100 }} />
@@ -667,7 +864,12 @@ const styles = StyleSheet.create({
     height: Layout.headerHeight,
   },
   headerIcon: {
-    padding: Spacing.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.gray50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileSection: {
     paddingHorizontal: Spacing.lg,
@@ -730,10 +932,11 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    height: 40,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.gray200,
+    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -763,8 +966,9 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     marginTop: Spacing.xl,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray100,
+    backgroundColor: Colors.white,
   },
   tab: {
     flex: 1,
