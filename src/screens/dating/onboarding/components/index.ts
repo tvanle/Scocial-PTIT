@@ -8,9 +8,11 @@ export {
   ProfileSetupBioSection,
   ProfileSetupInterestsSection,
   ProfileSetupPromptsSection,
+  ProfileSetupSongSection,
   ProfileSetupBottomBar,
   type PhotoSlot,
   type PromptValue,
+  type SongValue,
 } from './profile-setup';
 
 export {
