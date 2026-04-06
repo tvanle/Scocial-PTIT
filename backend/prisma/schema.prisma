@@ -23,6 +23,8 @@ model User {
   dateOfBirth     DateTime?
   gender          Gender?
   phone           String?
+  faculty         String?
+  className       String?
 
   // Status
   isVerified      Boolean   @default(false)
@@ -42,6 +44,7 @@ model User {
   posts           Post[]
   comments        Comment[]
   likes           Like[]
+  commentLikes    CommentLike[]
   shares          Share[]
 
   // Follow system
@@ -180,12 +183,28 @@ model Comment {
   parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies     Comment[] @relation("CommentReplies")
 
+  // Likes
+  likes       CommentLike[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
+}
+
+model CommentLike {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId   String
+  comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
 }
 
 model Like {
