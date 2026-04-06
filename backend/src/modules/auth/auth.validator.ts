@@ -27,6 +27,11 @@ export const verifyEmailSchema = z.object({
   code: z.string().length(6, 'Mã xác thực phải có 6 chữ số'),
 });
 
+export const verifyEmailPublicSchema = z.object({
+  email: z.string().email('Email không hợp lệ'),
+  code: z.string().length(6, 'Mã xác thực phải có 6 chữ số'),
+});
+
 export const resendVerificationSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
 });

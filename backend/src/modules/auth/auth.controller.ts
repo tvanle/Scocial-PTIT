@@ -125,6 +125,16 @@ export class AuthController {
     }
   }
 
+  async verifyEmailByEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code } = req.body;
+      await authService.verifyEmailByEmail(email, code);
+      sendSuccess(res, null, SUCCESS_MESSAGES.EMAIL_VERIFIED);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // ==================== TWO-FACTOR AUTH ====================
 
   async setup2FA(req: AuthRequest, res: Response, next: NextFunction) {
