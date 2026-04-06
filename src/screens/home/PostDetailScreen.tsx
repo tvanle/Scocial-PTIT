@@ -279,7 +279,7 @@ const PostDetailScreen: React.FC = () => {
                       )}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.commentActionBtn}>
-                      <Ionicons name="chatbox-outline" size={16} color={Colors.gray400} />
+                      <Text style={styles.replyText}>Trả lời</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.commentActionBtn}>
                       <Ionicons name="repeat-outline" size={16} color={Colors.gray400} />
@@ -490,6 +490,11 @@ const styles = StyleSheet.create({
   commentTime: {
     fontSize: FontSize.xs,
     color: Colors.gray400,
+  },
+  replyText: {
+    fontSize: FontSize.xs,
+    color: Colors.gray500,
+    fontWeight: FontWeight.medium,
   },
   inputContainer: {
     flexDirection: 'row',
