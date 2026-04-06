@@ -6,6 +6,7 @@ import type {
   DatingProfile,
   DatingPhoto,
   DatingPrompt,
+  DatingSong,
   DatingLifestyle,
   DatingPreferences,
   CreateDatingProfileInput,
@@ -14,6 +15,7 @@ import type {
   UpdatePromptsInput,
   UpdateLifestyleInput,
   UpdatePreferencesInput,
+  UpdateSongsInput,
   DiscoveryCard,
   DiscoveryQuery,
   SwipeInput,
@@ -96,6 +98,11 @@ class DatingService {
 
   async updatePreferences(data: UpdatePreferencesInput): Promise<DatingPreferences> {
     const response = await apiClient.put(ENDPOINTS.DATING.UPDATE_PREFERENCES, data);
+    return response.data;
+  }
+
+  async updateSongs(data: UpdateSongsInput): Promise<DatingSong[]> {
+    const response = await apiClient.put(ENDPOINTS.DATING.UPDATE_SONGS, data);
     return response.data;
   }
 
