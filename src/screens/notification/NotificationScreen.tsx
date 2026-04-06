@@ -8,6 +8,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  Pressable,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +20,7 @@ import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { notificationService } from '../../services/notification/notificationService';
 import { useFetch } from '../../hooks';
+import { showAlert } from '../../utils/alert';
 
 interface NotificationScreenProps {
   navigation: any;
@@ -30,6 +34,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   );
   const notifications = notificationsData?.data || [];
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
+  const [showMenu, setShowMenu] = useState(false);
 
   const handleNotificationPress = async (notification: Notification) => {
     if (!notification.isRead) {
@@ -72,6 +77,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const handleMarkAllRead = async () => {
+    setShowMenu(false);
     setData(notificationsData ? {
       ...notificationsData,
       data: notificationsData.data.map((n: Notification) => ({ ...n, isRead: true })),
@@ -81,6 +87,29 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     } catch (error) {
       refetch();
     }
+  };
+
+  const handleClearAll = () => {
+    setShowMenu(false);
+    showAlert(
+      'Xoa tat ca thong bao',
+      'Ban co chac chan muon xoa tat ca thong bao? Hanh dong nay khong the hoan tac.',
+      [
+        { text: 'Huy', style: 'cancel' },
+        {
+          text: 'Xoa tat ca',
+          style: 'destructive',
+          onPress: async () => {
+            setData(notificationsData ? { ...notificationsData, data: [] } : null);
+            try {
+              await notificationService.clearAll();
+            } catch (error) {
+              refetch();
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
@@ -103,9 +132,9 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const filterChips: { key: FilterChip; label: string }[] = [
-    { key: 'all', label: 'Tất cả' },
-    { key: 'follows', label: 'Lượt theo dõi' },
-    { key: 'invites', label: 'Cuộc trò chuyện' },
+    { key: 'all', label: 'Tat ca' },
+    { key: 'follows', label: 'Luot theo doi' },
+    { key: 'invites', label: 'Cuoc tro chuyen' },
   ];
 
   const filteredNotifications = useMemo(() => {
@@ -148,7 +177,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
         {item.type === 'follow' && (
           <TouchableOpacity style={styles.followBackButton}>
-            <Text style={styles.followBackText}>Theo dõi lại</Text>
+            <Text style={styles.followBackText}>Theo doi lai</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -157,76 +186,104 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hoạt động</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Hoat dong</Text>
+          </View>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Hoạt động</Text>
-        <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllButton}>
-          <Ionicons name="settings-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Filter Chips */}
-      <View style={styles.chipsWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsContainer}
-        >
-        {filterChips.map(chip => (
-          <TouchableOpacity
-            key={chip.key}
-            style={[styles.chip, activeFilter === chip.key && styles.chipActive]}
-            onPress={() => setActiveFilter(chip.key)}
-          >
-            <Text style={[styles.chipText, activeFilter === chip.key && styles.chipTextActive]}>
-              {chip.label}
-            </Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Hoat dong</Text>
+          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.markAllButton}>
+            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
-        ))}
-        </ScrollView>
-      </View>
+        </View>
 
-      <FlatList
-        style={{ flex: 1 }}
-        data={filteredNotifications}
-        renderItem={renderNotification}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="notifications-outline"
-            title="Không có hoạt động nào"
-            subtitle="Khi có người tương tác, bạn sẽ thấy ở đây"
-          />
-        }
-        removeClippedSubviews
-        maxToRenderPerBatch={10}
-        initialNumToRender={10}
-        windowSize={5}
-      />
-    </SafeAreaView>
+        {/* Action Menu Modal */}
+        <Modal
+          visible={showMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowMenu(false)}
+        >
+          <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.menuItem} onPress={handleMarkAllRead}>
+                <Ionicons name="checkmark-done-outline" size={20} color={Colors.textPrimary} />
+                <Text style={styles.menuItemText}>Danh dau da doc tat ca</Text>
+              </TouchableOpacity>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity style={styles.menuItem} onPress={handleClearAll}>
+                <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                <Text style={[styles.menuItemText, { color: Colors.error }]}>Xoa tat ca thong bao</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
+
+        {/* Filter Chips */}
+        <View style={styles.chipsWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}
+          >
+          {filterChips.map(chip => (
+            <TouchableOpacity
+              key={chip.key}
+              style={[styles.chip, activeFilter === chip.key && styles.chipActive]}
+              onPress={() => setActiveFilter(chip.key)}
+            >
+              <Text style={[styles.chipText, activeFilter === chip.key && styles.chipTextActive]}>
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          </ScrollView>
+        </View>
+
+        <FlatList
+          style={styles.list}
+          data={filteredNotifications}
+          renderItem={renderNotification}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <EmptyState
+              icon="notifications-outline"
+              title="Khong co hoat dong nao"
+              subtitle="Khi co nguoi tuong tac, ban se thay o day"
+            />
+          }
+          removeClippedSubviews
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
+          windowSize={5}
+        />
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -234,6 +291,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -255,6 +315,8 @@ const styles = StyleSheet.create({
   },
   chipsWrapper: {
     paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray100,
   },
   chipsContainer: {
     paddingHorizontal: Spacing.lg,
@@ -266,7 +328,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.gray50,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.gray200,
     marginRight: Spacing.sm,
   },
   chipActive: {
@@ -280,6 +342,9 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: Colors.white,
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     paddingBottom: 100,
@@ -347,6 +412,41 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: Spacing.lg,
+  },
+  menuContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    minWidth: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md + 2,
+    gap: Spacing.md,
+  },
+  menuItemText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
+    color: Colors.textPrimary,
+  },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.gray200,
+    marginHorizontal: Spacing.md,
   },
 });
 
