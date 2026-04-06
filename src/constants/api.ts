@@ -119,6 +119,7 @@ export const ENDPOINTS = {
     UPDATE_PROMPTS: '/dating/profile/prompts',
     UPDATE_LIFESTYLE: '/dating/profile/lifestyle',
     UPDATE_PREFERENCES: '/dating/profile/preferences',
+    UPDATE_SONGS: '/dating/profile/songs',
 
     // Discovery
     DISCOVERY: '/dating/discovery',

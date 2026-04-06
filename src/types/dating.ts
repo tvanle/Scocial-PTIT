@@ -54,6 +54,19 @@ export interface DatingPreferences {
   updatedAt: string;
 }
 
+export interface DatingSong {
+  id: string;
+  title: string;
+  artist: string;
+  artworkUrl: string | null;
+  embedUrl: string;
+  order: number;
+  startTime: number | null;
+  endTime: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DatingProfile {
   id: string;
   userId: string;
@@ -61,6 +74,7 @@ export interface DatingProfile {
   isActive: boolean;
   photos: DatingPhoto[];
   prompts: DatingPrompt[];
+  songs: DatingSong[];
   lifestyle: DatingLifestyle | null;
   preferences: DatingPreferences | null;
   user?: DatingUserSnippet;
@@ -112,6 +126,19 @@ export interface UpdatePreferencesInput {
   sameYearOnly?: boolean;
 }
 
+export interface SongItem {
+  title: string;
+  artist: string;
+  artworkUrl?: string | null;
+  embedUrl: string;
+  startTime?: number | null;
+  endTime?: number | null;
+}
+
+export interface UpdateSongsInput {
+  songs?: SongItem[];
+}
+
 /** Giá trị form bộ lọc dating, dùng chung cho discovery filter và màn khác */
 export interface DatingFilterValues {
   preferredGender: DatingGenderPreference | null;
@@ -129,6 +156,15 @@ export interface DiscoveryCard {
   bio: string;
   photos: Array<{ url: string; order?: number }>;
   prompts?: Array<{ question: string; answer: string }>;
+  songs?: Array<{
+    title: string;
+    artist: string;
+    artworkUrl: string | null;
+    embedUrl: string;
+    order: number;
+    startTime: number | null;
+    endTime: number | null;
+  }>;
   user: DatingUserSnippet & {
     studentId?: string | null;
     lastActiveAt?: string | null;
