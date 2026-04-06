@@ -126,6 +126,7 @@ export const ENDPOINTS = {
     SWIPE: '/dating/swipe',
     INCOMING_LIKES: '/dating/swipe/likes/incoming',
     SENT_LIKES: '/dating/swipe/likes/sent',
+    REWIND: '/dating/swipe/rewind',
 
     // Match
     MATCHES: '/dating/matches',
@@ -141,6 +142,17 @@ export const ENDPOINTS = {
     // Dating Chat
     CHAT_CONVERSATIONS: '/dating/chat',
     CHAT_MESSAGES: (conversationId: string) => `/dating/chat/${conversationId}/messages`,
+
+    // Payment & Subscription
+    SUBSCRIPTION: '/dating/payment/subscription',
+    PRICING_PLANS: '/dating/payment/plans',
+    CREATE_PAYMENT: '/dating/payment/create',
+    CREATE_VIETQR_PAYMENT: '/dating/payment/vietqr/create',
+    CONFIRM_PAYMENT: '/dating/payment/confirm',
+    VERIFY_PAYMENT: '/dating/payment/verify',
+    VNPAY_RETURN: '/dating/payment/vnpay/return',
+    TRANSACTIONS: '/dating/payment/transactions',
+    TRANSACTION_DETAIL: (id: string) => `/dating/payment/transactions/${id}`,
   },
 };
 

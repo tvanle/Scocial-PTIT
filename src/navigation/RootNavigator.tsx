@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
+import { Linking } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
 import { DatingTabNavigator } from './DatingTabNavigator';
@@ -31,7 +32,8 @@ import DatingPausedScreen from '../screens/dating/paused/DatingPausedScreen';
 import { DatingChatRoomScreen } from '../screens/dating/chat';
 import DatingNotificationsScreen from '../screens/dating/notifications/DatingNotificationsScreen';
 import DatingSettingsScreen from '../screens/dating/settings/DatingSettingsScreen';
-import { DatingBlockedUsersScreen, DatingLegalScreen } from '../screens/dating/settings';
+import { DatingBlockedUsersScreen, DatingLegalScreen, DatingSubscriptionScreen } from '../screens/dating/settings';
+import { DatingPremiumScreen, DatingPaymentResultScreen } from '../screens/dating/premium';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -39,6 +41,63 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const ImageViewerScreen = () => null;
 const FollowersScreen = () => null;
 const FollowingScreen = () => null;
+
+// Deep linking configuration
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['ptitsocial://'],
+  config: {
+    screens: {
+      DatingPaymentResult: {
+        path: 'payment/vnpay-return',
+        parse: {
+          vnpayParams: (params: string) => {
+            // Parse VNPay query params from URL
+            try {
+              const url = new URL(`ptitsocial://payment/vnpay-return?${params}`);
+              const vnpayParams: Record<string, string> = {};
+              url.searchParams.forEach((value, key) => {
+                vnpayParams[key] = value;
+              });
+              return vnpayParams;
+            } catch {
+              return {};
+            }
+          },
+        },
+      },
+    },
+  },
+  // Custom getStateFromPath to handle VNPay return with query params
+  getStateFromPath: (path, options) => {
+    // Check if it's a VNPay return URL
+    if (path.includes('payment/vnpay-return')) {
+      const queryString = path.split('?')[1] || '';
+      const vnpayParams: Record<string, string> = {};
+
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        params.forEach((value, key) => {
+          vnpayParams[key] = value;
+        });
+      }
+
+      return {
+        routes: [
+          {
+            name: 'Main',
+          },
+          {
+            name: 'DatingPaymentResult',
+            params: { vnpayParams },
+          },
+        ],
+      };
+    }
+
+    // Default behavior for other paths
+    return undefined;
+  },
+};
 
 const RootNavigator: React.FC = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -62,7 +121,7 @@ const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -158,6 +217,21 @@ const RootNavigator: React.FC = () => {
               name="DatingLegal"
               component={DatingLegalScreen}
               options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="DatingSubscription"
+              component={DatingSubscriptionScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="DatingPremium"
+              component={DatingPremiumScreen}
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="DatingPaymentResult"
+              component={DatingPaymentResultScreen}
+              options={{ animation: 'fade' }}
             />
           </>
         )}
