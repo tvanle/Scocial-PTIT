@@ -14,6 +14,7 @@ import {
   Modal,
   Dimensions,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -499,9 +500,16 @@ export const DatingPremiumScreen: React.FC = () => {
                       {selectedPlan?.formattedPrice}
                     </Text>
                   </View>
-                  <View style={styles.bankInfoRow}>
+                  <View style={[styles.bankInfoRow, { flexWrap: 'wrap' }]}>
                     <Text style={[styles.bankInfoLabel, { color: theme.text.muted }]}>Nội dung CK</Text>
-                    <Text style={[styles.bankInfoValue, { color: theme.brand.primary }]}>{qrData.transferInfo}</Text>
+                    <Text
+                      style={[styles.bankInfoValue, { color: theme.brand.primary, flexShrink: 1, textAlign: 'right' }]}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {qrData.transferInfo}
+                    </Text>
                   </View>
                 </View>
               )}
@@ -816,13 +824,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: SPACING.xs,
+    gap: SPACING.sm,
   },
   bankInfoLabel: {
     fontSize: 13,
+    flexShrink: 0,
   },
   bankInfoValue: {
     fontSize: 14,
     fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
   },
   qrNote: {
     fontSize: 12,
