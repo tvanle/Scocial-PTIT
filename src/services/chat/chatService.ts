@@ -70,6 +70,11 @@ class ChatService {
   async leaveGroup(groupId: string): Promise<void> {
     await apiClient.post(ENDPOINTS.CHAT.LEAVE_GROUP(groupId));
   }
+
+  async getUnreadCount(): Promise<number> {
+    const response = await apiClient.get(ENDPOINTS.CHAT.UNREAD_COUNT);
+    return response.data.count;
+  }
 }
 
 export const chatService = new ChatService();
