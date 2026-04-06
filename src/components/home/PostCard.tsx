@@ -13,6 +13,7 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../const
 import { Strings } from '../../constants/strings';
 import { Post } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import { getImageUrl } from '../../utils/image';
 
 interface PostCardProps {
   post: Post;
@@ -67,7 +68,7 @@ const PostCard: React.FC<PostCardProps> = ({
       return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
           <Image
-            source={{ uri: post.media[0].url }}
+            source={{ uri: getImageUrl(post.media[0].url) }}
             style={styles.singleImage}
             resizeMode="cover"
           />
@@ -86,7 +87,7 @@ const PostCard: React.FC<PostCardProps> = ({
               activeOpacity={0.9}
             >
               <Image
-                source={{ uri: media.url }}
+                source={{ uri: getImageUrl(media.url) }}
                 style={styles.twoImage}
                 resizeMode="cover"
               />
@@ -105,7 +106,7 @@ const PostCard: React.FC<PostCardProps> = ({
           activeOpacity={0.9}
         >
           <Image
-            source={{ uri: post.media[0].url }}
+            source={{ uri: getImageUrl(post.media[0].url) }}
             style={styles.mainImage}
             resizeMode="cover"
           />
@@ -119,7 +120,7 @@ const PostCard: React.FC<PostCardProps> = ({
               activeOpacity={0.9}
             >
               <Image
-                source={{ uri: media.url }}
+                source={{ uri: getImageUrl(media.url) }}
                 style={styles.sideImage}
                 resizeMode="cover"
               />
