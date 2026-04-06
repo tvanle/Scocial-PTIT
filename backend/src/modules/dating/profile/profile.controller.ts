@@ -116,6 +116,16 @@ export class ProfileController {
       next(error);
     }
   }
+
+  async updateSongs(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const songs = await profileService.updateSongs(userId, req.body);
+      sendSuccess(res, songs, 'Đã cập nhật danh sách bài hát');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const profileController = new ProfileController();

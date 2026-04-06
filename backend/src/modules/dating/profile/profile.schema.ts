@@ -84,6 +84,23 @@ export const userIdParamSchema = z.object({
   userId: z.string().uuid('ID người dùng không hợp lệ'),
 });
 
+// Update songs (max 3)
+export const updateSongsSchema = z.object({
+  songs: z
+    .array(
+      z.object({
+        title: z.string().min(1, 'Tên bài hát không được để trống').max(200),
+        artist: z.string().min(1, 'Tên nghệ sĩ không được để trống').max(100),
+        artworkUrl: z.string().url('URL artwork không hợp lệ').optional().nullable(),
+        embedUrl: z.string().min(1, 'Embed URL không được để trống'),
+        startTime: z.number().int().min(0).optional().nullable(),
+        endTime: z.number().int().min(0).optional().nullable(),
+      })
+    )
+    .max(3, 'Tối đa 3 bài hát')
+    .optional(),
+});
+
 // Export types
 export type CreateDatingProfileInput = z.infer<typeof createDatingProfileSchema>;
 export type UpdateDatingProfileInput = z.infer<typeof updateDatingProfileSchema>;
@@ -94,6 +111,7 @@ export type UpdateLifestyleInput = z.infer<typeof updateLifestyleSchema>;
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
 export type PhotoIdParam = z.infer<typeof photoIdParamSchema>;
 export type UserIdParam = z.infer<typeof userIdParamSchema>;
+export type UpdateSongsInput = z.infer<typeof updateSongsSchema>;
 
 // Export helper for age validation
 export { validateAge };
