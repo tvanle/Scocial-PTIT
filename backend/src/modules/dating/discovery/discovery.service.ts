@@ -22,6 +22,10 @@ const CANDIDATE_SELECT = {
   prompts: {
     select: { question: true, answer: true },
   },
+  songs: {
+    select: { title: true, artist: true, artworkUrl: true, embedUrl: true, order: true, startTime: true, endTime: true },
+    orderBy: { order: 'asc' as const },
+  },
   user: {
     select: {
       id: true,
