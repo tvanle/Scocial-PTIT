@@ -130,6 +130,22 @@ export class PostController {
     }
   }
 
+  async getUserReplies(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.params.userId as string;
+      const { page, limit } = req.query;
+      const result = await postService.getUserReplies(
+        userId,
+        req.user?.userId,
+        page as string,
+        limit as string
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async createComment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId as string;
@@ -140,12 +156,43 @@ export class PostController {
     }
   }
 
-  async getComments(req: Request, res: Response, next: NextFunction) {
+  async getComments(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId as string;
       const { page, limit } = req.query;
-      const result = await postService.getComments(postId, page as string, limit as string);
+      const result = await postService.getComments(postId, req.user?.userId, page as string, limit as string);
       sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getCommentReplies(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const commentId = req.params.commentId as string;
+      const { page, limit } = req.query;
+      const result = await postService.getCommentReplies(commentId, req.user?.userId, page as string, limit as string);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async likeComment(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const commentId = req.params.commentId as string;
+      await postService.likeComment(req.user!.userId, commentId);
+      sendSuccess(res, null, 'Comment liked');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unlikeComment(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const commentId = req.params.commentId as string;
+      await postService.unlikeComment(req.user!.userId, commentId);
+      sendSuccess(res, null, 'Comment unliked');
     } catch (error) {
       next(error);
     }
