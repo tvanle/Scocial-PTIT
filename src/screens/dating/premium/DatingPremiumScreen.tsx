@@ -144,9 +144,8 @@ export const DatingPremiumScreen: React.FC = () => {
         setSuccessModalVisible(true);
       }
       // Don't show anything for PENDING - just keep polling silently
-    } catch (error) {
-      console.error('Failed to verify payment:', error);
-      // Don't show error to user - just keep polling
+    } catch {
+      // Payment not yet received - silently continue polling
     }
   }, [transactionId]);
 
