@@ -20,7 +20,7 @@ class UserService {
 
   async searchUsers(query: string, params?: PaginationParams): Promise<PaginatedResponse<User>> {
     const response = await apiClient.get(ENDPOINTS.USER.SEARCH, {
-      params: { query, ...params },
+      params: { q: query, ...params },
     });
     return response.data;
   }
