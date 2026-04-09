@@ -103,10 +103,17 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         }
         break;
 
-      // Dating match -> go to dating chat or matches
+      // Dating match -> go to dating chat room
       case 'MATCH_CREATED':
-        if (userId) {
-          navigation.navigate('DatingChat', { matchUserId: userId });
+        if (notification.actor) {
+          navigation.navigate('DatingChatRoom', {
+            conversationId: '',
+            otherUser: {
+              id: notification.actor.id,
+              fullName: notification.actor.fullName || '',
+              avatar: notification.actor.avatar,
+            },
+          });
         }
         break;
 
