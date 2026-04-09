@@ -75,27 +75,17 @@ const SONG_SELECT = {
 } as const;
 
 export class ProfileService {
-  // Check if user is 18+
+  // Check if user is 18+ (DISABLED - skip age verification)
   private async validateUserAge(userId: string): Promise<void> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { dateOfBirth: true },
+      select: { id: true },
     });
 
     if (!user) {
       throw new AppError('Không tìm thấy người dùng', HTTP_STATUS.BAD_REQUEST);
     }
-
-    if (!user.dateOfBirth) {
-      throw new AppError(
-        'Vui lòng cập nhật ngày sinh trước khi sử dụng tính năng hẹn hò',
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (!validateAge(user.dateOfBirth)) {
-      throw new AppError(ERROR_MESSAGES.AGE_TOO_YOUNG, HTTP_STATUS.BAD_REQUEST);
-    }
+    // Age verification skipped
   }
 
   // Ensure profile exists and belongs to user, return profileId
