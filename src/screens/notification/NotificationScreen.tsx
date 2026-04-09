@@ -19,6 +19,7 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../
 import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { notificationService } from '../../services/notification/notificationService';
+import { userService } from '../../services/user/userService';
 import { useFetch } from '../../hooks';
 import { showAlert } from '../../utils/alert';
 
@@ -35,8 +36,30 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const notifications = notificationsData?.data || [];
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
   const [showMenu, setShowMenu] = useState(false);
+  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
+  const [followingInProgress, setFollowingInProgress] = useState<Set<string>>(new Set());
+
+  const handleFollowBack = async (userId: string) => {
+    if (followingInProgress.has(userId)) return;
+
+    setFollowingInProgress(prev => new Set(prev).add(userId));
+    try {
+      await userService.follow(userId);
+      setFollowedUsers(prev => new Set(prev).add(userId));
+    } catch (error) {
+      console.error('Failed to follow user:', error);
+      showAlert('Lỗi', 'Không thể theo dõi người dùng này');
+    } finally {
+      setFollowingInProgress(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    }
+  };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // Mark as read
     if (!notification.isRead) {
       setData(notificationsData ? {
         ...notificationsData,
@@ -51,26 +74,60 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       }
     }
 
-    switch (notification.type) {
-      case 'like_post':
-      case 'comment_post':
-      case 'share_post':
-        if (notification.data?.postId) {
-          navigation.navigate('PostDetail', { postId: notification.data.postId });
+    // Get postId from referenceId or data
+    const postId = notification.referenceId || notification.data?.postId;
+    const userId = notification.actor?.id;
+
+    // Navigate based on notification type
+    const type = notification.type.toUpperCase();
+
+    switch (type) {
+      // Post interactions -> go to post detail
+      case 'LIKE':
+      case 'LIKE_POST':
+      case 'COMMENT':
+      case 'COMMENT_POST':
+      case 'SHARE_POST':
+      case 'MENTION':
+      case 'TAG':
+        if (postId) {
+          navigation.navigate('PostDetail', { postId });
         }
         break;
-      case 'follow':
-      case 'follow_back':
-        if (notification.actor?.id) {
-          navigation.navigate('UserProfile', { userId: notification.actor.id });
+
+      // Follow -> go to user profile
+      case 'FOLLOW':
+      case 'FOLLOW_BACK':
+        if (userId) {
+          navigation.navigate('UserProfile', { userId });
         }
         break;
-      case 'mention':
-      case 'tag':
-        if (notification.data?.postId) {
-          navigation.navigate('PostDetail', { postId: notification.data.postId });
+
+      // Dating match -> go to dating chat or matches
+      case 'MATCH_CREATED':
+        if (userId) {
+          navigation.navigate('DatingChat', { matchUserId: userId });
         }
         break;
+
+      // Super like -> go to dating discovery or user
+      case 'SUPER_LIKE':
+        if (userId) {
+          navigation.navigate('UserProfile', { userId });
+        }
+        break;
+
+      // Message -> go to chat
+      case 'MESSAGE':
+        if (notification.data?.conversationId) {
+          navigation.navigate('ChatRoom', { conversationId: notification.data.conversationId });
+        } else if (userId) {
+          navigation.navigate('ChatRoom', { userId });
+        }
+        break;
+
+      // System notification -> no navigation
+      case 'SYSTEM':
       default:
         break;
     }
@@ -113,44 +170,66 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
-    switch (type) {
-      case 'like_post':
+    const t = type.toUpperCase();
+    switch (t) {
+      case 'LIKE':
+      case 'LIKE_POST':
         return { name: 'heart', color: Colors.like };
-      case 'comment_post':
-        return { name: 'chatbox', color: Colors.info };
-      case 'share_post':
+      case 'COMMENT':
+      case 'COMMENT_POST':
+        return { name: 'chatbubble', color: Colors.info };
+      case 'SHARE_POST':
         return { name: 'repeat', color: Colors.success };
-      case 'follow':
-      case 'follow_back':
+      case 'FOLLOW':
+      case 'FOLLOW_BACK':
         return { name: 'person-add', color: Colors.primary };
-      case 'mention':
-      case 'tag':
+      case 'MENTION':
+      case 'TAG':
         return { name: 'at', color: Colors.info };
+      case 'MATCH_CREATED':
+        return { name: 'heart-circle', color: '#FF6B6B' };
+      case 'SUPER_LIKE':
+        return { name: 'star', color: '#FFD700' };
+      case 'MESSAGE':
+        return { name: 'chatbubbles', color: Colors.info };
+      case 'SYSTEM':
+        return { name: 'information-circle', color: Colors.textSecondary };
       default:
         return { name: 'notifications', color: Colors.primary };
     }
   };
 
   const filterChips: { key: FilterChip; label: string }[] = [
-    { key: 'all', label: 'Tat ca' },
-    { key: 'follows', label: 'Luot theo doi' },
-    { key: 'invites', label: 'Cuoc tro chuyen' },
+    { key: 'all', label: 'Tất cả' },
+    { key: 'follows', label: 'Theo dõi' },
+    { key: 'invites', label: 'Tương tác' },
   ];
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === 'all') return notifications;
-    const typeMap: Record<FilterChip, NotificationType[]> = {
+
+    const normalizeType = (type: string) => type.toUpperCase();
+
+    const typeMap: Record<FilterChip, string[]> = {
       all: [],
-      follows: ['follow', 'follow_back'],
-      invites: ['mention', 'tag'],
+      follows: ['FOLLOW', 'FOLLOW_BACK'],
+      invites: ['MENTION', 'TAG', 'MESSAGE', 'MATCH_CREATED', 'SUPER_LIKE'],
     };
-    return notifications.filter(n => typeMap[activeFilter]?.includes(n.type));
+
+    return notifications.filter(n =>
+      typeMap[activeFilter]?.includes(normalizeType(n.type))
+    );
   }, [notifications, activeFilter]);
 
   const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
 
   const renderNotification = ({ item }: { item: Notification }) => {
     const icon = getNotificationIcon(item.type);
+    const isFollowType = item.type.toUpperCase() === 'FOLLOW';
+    const actorId = item.actor?.id;
+    const isFollowed = actorId ? followedUsers.has(actorId) : false;
+    const isFollowing = actorId ? followingInProgress.has(actorId) : false;
+    const notificationBody = item.body || item.content || '';
 
     return (
       <TouchableOpacity
@@ -168,16 +247,29 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         <View style={styles.content}>
           <Text style={styles.notificationText}>
             <Text style={styles.actorName}>{item.actor?.fullName}</Text>
-            {' '}{item.body}
+            {' '}{notificationBody}
           </Text>
           <Text style={styles.timeText}>{formatTimeAgo(item.createdAt)}</Text>
         </View>
 
-        {!item.isRead && <View style={styles.unreadDot} />}
+        {!item.isRead && !isFollowType && <View style={styles.unreadDot} />}
 
-        {item.type === 'follow' && (
-          <TouchableOpacity style={styles.followBackButton}>
-            <Text style={styles.followBackText}>Theo doi lai</Text>
+        {isFollowType && actorId && (
+          <TouchableOpacity
+            style={[
+              styles.followBackButton,
+              isFollowed && styles.followedButton
+            ]}
+            onPress={() => !isFollowed && handleFollowBack(actorId)}
+            disabled={isFollowed || isFollowing}
+          >
+            {isFollowing ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={[styles.followBackText, isFollowed && styles.followedText]}>
+                {isFollowed ? 'Đã theo dõi' : 'Theo dõi lại'}
+              </Text>
+            )}
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -402,11 +494,21 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.full,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  followedButton: {
+    backgroundColor: Colors.gray100,
+    borderWidth: 1,
+    borderColor: Colors.gray300,
   },
   followBackText: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
     color: Colors.white,
+  },
+  followedText: {
+    color: Colors.textSecondary,
   },
   loadingContainer: {
     flex: 1,

@@ -180,12 +180,22 @@ export interface Notification {
   actor: User | null;
   title: string;
   body: string;
+  content?: string;
+  referenceId?: string; // postId, matchId, etc.
   data?: Record<string, any>;
   isRead: boolean;
   createdAt: string;
 }
 
 export type NotificationType =
+  | 'LIKE'
+  | 'COMMENT'
+  | 'FOLLOW'
+  | 'MENTION'
+  | 'SYSTEM'
+  | 'MATCH_CREATED'
+  | 'SUPER_LIKE'
+  // Legacy support
   | 'like_post'
   | 'comment_post'
   | 'share_post'
