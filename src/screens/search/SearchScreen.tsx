@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,149 +7,306 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  ActivityIndicator,
+  Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import { Avatar } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
-import { Strings, DEFAULT_AVATAR } from '../../constants/strings';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { User } from '../../types';
+import { userService } from '../../services/user/userService';
 
-const mockUsers: User[] = [
-  { id: '2', fullName: 'Tran Van B', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN002', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '3', fullName: 'Le Thi C', avatar: DEFAULT_AVATAR, studentId: 'B21DCCN003', faculty: 'CNTT', email: '', createdAt: '', updatedAt: '' },
-  { id: '4', fullName: 'Pham Van D', avatar: DEFAULT_AVATAR, studentId: 'B21DCAT001', faculty: 'ATTT', email: '', createdAt: '', updatedAt: '' },
-];
+const SEARCH_HISTORY_KEY = 'search_history';
+const MAX_HISTORY_ITEMS = 10;
 
-const recentSearches = [
-  { id: '1', text: 'Lap trinh React Native', type: 'keyword' },
-  { id: '2', text: 'Tran Van B', type: 'user' },
-  { id: '3', text: 'CLB Lap trinh', type: 'group' },
-];
+interface SearchHistoryItem {
+  id: string;
+  query: string;
+  timestamp: number;
+}
 
 interface SearchScreenProps {
   navigation: any;
 }
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [recentList, setRecentList] = useState(recentSearches);
-  const [isFocused, setIsFocused] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setIsSearching(query.trim().length > 0);
+  // Load search history on mount
+  useEffect(() => {
+    loadSearchHistory();
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
+  const loadSearchHistory = async () => {
+    try {
+      const data = await SecureStore.getItemAsync(SEARCH_HISTORY_KEY);
+      if (data) {
+        setSearchHistory(JSON.parse(data));
+      }
+    } catch (error) {
+      console.error('Failed to load search history:', error);
+    }
+  };
+
+  const saveSearchHistory = async (history: SearchHistoryItem[]) => {
+    try {
+      await SecureStore.setItemAsync(SEARCH_HISTORY_KEY, JSON.stringify(history));
+    } catch (error) {
+      console.error('Failed to save search history:', error);
+    }
+  };
+
+  const addToHistory = async (query: string) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    const newItem: SearchHistoryItem = {
+      id: Date.now().toString(),
+      query: trimmedQuery,
+      timestamp: Date.now(),
+    };
+
+    // Remove duplicate if exists
+    const filtered = searchHistory.filter(
+      item => item.query.toLowerCase() !== trimmedQuery.toLowerCase()
+    );
+
+    // Add new item at the beginning and limit to MAX_HISTORY_ITEMS
+    const newHistory = [newItem, ...filtered].slice(0, MAX_HISTORY_ITEMS);
+    setSearchHistory(newHistory);
+    await saveSearchHistory(newHistory);
+  };
+
+  const removeFromHistory = async (id: string) => {
+    const newHistory = searchHistory.filter(item => item.id !== id);
+    setSearchHistory(newHistory);
+    await saveSearchHistory(newHistory);
+  };
+
+  const clearAllHistory = async () => {
+    setSearchHistory([]);
+    await SecureStore.deleteItemAsync(SEARCH_HISTORY_KEY);
+  };
+
+  // Debounced search
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (searchQuery.trim().length === 0) {
+      setUsers([]);
+      setHasSearched(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      setHasSearched(true);
+      try {
+        const response = await userService.searchUsers(searchQuery.trim(), { page: 1, limit: 20 });
+        setUsers(response.data || []);
+        // Save to history when search completes
+        if (response.data && response.data.length > 0) {
+          addToHistory(searchQuery.trim());
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleHistoryItemPress = (query: string) => {
+    setSearchQuery(query);
+  };
+
   const handleUserPress = (userId: string) => {
+    Keyboard.dismiss();
     navigation.navigate('UserProfile', { userId });
   };
 
-  const handleClearRecent = () => {
-    setRecentList([]);
+  const handleChatPress = (userId: string) => {
+    Keyboard.dismiss();
+    navigation.navigate('ChatRoom', { userId });
   };
 
-  const renderUserItem = (user: User) => (
+  const renderUserItem = ({ item: user }: { item: User }) => (
     <TouchableOpacity
-      key={user.id}
       style={styles.userItem}
       onPress={() => handleUserPress(user.id)}
       activeOpacity={0.7}
     >
-      <Avatar uri={user.avatar} name={user.fullName} size="md" />
+      <Avatar uri={user.avatar} name={user.fullName || ''} size="lg" />
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>{user.fullName}</Text>
-        <Text style={styles.userDetail}>
-          {user.studentId} · {user.faculty}
+        <View style={styles.nameRow}>
+          <Text style={styles.userName} numberOfLines={1}>{user.fullName}</Text>
+          {user.isVerified && (
+            <Ionicons name="checkmark-circle" size={16} color={Colors.primary} style={{ marginLeft: 4 }} />
+          )}
+        </View>
+        <Text style={styles.userDetail} numberOfLines={1}>
+          {user.studentId ? `${user.studentId}` : ''}{user.faculty ? ` · ${user.faculty}` : ''}
         </Text>
+        {user.bio && (
+          <Text style={styles.userBio} numberOfLines={1}>{user.bio}</Text>
+        )}
       </View>
-      <TouchableOpacity style={styles.followButton}>
-        <Text style={styles.followButtonText}>Theo doi</Text>
+      <TouchableOpacity
+        style={styles.chatButton}
+        onPress={() => handleChatPress(user.id)}
+      >
+        <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
-  const renderRecentSearches = () => (
-    <View style={styles.recentContainer}>
-      <View style={styles.recentHeader}>
-        <Text style={styles.sectionTitle}>Gan day</Text>
-        {recentList.length > 0 && (
-          <TouchableOpacity onPress={handleClearRecent}>
-            <Text style={styles.clearText}>Xoa tat ca</Text>
-          </TouchableOpacity>
-        )}
+  const renderHistoryItem = ({ item }: { item: SearchHistoryItem }) => (
+    <TouchableOpacity
+      style={styles.historyItem}
+      onPress={() => handleHistoryItemPress(item.query)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.historyIcon}>
+        <Ionicons name="time-outline" size={20} color={Colors.textSecondary} />
       </View>
-      {recentList.map(item => (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.recentItem}
-          onPress={() => handleSearch(item.text)}
-        >
-          <View style={styles.recentIcon}>
-            <Ionicons
-              name={item.type === 'user' ? 'person-outline' : 'time-outline'}
-              size={18}
-              color={Colors.textSecondary}
-            />
-          </View>
-          <Text style={styles.recentText}>{item.text}</Text>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => setRecentList(recentList.filter(r => r.id !== item.id))}
-          >
-            <Ionicons name="close" size={18} color={Colors.textTertiary} />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      ))}
-    </View>
+      <Text style={styles.historyText} numberOfLines={1}>{item.query}</Text>
+      <TouchableOpacity
+        style={styles.historyRemove}
+        onPress={() => removeFromHistory(item.id)}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons name="close" size={18} color={Colors.textTertiary} />
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 
-  const renderSearchResults = () => (
-    <View style={styles.resultsContainer}>
-      <Text style={styles.sectionTitle}>Moi nguoi</Text>
-      {mockUsers.map(renderUserItem)}
-    </View>
-  );
+  const renderSearchHistory = () => {
+    if (searchHistory.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconWrapper}>
+            <Ionicons name="search" size={48} color={Colors.gray300} />
+          </View>
+          <Text style={styles.emptyTitle}>Tìm kiếm bạn bè</Text>
+          <Text style={styles.emptySubtitle}>
+            Nhập tên, mã sinh viên hoặc email để tìm kiếm
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.historyContainer}>
+        <View style={styles.historyHeader}>
+          <Text style={styles.historyTitle}>Tìm kiếm gần đây</Text>
+          <TouchableOpacity onPress={clearAllHistory}>
+            <Text style={styles.clearAllText}>Xóa tất cả</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={searchHistory}
+          renderItem={renderHistoryItem}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+        />
+      </View>
+    );
+  };
+
+  const renderEmpty = () => {
+    if (loading) return null;
+
+    if (!hasSearched) {
+      return renderSearchHistory();
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIconWrapper}>
+          <Ionicons name="person-outline" size={48} color={Colors.gray300} />
+        </View>
+        <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
+        <Text style={styles.emptySubtitle}>
+          Thử tìm kiếm với từ khóa khác
+        </Text>
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={[styles.searchBar, isFocused && styles.searchBarFocused]}>
-            <Ionicons name="search" size={20} color={isFocused ? Colors.primary : Colors.textTertiary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Tim kiem ban be, bai viet..."
-              placeholderTextColor={Colors.textTertiary}
-              value={searchQuery}
-              onChangeText={handleSearch}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            />
-            {searchQuery.length > 0 ? (
-              <TouchableOpacity onPress={() => handleSearch('')}>
-                <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
-              </TouchableOpacity>
-            ) : (
-              <Ionicons name="mic-outline" size={20} color={Colors.textTertiary} />
-            )}
-          </View>
-        </View>
 
+      {/* Header with Search */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+        </TouchableOpacity>
+
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color={Colors.textTertiary} />
+          <TextInput
+            ref={inputRef}
+            style={styles.searchInput}
+            placeholder="Tìm kiếm người dùng..."
+            placeholderTextColor={Colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+              <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Results */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Đang tìm kiếm...</Text>
+        </View>
+      ) : (
         <FlatList
-          data={[]}
-          renderItem={null}
-          ListHeaderComponent={isSearching ? renderSearchResults : renderRecentSearches}
+          data={users}
+          renderItem={renderUserItem}
+          keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={renderEmpty}
+          ListHeaderComponent={
+            users.length > 0 ? (
+              <Text style={styles.resultCount}>
+                Tìm thấy {users.length} kết quả
+              </Text>
+            ) : null
+          }
         />
-      </SafeAreaView>
+      )}
     </View>
   );
 };
@@ -159,74 +316,157 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-  safeArea: {
-    flex: 1,
-  },
-  searchContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingRight: Spacing.lg,
     paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray100,
   },
   backButton: {
-    padding: Spacing.xxs,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray50,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
     height: 44,
-    borderWidth: 1.5,
-    borderColor: Colors.gray200,
-  },
-  searchBarFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
+    gap: Spacing.sm,
   },
   searchInput: {
     flex: 1,
-    marginLeft: Spacing.sm,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
+    height: '100%',
+  },
+  clearButton: {
+    padding: Spacing.xs,
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 100,
   },
-  recentContainer: {
-    paddingTop: Spacing.md,
+  resultCount: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.gray50,
   },
-  recentHeader: {
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray50,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userName: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    flexShrink: 1,
+  },
+  userDetail: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  userBio: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  chatButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: Colors.gray50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: Spacing.md,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: 100,
+  },
+  emptyIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.gray50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  historyContainer: {
+    flex: 1,
+  },
+  historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray50,
   },
-  sectionTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+  historyTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
   },
-  clearText: {
+  clearAllText: {
     fontSize: FontSize.sm,
     color: Colors.primary,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.medium,
   },
-  recentItem: {
+  historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  recentIcon: {
+  historyIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -234,48 +474,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  recentText: {
+  historyText: {
     flex: 1,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     marginLeft: Spacing.md,
   },
-  removeButton: {
+  historyRemove: {
     padding: Spacing.sm,
-  },
-  resultsContainer: {
-    paddingTop: Spacing.md,
-  },
-  userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  userName: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  userDetail: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  followButton: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-  },
-  followButtonText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
 });
 

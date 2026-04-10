@@ -10,15 +10,15 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { showAlert } from '../../utils/alert';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Avatar, Header } from '../../components/common';
+import { Avatar } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Message, User, Conversation, RootStackParamList } from '../../types';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { chatService } from '../../services/chat/chatService';
@@ -27,6 +27,7 @@ type ChatRoomScreenNavigationProp = NativeStackNavigationProp<RootStackParamList
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 
 const ChatRoomScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<ChatRoomScreenNavigationProp>();
   const route = useRoute<ChatRoomScreenRouteProp>();
   const { conversationId: routeConversationId, userId } = route.params;
@@ -206,16 +207,19 @@ const ChatRoomScreen: React.FC = () => {
 
   if (loading || !conversation) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <Header
-          showBackButton
-          onBackPress={() => navigation.goBack()}
-          title="Đang tải..."
-        />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Đang tải...</Text>
+          <View style={styles.headerRight} />
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -229,37 +233,47 @@ const ChatRoomScreen: React.FC = () => {
     : otherParticipant?.avatar;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header
-        showBackButton
-        onBackPress={() => navigation.goBack()}
-        centerComponent={
-          <TouchableOpacity
-            style={styles.headerCenter}
-            onPress={() => {
-              if (isPrivate && otherParticipant) {
-                navigation.navigate('UserProfile', { userId: otherParticipant.id });
-              }
-            }}
-          >
-            <Avatar
-              uri={chatAvatar}
-              name={chatName}
-              size="sm"
-              showOnlineStatus={isPrivate}
-              isOnline={isPrivate ? otherParticipant?.isOnline : false}
-            />
-            <View style={styles.headerInfo}>
-              <Text style={styles.headerName}>{chatName}</Text>
-              {isPrivate && (
-                <Text style={styles.headerStatus}>
-                  {otherParticipant?.isOnline ? Strings.chat.online : Strings.chat.offline}
-                </Text>
-              )}
-            </View>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.headerCenter}
+          onPress={() => {
+            if (isPrivate && otherParticipant) {
+              navigation.navigate('UserProfile', { userId: otherParticipant.id });
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.headerAvatarWrapper}>
+            <Avatar uri={chatAvatar} name={chatName} size="sm" />
+            {isPrivate && otherParticipant?.isOnline && <View style={styles.onlineDot} />}
+          </View>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerName} numberOfLines={1}>{chatName}</Text>
+            {isPrivate && (
+              <Text style={[styles.headerStatus, otherParticipant?.isOnline && styles.headerStatusOnline]}>
+                {otherParticipant?.isOnline ? 'Đang hoạt động' : 'Offline'}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Ionicons name="call-outline" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
-        }
-      />
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Ionicons name="videocam-outline" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -283,7 +297,7 @@ const ChatRoomScreen: React.FC = () => {
           </View>
         )}
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}>
           <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
             <Ionicons name="add-circle" size={28} color={Colors.primary} />
           </TouchableOpacity>
@@ -291,18 +305,21 @@ const ChatRoomScreen: React.FC = () => {
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="Type a message..."
+              placeholder="Nhập tin nhắn..."
               placeholderTextColor={Colors.textTertiary}
               value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={1000}
             />
+            <TouchableOpacity style={styles.emojiButton}>
+              <Ionicons name="happy-outline" size={22} color={Colors.textTertiary} />
+            </TouchableOpacity>
           </View>
 
           {inputText.trim() ? (
             <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Ionicons name="send" size={22} color={Colors.textLight} />
+              <Ionicons name="send" size={20} color={Colors.white} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.micButton}>
@@ -311,24 +328,62 @@ const ChatRoomScreen: React.FC = () => {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
   },
   flex: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray100,
+    backgroundColor: Colors.white,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
   headerCenter: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
+  headerAvatarWrapper: {
+    position: 'relative',
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.success,
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
   headerInfo: {
     marginLeft: Spacing.sm,
+    flex: 1,
   },
   headerName: {
     fontSize: FontSize.md,
@@ -337,7 +392,20 @@ const styles = StyleSheet.create({
   },
   headerStatus: {
     fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+  },
+  headerStatusOnline: {
     color: Colors.success,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   messageList: {
     paddingHorizontal: Spacing.md,
@@ -348,6 +416,12 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: 'center',
     marginVertical: Spacing.md,
+    backgroundColor: Colors.gray100,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
   },
   messageRow: {
     flexDirection: 'row',
@@ -365,26 +439,27 @@ const styles = StyleSheet.create({
     height: 32,
   },
   messageBubble: {
-    maxWidth: '70%',
-    borderRadius: BorderRadius.lg,
+    maxWidth: '75%',
+    borderRadius: 20,
     overflow: 'hidden',
   },
   ownBubble: {
     backgroundColor: Colors.primary,
-    borderBottomRightRadius: BorderRadius.xs,
+    borderBottomRightRadius: 4,
   },
   otherBubble: {
-    backgroundColor: Colors.backgroundSecondary,
-    borderBottomLeftRadius: BorderRadius.xs,
+    backgroundColor: Colors.gray100,
+    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    padding: Spacing.md,
-    lineHeight: 20,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    lineHeight: 22,
   },
   ownMessageText: {
-    color: Colors.textLight,
+    color: Colors.white,
   },
   messageImage: {
     width: 200,
@@ -411,31 +486,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
+    paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    backgroundColor: Colors.background,
+    borderTopColor: Colors.gray100,
+    backgroundColor: Colors.white,
   },
   attachButton: {
-    padding: Spacing.xs,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: Colors.backgroundSecondary,
-    borderRadius: BorderRadius.round,
+    backgroundColor: Colors.gray100,
+    borderRadius: 24,
     marginHorizontal: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    maxHeight: 100,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.xs,
+    paddingVertical: 4,
+    minHeight: 44,
+    maxHeight: 120,
   },
   textInput: {
     flex: 1,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    paddingVertical: Spacing.xs,
-    maxHeight: 80,
+    paddingVertical: Spacing.sm,
+    maxHeight: 100,
+  },
+  emojiButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sendButton: {
     width: 40,
@@ -446,7 +532,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   micButton: {
-    padding: Spacing.sm,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,
