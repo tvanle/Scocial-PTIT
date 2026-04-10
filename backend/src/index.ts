@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 
@@ -10,6 +9,7 @@ import { config } from './config';
 import { prisma, disconnectDatabases } from './config/database';
 import { setIO } from './config/socket';
 import { errorHandler, notFoundHandler } from './middleware';
+import { initBuckets } from './services/storage.service';
 
 // Import routes
 import { authRoutes } from './modules/auth';
@@ -47,9 +47,6 @@ app.use(
     message: { success: false, error: 'Too many requests, please try again later' },
   })
 );
-
-// Static files (uploads)
-app.use('/uploads', express.static(path.join(__dirname, '..', config.upload.dir)));
 
 // Health check - dùng để test xem server có gọi đến được không
 app.get('/health', (_req, res) => {
@@ -107,9 +104,8 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('✅ PostgreSQL connected');
 
-    // Create uploads directory
-    const fs = await import('fs/promises');
-    await fs.mkdir(config.upload.dir, { recursive: true });
+    // Initialize MinIO buckets
+    await initBuckets();
 
     httpServer.listen(config.port, () => {
       console.log(`🚀 Server running on port ${config.port}`);

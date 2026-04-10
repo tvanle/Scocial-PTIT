@@ -31,13 +31,20 @@ export const config = {
     allowedMimeTypes: (process.env.ALLOWED_MIME_TYPES || 'image/jpeg,image/png,image/gif,image/webp,video/mp4').split(','),
   },
 
-  // AWS S3
-  s3: {
-    useS3: process.env.USE_S3 === 'true',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
-    bucket: process.env.AWS_S3_BUCKET,
+  // MinIO (S3-compatible storage)
+  minio: {
+    accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+    secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+    // Internal URL: used by SDK (inside Docker = http://minio:9000)
+    internalUrl: process.env.MINIO_INTERNAL_URL || 'http://localhost:9000',
+    // Public URL: used in response URLs (what clients/browsers access)
+    publicUrl: process.env.MINIO_PUBLIC_URL || 'http://localhost:9000',
+    buckets: {
+      avatars: 'avatars',
+      posts: 'posts',
+      dating: 'dating',
+      messages: 'messages',
+    },
   },
 
   // Firebase

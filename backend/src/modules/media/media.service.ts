@@ -1,5 +1,4 @@
 import path from 'path';
-import fs from 'fs/promises';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../config/database';
@@ -7,6 +6,7 @@ import { config } from '../../config';
 import { AppError } from '../../middleware';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constants';
 import { MediaType } from '@prisma/client';
+import { uploadToStorage, deleteFromStorage, parseStorageUrl } from '../../services/storage.service';
 
 export class MediaService {
   private getMediaType(mimeType: string): MediaType {
@@ -17,42 +17,41 @@ export class MediaService {
   }
 
   async uploadFile(file: Express.Multer.File, postId?: string) {
-    const filename = `${uuidv4()}${path.extname(file.originalname)}`;
-    const uploadPath = path.join(config.upload.dir, filename);
-
-    // Ensure upload directory exists
-    await fs.mkdir(config.upload.dir, { recursive: true });
+    const bucket = config.minio.buckets.posts;
+    const isImage = file.mimetype.startsWith('image/');
 
     let width: number | undefined;
     let height: number | undefined;
+    let buffer = file.buffer;
+    let mimeType = file.mimetype;
+    let filename: string;
 
-    // Process image with sharp
-    if (file.mimetype.startsWith('image/')) {
+    if (isImage) {
       const image = sharp(file.buffer);
       const metadata = await image.metadata();
       width = metadata.width;
       height = metadata.height;
 
-      // Resize if too large and save
-      await image
+      buffer = await image
         .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 85 })
-        .toFile(uploadPath);
+        .toBuffer();
+
+      filename = `${uuidv4()}.jpg`;
+      mimeType = 'image/jpeg';
     } else {
-      // Save other file types directly
-      await fs.writeFile(uploadPath, file.buffer);
+      filename = `${uuidv4()}${path.extname(file.originalname)}`;
     }
 
-    const relativeUrl = `/uploads/${filename}`;
-    const fullUrl = `${config.baseUrl}${relativeUrl}`;
+    const url = await uploadToStorage(bucket, filename, buffer, mimeType);
 
     const media = await prisma.media.create({
       data: {
-        url: fullUrl,
+        url,
         type: this.getMediaType(file.mimetype),
         filename,
-        mimeType: file.mimetype,
-        size: file.size,
+        mimeType,
+        size: buffer.length,
         width,
         height,
         postId,
@@ -86,12 +85,14 @@ export class MediaService {
       throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
     }
 
-    // Delete file from disk
-    const filePath = path.join(config.upload.dir, media.filename);
-    try {
-      await fs.unlink(filePath);
-    } catch {
-      // File might not exist, continue
+    // Delete file from MinIO
+    const parsed = parseStorageUrl(media.url);
+    if (parsed) {
+      try {
+        await deleteFromStorage(parsed.bucket, parsed.key);
+      } catch (err) {
+        console.warn('Failed to delete storage object:', parsed, err);
+      }
     }
 
     // Delete from database
