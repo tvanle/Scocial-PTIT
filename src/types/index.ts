@@ -193,6 +193,7 @@ export interface Message {
   sender: User;
   content?: string;
   media?: Media[];
+  mediaUrl?: string; // For voice/audio messages
   replyTo?: Message;
   type: MessageType;
   status: MessageStatus;

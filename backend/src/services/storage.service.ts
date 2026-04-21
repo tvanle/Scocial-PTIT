@@ -22,6 +22,7 @@ const PUBLIC_BUCKETS: string[] = [
   config.minio.buckets.avatars,
   config.minio.buckets.posts,
   config.minio.buckets.dating,
+  config.minio.buckets.messages,
 ];
 
 async function ensureBucket(bucket: string): Promise<void> {
