@@ -20,6 +20,7 @@ import { userService } from '../../services/user/userService';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { getImageUrl } from '../../utils/image';
+import { useTheme } from '../../hooks/useThemeColors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FollowersRouteProp = RouteProp<RootStackParamList, 'Followers'>;
@@ -31,6 +32,7 @@ const FollowersScreen: React.FC = () => {
   const route = useRoute<FollowersRouteProp>();
   const { userId, initialTab } = route.params as { userId: string; initialTab?: TabType };
   const currentUser = useAuthStore((s) => s.user);
+  const { colors, isDark } = useTheme();
 
   const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'followers');
   const [followers, setFollowers] = useState<User[]>([]);
@@ -107,34 +109,38 @@ const FollowersScreen: React.FC = () => {
       >
         <Image
           source={{ uri: getImageUrl(item.avatar) || DEFAULT_AVATAR }}
-          style={styles.avatar}
+          style={[styles.avatar, { backgroundColor: colors.gray200 }]}
         />
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.fullName} numberOfLines={1}>
+            <Text style={[styles.fullName, { color: colors.textPrimary }]} numberOfLines={1}>
               {item.fullName}
             </Text>
             {item.isVerified && (
               <Ionicons
                 name="checkmark-circle"
                 size={14}
-                color={Colors.verified}
+                color={colors.verified}
                 style={{ marginLeft: 4 }}
               />
             )}
           </View>
           {item.bio && (
-            <Text style={styles.bio} numberOfLines={1}>
+            <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={1}>
               {item.bio}
             </Text>
           )}
         </View>
         {!isOwnProfile && (
           <TouchableOpacity
-            style={[styles.followBtn, isFollowing && styles.followingBtn]}
+            style={[
+              styles.followBtn,
+              { backgroundColor: colors.primary },
+              isFollowing && [styles.followingBtn, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]
+            ]}
             onPress={() => handleFollow(item.id)}
           >
-            <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+            <Text style={[styles.followBtnText, { color: isFollowing ? colors.textPrimary : colors.white }]}>
               {isFollowing ? 'Dang theo doi' : 'Theo doi'}
             </Text>
           </TouchableOpacity>
@@ -147,19 +153,19 @@ const FollowersScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.gray200 }]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.gray100 }]}>
+              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Nguoi theo doi</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Nguoi theo doi</Text>
             <View style={styles.placeholder} />
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Dang tai...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Dang tai...</Text>
           </View>
         </SafeAreaView>
       </View>
@@ -167,33 +173,33 @@ const FollowersScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.gray200 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.gray100 }]}>
+            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Ket noi</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Ket noi</Text>
           <View style={styles.placeholder} />
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
+        <View style={[styles.tabsContainer, { backgroundColor: colors.background, borderBottomColor: colors.gray200 }]}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'followers' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'followers' && [styles.activeTab, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('followers')}
           >
-            <Text style={[styles.tabText, activeTab === 'followers' && styles.activeTabText]}>
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'followers' && { color: colors.primary, fontWeight: FontWeight.bold }]}>
               Nguoi theo doi ({followers.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'following' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'following' && [styles.activeTab, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('following')}
           >
-            <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'following' && { color: colors.primary, fontWeight: FontWeight.bold }]}>
               Dang theo doi ({following.length})
             </Text>
           </TouchableOpacity>
@@ -210,8 +216,8 @@ const FollowersScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
@@ -219,9 +225,9 @@ const FollowersScreen: React.FC = () => {
               <Ionicons
                 name={activeTab === 'followers' ? 'people-outline' : 'person-add-outline'}
                 size={48}
-                color={Colors.gray300}
+                color={colors.gray200}
               />
-              <Text style={styles.emptyTitle}>
+              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
                 {activeTab === 'followers'
                   ? 'Chua co nguoi theo doi nao'
                   : 'Chua theo doi ai'}
@@ -237,7 +243,6 @@ const FollowersScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   safeArea: {
     flex: 1,
@@ -248,22 +253,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -271,8 +272,6 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   tab: {
     flex: 1,
@@ -284,19 +283,15 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
   },
   activeTabText: {
-    color: Colors.primary,
     fontWeight: FontWeight.bold,
   },
   tabBadge: {
-    backgroundColor: Colors.gray100,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -307,10 +302,9 @@ const styles = StyleSheet.create({
   tabBadgeText: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
   },
   tabBadgeTextActive: {
-    color: Colors.primary,
+    // Color applied inline for theme support
   },
   listContent: {
     paddingVertical: Spacing.sm,
@@ -328,7 +322,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.gray200,
   },
   verifiedBadge: {
     position: 'absolute',
@@ -337,11 +330,10 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: Colors.verified || '#1DA1F2',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
+    // backgroundColor applied inline for theme support
   },
   userInfo: {
     flex: 1,
@@ -355,7 +347,6 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   studentIdRow: {
     flexDirection: 'row',
@@ -365,12 +356,11 @@ const styles = StyleSheet.create({
   },
   studentId: {
     fontSize: FontSize.xs,
-    color: Colors.primary,
     fontWeight: FontWeight.medium,
+    // Color applied inline for theme support
   },
   bio: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   followBtn: {
@@ -380,20 +370,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primary,
   },
   followingBtn: {
-    backgroundColor: Colors.gray50,
     borderWidth: 1,
-    borderColor: Colors.gray200,
   },
   followBtnText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.white,
+    // Color applied inline for theme support
   },
   followingBtnText: {
-    color: Colors.textPrimary,
   },
   loadingContainer: {
     flex: 1,
@@ -402,7 +388,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
   emptyContainer: {
@@ -417,13 +402,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
     marginTop: Spacing.md,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
     textAlign: 'center',
   },
 });

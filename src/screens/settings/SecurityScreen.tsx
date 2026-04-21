@@ -16,7 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
-import { Colors, FontSize, FontWeight } from '../../constants/theme';
+import { FontSize, FontWeight } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { RootStackParamList } from '../../types';
 import { authService, TwoFactorSetupResponse } from '../../services/auth/authService';
 import { useAuthStore } from '../../store/slices/authSlice';
@@ -32,6 +33,7 @@ interface SettingRowProps {
   onPress?: () => void;
   rightElement?: React.ReactNode;
   isLast?: boolean;
+  colors: ReturnType<typeof useTheme>['colors'];
 }
 
 const SettingRow: React.FC<SettingRowProps> = ({
@@ -42,26 +44,27 @@ const SettingRow: React.FC<SettingRowProps> = ({
   onPress,
   rightElement,
   isLast,
+  colors,
 }) => (
   <TouchableOpacity
-    style={[styles.row, !isLast && styles.rowBorder]}
+    style={[styles.row, !isLast && [styles.rowBorder, { borderBottomColor: colors.gray200 }]]}
     onPress={onPress}
     activeOpacity={onPress ? 0.6 : 1}
     disabled={!onPress}
   >
     <View style={styles.rowLeft}>
-      <Text style={styles.rowTitle}>{title}</Text>
-      {subtitle && <Text style={styles.rowSubtitle}>{subtitle}</Text>}
+      <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{title}</Text>
+      {subtitle && <Text style={[styles.rowSubtitle, { color: colors.gray400 }]}>{subtitle}</Text>}
     </View>
     <View style={styles.rowRight}>
       {value && (
-        <Text style={[styles.rowValue, valueColor ? { color: valueColor } : undefined]}>
+        <Text style={[styles.rowValue, { color: colors.gray400 }, valueColor ? { color: valueColor } : undefined]}>
           {value}
         </Text>
       )}
       {rightElement}
       {onPress && !rightElement && (
-        <Ionicons name="chevron-forward" size={18} color={Colors.gray300} />
+        <Ionicons name="chevron-forward" size={18} color={colors.gray300} />
       )}
     </View>
   </TouchableOpacity>
@@ -70,13 +73,14 @@ const SettingRow: React.FC<SettingRowProps> = ({
 interface SectionProps {
   label: string;
   children: React.ReactNode;
+  colors: ReturnType<typeof useTheme>['colors'];
 }
 
-const Section: React.FC<SectionProps> = ({ label, children }) => (
+const Section: React.FC<SectionProps> = ({ label, children, colors }) => (
   <View style={styles.section}>
     <View style={styles.sectionLabelContainer}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      <View style={styles.sectionLabelLine} />
+      <Text style={[styles.sectionLabel, { color: colors.gray400 }]}>{label}</Text>
+      <View style={[styles.sectionLabelLine, { backgroundColor: colors.gray200 }]} />
     </View>
     <View>{children}</View>
   </View>
@@ -85,6 +89,7 @@ const Section: React.FC<SectionProps> = ({ label, children }) => (
 const SecurityScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { logout } = useAuthStore();
+  const { colors } = useTheme();
 
   // 2FA State
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -202,7 +207,7 @@ const SecurityScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -210,14 +215,14 @@ const SecurityScreen: React.FC = () => {
       >
         {/* Header */}
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color={Colors.primary} />
-          <Text style={styles.backText}>Back</Text>
+          <Ionicons name="chevron-back" size={22} color={colors.primary} />
+          <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.screenTitle}>Security</Text>
+        <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Security</Text>
 
         {/* TWO-FACTOR AUTHENTICATION */}
-        <Section label="TWO-FACTOR AUTHENTICATION">
+        <Section label="TWO-FACTOR AUTHENTICATION" colors={colors}>
           <SettingRow
             title="Enable 2FA"
             subtitle="Add an extra layer of security to your account"
@@ -225,29 +230,31 @@ const SecurityScreen: React.FC = () => {
               <Switch
                 value={is2FAEnabled}
                 onValueChange={handle2FAToggle}
-                trackColor={{ false: Colors.gray200, true: Colors.primary }}
-                thumbColor={Colors.white}
+                trackColor={{ false: colors.gray200, true: colors.primary }}
+                thumbColor={colors.white}
                 disabled={loading}
               />
             }
             isLast
+            colors={colors}
           />
         </Section>
 
         {/* SESSION MANAGEMENT */}
-        <Section label="SESSION MANAGEMENT">
+        <Section label="SESSION MANAGEMENT" colors={colors}>
           <SettingRow
             title="Logout All Devices"
             subtitle="End all active sessions on other devices"
             onPress={handleLogoutAll}
             isLast
+            colors={colors}
           />
         </Section>
 
         {/* Info Card */}
-        <View style={styles.infoCard}>
-          <Ionicons name="shield-checkmark-outline" size={24} color={Colors.primary} />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoCard, { backgroundColor: colors.gray50 }]}>
+          <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             Two-factor authentication adds an extra layer of security by requiring a code from your
             authenticator app when signing in.
           </Text>
@@ -264,29 +271,29 @@ const SecurityScreen: React.FC = () => {
           setVerificationCode('');
         }}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.gray200 }]}>
             <TouchableOpacity
               onPress={() => {
                 setShow2FASetupModal(false);
                 setVerificationCode('');
               }}
             >
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={[styles.modalCancel, { color: colors.primary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Setup 2FA</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Setup 2FA</Text>
             <TouchableOpacity onPress={handleEnable2FA} disabled={loading}>
               {loading ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Text style={styles.modalSave}>Enable</Text>
+                <Text style={[styles.modalSave, { color: colors.primary }]}>Enable</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalBody}>
-            <Text style={styles.setupStep}>Step 1: Scan QR Code</Text>
-            <Text style={styles.setupDescription}>
+            <Text style={[styles.setupStep, { color: colors.textPrimary }]}>Step 1: Scan QR Code</Text>
+            <Text style={[styles.setupDescription, { color: colors.textSecondary }]}>
               Open your authenticator app (Google Authenticator, Authy, etc.) and scan this QR code:
             </Text>
 
@@ -294,32 +301,36 @@ const SecurityScreen: React.FC = () => {
               <View style={styles.qrContainer}>
                 <Image
                   source={{ uri: setupData.qrCode }}
-                  style={styles.qrCode}
+                  style={[styles.qrCode, { backgroundColor: colors.gray50 }]}
                   resizeMode="contain"
                 />
               </View>
             )}
 
-            <Text style={styles.setupStep}>Or enter this code manually:</Text>
+            <Text style={[styles.setupStep, { color: colors.textPrimary }]}>Or enter this code manually:</Text>
             <TouchableOpacity
-              style={styles.secretContainer}
+              style={[styles.secretContainer, { backgroundColor: colors.gray50 }]}
               onPress={() => setupData?.secret && copyToClipboard(setupData.secret)}
             >
-              <Text style={styles.secretCode}>{setupData?.secret}</Text>
-              <Ionicons name="copy-outline" size={20} color={Colors.primary} />
+              <Text style={[styles.secretCode, { color: colors.textPrimary }]}>{setupData?.secret}</Text>
+              <Ionicons name="copy-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
 
-            <Text style={styles.setupStep}>Step 2: Enter Verification Code</Text>
-            <Text style={styles.setupDescription}>
+            <Text style={[styles.setupStep, { color: colors.textPrimary }]}>Step 2: Enter Verification Code</Text>
+            <Text style={[styles.setupDescription, { color: colors.textSecondary }]}>
               Enter the 6-digit code from your authenticator app:
             </Text>
 
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, {
+                borderColor: colors.gray200,
+                color: colors.textPrimary,
+                backgroundColor: colors.gray50
+              }]}
               value={verificationCode}
               onChangeText={setVerificationCode}
               placeholder="000000"
-              placeholderTextColor={Colors.gray300}
+              placeholderTextColor={colors.gray300}
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
@@ -338,22 +349,22 @@ const SecurityScreen: React.FC = () => {
           setVerificationCode('');
         }}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.gray200 }]}>
             <TouchableOpacity
               onPress={() => {
                 setShow2FADisableModal(false);
                 setVerificationCode('');
               }}
             >
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={[styles.modalCancel, { color: colors.primary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Disable 2FA</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Disable 2FA</Text>
             <TouchableOpacity onPress={handleDisable2FA} disabled={loading}>
               {loading ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Text style={[styles.modalSave, { color: Colors.error }]}>Disable</Text>
+                <Text style={[styles.modalSave, { color: colors.error }]}>Disable</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -362,25 +373,29 @@ const SecurityScreen: React.FC = () => {
             <Ionicons
               name="warning-outline"
               size={48}
-              color={Colors.warning}
+              color={colors.warning}
               style={styles.warningIcon}
             />
-            <Text style={styles.warningTitle}>Are you sure?</Text>
-            <Text style={styles.warningText}>
+            <Text style={[styles.warningTitle, { color: colors.textPrimary }]}>Are you sure?</Text>
+            <Text style={[styles.warningText, { color: colors.textSecondary }]}>
               Disabling 2FA will make your account less secure. You will only need your password to
               sign in.
             </Text>
 
-            <Text style={styles.setupDescription}>
+            <Text style={[styles.setupDescription, { color: colors.textSecondary }]}>
               Enter your current 2FA code to confirm:
             </Text>
 
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, {
+                borderColor: colors.gray200,
+                color: colors.textPrimary,
+                backgroundColor: colors.gray50
+              }]}
               value={verificationCode}
               onChangeText={setVerificationCode}
               placeholder="000000"
-              placeholderTextColor={Colors.gray300}
+              placeholderTextColor={colors.gray300}
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
@@ -396,12 +411,12 @@ const SecurityScreen: React.FC = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowBackupCodes(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.gray200 }]}>
             <View style={{ width: 60 }} />
-            <Text style={styles.modalTitle}>Backup Codes</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Backup Codes</Text>
             <TouchableOpacity onPress={() => setShowBackupCodes(false)}>
-              <Text style={styles.modalSave}>Done</Text>
+              <Text style={[styles.modalSave, { color: colors.primary }]}>Done</Text>
             </TouchableOpacity>
           </View>
 
@@ -409,32 +424,32 @@ const SecurityScreen: React.FC = () => {
             <Ionicons
               name="key-outline"
               size={48}
-              color={Colors.primary}
+              color={colors.primary}
               style={styles.warningIcon}
             />
-            <Text style={styles.warningTitle}>Save Your Backup Codes</Text>
-            <Text style={styles.warningText}>
+            <Text style={[styles.warningTitle, { color: colors.textPrimary }]}>Save Your Backup Codes</Text>
+            <Text style={[styles.warningText, { color: colors.textSecondary }]}>
               These codes can be used to access your account if you lose your phone. Each code can
               only be used once.
             </Text>
 
-            <View style={styles.backupCodesContainer}>
+            <View style={[styles.backupCodesContainer, { backgroundColor: colors.gray50 }]}>
               {backupCodes.map((code, index) => (
-                <Text key={index} style={styles.backupCode}>
+                <Text key={index} style={[styles.backupCode, { color: colors.textPrimary }]}>
                   {code}
                 </Text>
               ))}
             </View>
 
             <TouchableOpacity
-              style={styles.copyButton}
+              style={[styles.copyButton, { backgroundColor: colors.primary }]}
               onPress={() => copyToClipboard(backupCodes.join('\n'))}
             >
-              <Ionicons name="copy-outline" size={20} color={Colors.white} />
-              <Text style={styles.copyButtonText}>Copy All Codes</Text>
+              <Ionicons name="copy-outline" size={20} color={colors.white} />
+              <Text style={[styles.copyButtonText, { color: colors.white }]}>Copy All Codes</Text>
             </TouchableOpacity>
 
-            <Text style={styles.backupWarning}>
+            <Text style={[styles.backupWarning, { color: colors.warning }]}>
               Store these codes in a safe place. You won't be able to see them again!
             </Text>
           </ScrollView>
@@ -447,7 +462,6 @@ const SecurityScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   scroll: {
     flex: 1,
@@ -466,13 +480,11 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: FontSize.lg,
-    color: Colors.primary,
     marginLeft: 2,
   },
   screenTitle: {
     fontSize: 32,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -485,13 +497,11 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: FontWeight.bold,
-    color: Colors.gray400,
     letterSpacing: 1.5,
     marginBottom: 10,
   },
   sectionLabelLine: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.gray200,
   },
   row: {
     flexDirection: 'row',
@@ -501,7 +511,6 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.gray200,
   },
   rowLeft: {
     flex: 1,
@@ -510,11 +519,9 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.regular,
-    color: Colors.textPrimary,
   },
   rowSubtitle: {
     fontSize: FontSize.sm,
-    color: Colors.gray400,
     marginTop: 2,
   },
   rowRight: {
@@ -524,12 +531,10 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     fontSize: FontSize.sm,
-    color: Colors.gray400,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: Colors.gray50,
     borderRadius: 12,
     padding: 16,
     marginTop: 32,
@@ -538,12 +543,10 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -552,21 +555,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.gray200,
   },
   modalCancel: {
     fontSize: FontSize.lg,
-    color: Colors.primary,
   },
   modalTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   modalSave: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.primary,
   },
   modalBody: {
     paddingHorizontal: 20,
@@ -575,13 +574,11 @@ const styles = StyleSheet.create({
   setupStep: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   setupDescription: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     marginBottom: 16,
     lineHeight: 22,
   },
@@ -592,14 +589,12 @@ const styles = StyleSheet.create({
   qrCode: {
     width: 200,
     height: 200,
-    backgroundColor: Colors.gray50,
     borderRadius: 12,
   },
   secretContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.gray50,
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -607,20 +602,16 @@ const styles = StyleSheet.create({
   secretCode: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
     fontFamily: 'monospace',
     flex: 1,
   },
   codeInput: {
     height: 56,
     borderWidth: 1,
-    borderColor: Colors.gray200,
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    backgroundColor: Colors.gray50,
     textAlign: 'center',
     letterSpacing: 8,
   },
@@ -631,19 +622,16 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
   },
   warningText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
   },
   backupCodesContainer: {
-    backgroundColor: Colors.gray50,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -651,7 +639,6 @@ const styles = StyleSheet.create({
   backupCode: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
     fontFamily: 'monospace',
     textAlign: 'center',
     paddingVertical: 8,
@@ -660,7 +647,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -669,11 +655,9 @@ const styles = StyleSheet.create({
   copyButtonText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.white,
   },
   backupWarning: {
     fontSize: FontSize.sm,
-    color: Colors.warning,
     textAlign: 'center',
     fontWeight: FontWeight.medium,
   },

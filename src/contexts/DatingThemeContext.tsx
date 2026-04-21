@@ -1,11 +1,11 @@
- /**
+/**
  * Dating Theme Context
  *
  * Provides theme-aware colors and utilities for Dating module
+ * Syncs with main app's theme store for consistent theming
  */
 
 import React, { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
 import {
   BRAND,
   SEMANTIC,
@@ -15,6 +15,7 @@ import {
   GLOWS,
   type ThemeMode,
 } from '../constants/dating/design-system';
+import { useThemeStore } from '../store/slices/themeSlice';
 
 // ═══════════════════════════════════════════════════════════════
 // THEME TYPES
@@ -58,8 +59,9 @@ export const DatingThemeProvider: React.FC<DatingThemeProviderProps> = ({
   children,
   forcedMode,
 }) => {
-  const systemColorScheme = useColorScheme();
-  const mode: ThemeMode = forcedMode ?? (systemColorScheme === 'dark' ? 'dark' : 'light');
+  // Use main app's theme store instead of useColorScheme directly
+  const appIsDark = useThemeStore((state) => state.isDark);
+  const mode: ThemeMode = forcedMode ?? (appIsDark ? 'dark' : 'light');
 
   const theme = useMemo<DatingTheme>(() => {
     const isDark = mode === 'dark';

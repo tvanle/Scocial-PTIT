@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, EmptyState } from '../../components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { Conversation } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { chatService } from '../../services/chat/chatService';
@@ -26,6 +27,7 @@ interface ChatListScreenProps {
 
 const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const { data: conversationsData, loading, refreshing, onRefresh } = useFetch(
     useCallback(() => chatService.getConversations({ page: 1, limit: 50 }), []),
   );
@@ -73,9 +75,9 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       >
         <View style={styles.onlineAvatarWrapper}>
           <Avatar uri={avatar} name={name} size="lg" />
-          <View style={styles.onlineIndicator} />
+          <View style={[styles.onlineIndicator, { borderColor: colors.background, backgroundColor: colors.success }]} />
         </View>
-        <Text style={styles.onlineUserName} numberOfLines={1}>{firstName}</Text>
+        <Text style={[styles.onlineUserName, { color: colors.textSecondary }]} numberOfLines={1}>{firstName}</Text>
       </TouchableOpacity>
     );
   };
@@ -95,19 +97,19 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       >
         <View style={styles.avatarWrapper}>
           <Avatar uri={avatar} name={name} size="lg" />
-          {isPrivate && isOnline && <View style={styles.onlineDot} />}
+          {isPrivate && isOnline && <View style={[styles.onlineDot, { borderColor: colors.background, backgroundColor: colors.success }]} />}
         </View>
 
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
-            <Text style={[styles.name, hasUnread && styles.nameUnread]} numberOfLines={1}>
+            <Text style={[styles.name, { color: colors.textPrimary }, hasUnread && styles.nameUnread]} numberOfLines={1}>
               {name}
             </Text>
             <View style={styles.timeRow}>
               {item.isMuted && (
-                <Ionicons name="volume-mute" size={12} color={Colors.textTertiary} style={{ marginRight: 4 }} />
+                <Ionicons name="volume-mute" size={12} color={colors.textTertiary} style={{ marginRight: 4 }} />
               )}
-              <Text style={[styles.time, hasUnread && styles.timeUnread]}>
+              <Text style={[styles.time, { color: colors.textTertiary }, hasUnread && { color: colors.primary }]}>
                 {formatTimeAgo(item.lastMessage?.createdAt || item.updatedAt)}
               </Text>
             </View>
@@ -115,14 +117,14 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
 
           <View style={styles.messageRow}>
             <Text
-              style={[styles.lastMessage, hasUnread && styles.lastMessageUnread]}
+              style={[styles.lastMessage, { color: colors.textTertiary }, hasUnread && { color: colors.textPrimary, fontWeight: FontWeight.medium }]}
               numberOfLines={1}
             >
               {item.lastMessage?.content || 'Bắt đầu cuộc trò chuyện'}
             </Text>
             {hasUnread && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>
+              <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.unreadText, { color: colors.white }]}>
                   {item.unreadCount > 99 ? '99+' : item.unreadCount}
                 </Text>
               </View>
@@ -137,7 +139,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
     <View>
       {/* Online Users Section */}
       {onlineUsers.length > 0 && (
-        <View style={styles.onlineSection}>
+        <View style={[styles.onlineSection, { borderBottomColor: colors.gray200 }]}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -149,53 +151,53 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
       )}
 
       {/* Section Title */}
-      <Text style={styles.sectionTitle}>Tin nhắn</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Tin nhắn</Text>
     </View>
   );
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Nhắn tin</Text>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="create-outline" size={24} color={Colors.textPrimary} />
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Nhắn tin</Text>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.gray100 }]}>
+            <Ionicons name="create-outline" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nhắn tin</Text>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="create-outline" size={24} color={Colors.textPrimary} />
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Nhắn tin</Text>
+        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.gray100 }]}>
+          <Ionicons name="create-outline" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={Colors.textTertiary} />
+        <View style={[styles.searchBar, { backgroundColor: colors.gray100 }]}>
+          <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="Tìm kiếm"
-            placeholderTextColor={Colors.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
+              <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -211,8 +213,8 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -236,7 +238,6 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: 'row',
@@ -248,7 +249,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   iconButton: {
     width: 40,
@@ -256,7 +256,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
-    backgroundColor: Colors.gray100,
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,
@@ -265,7 +264,6 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray100,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
     height: 40,
@@ -274,13 +272,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     height: '100%',
   },
   onlineSection: {
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
   },
   onlineList: {
     paddingRight: Spacing.lg,
@@ -300,20 +296,16 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.success,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   onlineUserName: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
   },
   sectionTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xs,
@@ -337,9 +329,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.success,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   conversationContent: {
     flex: 1,
@@ -354,7 +344,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
     flex: 1,
     marginRight: Spacing.sm,
   },
@@ -367,10 +356,8 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
   },
   timeUnread: {
-    color: Colors.primary,
     fontWeight: FontWeight.medium,
   },
   messageRow: {
@@ -380,18 +367,15 @@ const styles = StyleSheet.create({
   lastMessage: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
     marginRight: Spacing.sm,
   },
   lastMessageUnread: {
-    color: Colors.textPrimary,
     fontWeight: FontWeight.medium,
   },
   unreadBadge: {
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -399,7 +383,6 @@ const styles = StyleSheet.create({
   unreadText: {
     fontSize: 11,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
   loadingContainer: {
     flex: 1,

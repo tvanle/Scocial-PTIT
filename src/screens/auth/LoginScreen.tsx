@@ -15,8 +15,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface LoginScreenProps {
   navigation: any;
@@ -32,6 +33,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const { login, isLoading, error } = useAuthStore();
+  const { colors, isDark } = useTheme();
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -63,29 +65,29 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const isFormValid = email.trim() && password;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+    <View style={[styles.container, { backgroundColor: colors.primary }]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       {/* Header Background */}
-      <View style={styles.headerBg}>
+      <View style={[styles.headerBg, { backgroundColor: colors.primary }]}>
         <View style={styles.headerDecor1} />
         <View style={styles.headerDecor2} />
         <SafeAreaView edges={['top']} style={styles.headerContent}>
-          <View style={styles.logoBox}>
+          <View style={[styles.logoBox, { backgroundColor: colors.white }]}>
             <Image
               source={require('../../../assets/logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.brandName}>PTIT Social</Text>
+          <Text style={[styles.brandName, { color: colors.white }]}>PTIT Social</Text>
           <Text style={styles.brandTagline}>Ket noi sinh vien PTIT</Text>
         </SafeAreaView>
       </View>
 
       {/* Form Card */}
       <KeyboardAvoidingView
-        style={styles.formContainer}
+        style={[styles.formContainer, { backgroundColor: colors.backgroundSecondary }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
@@ -94,25 +96,30 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           bounces={false}
         >
-          <View style={styles.card}>
-            <Text style={styles.title}>Dang nhap</Text>
-            <Text style={styles.subtitle}>Chao mung ban quay tro lai!</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Dang nhap</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Chao mung ban quay tro lai!</Text>
 
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Email</Text>
               <View style={[
                 styles.inputWrapper,
-                focusedField === 'email' && styles.inputFocused,
-                errors.email && styles.inputError
+                { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+                focusedField === 'email' && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+                errors.email && { borderColor: colors.error }
               ]}>
-                <View style={[styles.inputIcon, focusedField === 'email' && styles.inputIconActive]}>
-                  <Ionicons name="mail" size={18} color={focusedField === 'email' ? Colors.primary : Colors.gray400} />
+                <View style={[
+                  styles.inputIcon,
+                  { backgroundColor: colors.gray100 },
+                  focusedField === 'email' && { backgroundColor: colors.primaryLight }
+                ]}>
+                  <Ionicons name="mail" size={18} color={focusedField === 'email' ? colors.primary : colors.gray400} />
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   placeholder="Nhap email cua ban"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.gray400}
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
@@ -126,8 +133,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               </View>
               {errors.email && (
                 <View style={styles.errorRow}>
-                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                  <Text style={styles.errorText}>{errors.email}</Text>
+                  <Ionicons name="alert-circle" size={14} color={colors.error} />
+                  <Text style={[styles.errorText, { color: colors.error }]}>{errors.email}</Text>
                 </View>
               )}
             </View>
@@ -135,23 +142,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             {/* Password */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <Text style={styles.label}>Mat khau</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Mat khau</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.forgotLink}>Quen mat khau?</Text>
+                  <Text style={[styles.forgotLink, { color: colors.primary }]}>Quen mat khau?</Text>
                 </TouchableOpacity>
               </View>
               <View style={[
                 styles.inputWrapper,
-                focusedField === 'password' && styles.inputFocused,
-                errors.password && styles.inputError
+                { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+                focusedField === 'password' && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+                errors.password && { borderColor: colors.error }
               ]}>
-                <View style={[styles.inputIcon, focusedField === 'password' && styles.inputIconActive]}>
-                  <Ionicons name="lock-closed" size={18} color={focusedField === 'password' ? Colors.primary : Colors.gray400} />
+                <View style={[
+                  styles.inputIcon,
+                  { backgroundColor: colors.gray100 },
+                  focusedField === 'password' && { backgroundColor: colors.primaryLight }
+                ]}>
+                  <Ionicons name="lock-closed" size={18} color={focusedField === 'password' ? colors.primary : colors.gray400} />
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   placeholder="Nhap mat khau"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.gray400}
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
@@ -165,60 +177,64 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   <Ionicons
                     name={showPassword ? 'eye-off' : 'eye'}
                     size={20}
-                    color={Colors.gray400}
+                    color={colors.gray400}
                   />
                 </TouchableOpacity>
               </View>
               {errors.password && (
                 <View style={styles.errorRow}>
-                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                  <Text style={styles.errorText}>{errors.password}</Text>
+                  <Ionicons name="alert-circle" size={14} color={colors.error} />
+                  <Text style={[styles.errorText, { color: colors.error }]}>{errors.password}</Text>
                 </View>
               )}
             </View>
 
             {/* API Error */}
             {error && (
-              <View style={styles.apiError}>
-                <Ionicons name="warning" size={20} color={Colors.error} />
-                <Text style={styles.apiErrorText}>{error}</Text>
+              <View style={[styles.apiError, { backgroundColor: colors.errorLight, borderColor: isDark ? colors.error : '#FECACA' }]}>
+                <Ionicons name="warning" size={20} color={colors.error} />
+                <Text style={[styles.apiErrorText, { color: colors.error }]}>{error}</Text>
               </View>
             )}
 
             {/* Login Button */}
             <TouchableOpacity
-              style={[styles.button, !isFormValid && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                { backgroundColor: colors.primary, shadowColor: colors.primary },
+                !isFormValid && { backgroundColor: colors.gray300, shadowOpacity: 0, elevation: 0 }
+              ]}
               onPress={handleLogin}
               disabled={isLoading || !isFormValid}
               activeOpacity={0.8}
             >
               {isLoading ? (
-                <ActivityIndicator color={Colors.white} size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <>
-                  <Text style={styles.buttonText}>Dang nhap</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                  <Text style={[styles.buttonText, { color: colors.white }]}>Dang nhap</Text>
+                  <Ionicons name="arrow-forward" size={20} color={colors.white} />
                 </>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoac</Text>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: colors.gray200 }]} />
+              <Text style={[styles.dividerText, { color: colors.gray400 }]}>hoac</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.gray200 }]} />
             </View>
 
             {/* Social Buttons */}
             <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity style={[styles.socialBtn, { backgroundColor: colors.inputBackground, borderColor: colors.gray200 }]}>
                 <Ionicons name="logo-google" size={22} color="#EA4335" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity style={[styles.socialBtn, { backgroundColor: colors.inputBackground, borderColor: colors.gray200 }]}>
                 <Ionicons name="logo-facebook" size={22} color="#1877F2" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
-                <Ionicons name="logo-apple" size={22} color="#000" />
+              <TouchableOpacity style={[styles.socialBtn, { backgroundColor: colors.inputBackground, borderColor: colors.gray200 }]}>
+                <Ionicons name="logo-apple" size={22} color={isDark ? colors.white : '#000'} />
               </TouchableOpacity>
             </View>
           </View>
@@ -226,10 +242,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       </KeyboardAvoidingView>
 
       {/* Footer */}
-      <SafeAreaView edges={['bottom']} style={styles.footer}>
-        <Text style={styles.footerText}>Chua co tai khoan? </Text>
+      <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.backgroundSecondary }]}>
+        <Text style={[styles.footerText, { color: colors.textSecondary }]}>Chua co tai khoan? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.footerLink}>Dang ky ngay</Text>
+          <Text style={[styles.footerLink, { color: colors.primary }]}>Dang ky ngay</Text>
         </TouchableOpacity>
       </SafeAreaView>
     </View>
@@ -239,11 +255,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primary,
   },
   headerBg: {
     height: 220,
-    backgroundColor: Colors.primary,
     overflow: 'hidden',
   },
   headerDecor1: {
@@ -274,7 +288,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 18,
-    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
@@ -291,7 +304,6 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
     marginBottom: 4,
   },
   brandTagline: {
@@ -300,7 +312,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    backgroundColor: Colors.gray50,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -20,
@@ -310,7 +321,6 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: Spacing.xl,
     shadowColor: '#000',
@@ -322,12 +332,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     marginBottom: Spacing.xl,
   },
   inputGroup: {
@@ -336,7 +344,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   labelRow: {
@@ -347,41 +354,26 @@ const styles = StyleSheet.create({
   },
   forgotLink: {
     fontSize: FontSize.sm,
-    color: Colors.primary,
     fontWeight: FontWeight.medium,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 54,
-    backgroundColor: Colors.gray50,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
     overflow: 'hidden',
-  },
-  inputFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-  },
-  inputError: {
-    borderColor: Colors.error,
   },
   inputIcon: {
     width: 46,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.gray100,
-  },
-  inputIconActive: {
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingHorizontal: Spacing.md,
   },
   eyeBtn: {
@@ -395,47 +387,35 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: FontSize.xs,
-    color: Colors.error,
   },
   apiError: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
     padding: Spacing.md,
     borderRadius: 12,
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: '#FECACA',
   },
   apiErrorText: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.error,
   },
   button: {
     flexDirection: 'row',
     height: 54,
-    backgroundColor: Colors.primary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  buttonDisabled: {
-    backgroundColor: Colors.gray300,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   buttonText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
   divider: {
     flexDirection: 'row',
@@ -445,11 +425,9 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.gray200,
   },
   dividerText: {
     fontSize: FontSize.sm,
-    color: Colors.gray400,
     marginHorizontal: Spacing.md,
   },
   socialRow: {
@@ -461,9 +439,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 14,
-    backgroundColor: Colors.gray50,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -472,16 +448,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.gray50,
   },
   footerText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
   },
   footerLink: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.primary,
   },
 });
 

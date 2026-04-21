@@ -28,6 +28,7 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -336,7 +337,7 @@ const ProfileDetailInner: React.FC = () => {
 
   // Swipe mutation
   const swipeMutation = useMutation({
-    mutationFn: (params: { targetUserId: string; action: 'LIKE' | 'UNLIKE' }) =>
+    mutationFn: (params: { targetUserId: string; action: 'LIKE' | 'UNLIKE' | 'SUPER_LIKE' }) =>
       datingService.swipe(params),
     onSuccess: (data) => {
       // Invalidate queries to refresh lists
@@ -440,6 +441,12 @@ const ProfileDetailInner: React.FC = () => {
     if (!profile?.userId || swipeMutation.isPending) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     swipeMutation.mutate({ targetUserId: profile.userId, action: 'UNLIKE' });
+  }, [profile?.userId, swipeMutation]);
+
+  const handleSuperLike = useCallback(() => {
+    if (!profile?.userId || swipeMutation.isPending) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    swipeMutation.mutate({ targetUserId: profile.userId, action: 'SUPER_LIKE' });
   }, [profile?.userId, swipeMutation]);
 
   // Open reply modal for a prompt
@@ -756,48 +763,97 @@ const ProfileDetailInner: React.FC = () => {
         <View style={{ height: 100 }} />
       </Animated.ScrollView>
 
-      {/* Fixed Action Bar */}
-      <SafeAreaView edges={['bottom']} style={styles.actionBarContainer}>
-        <View style={[styles.actionBar, { backgroundColor: theme.bg.base }]}>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              styles.nopeButton,
-              { borderColor: theme.semantic.nope.main },
-              swipeMutation.isPending && styles.actionButtonDisabled,
-            ]}
-            onPress={handleNope}
-            disabled={swipeMutation.isPending}
-          >
-            {swipeMutation.isPending && swipeMutation.variables?.action === 'UNLIKE' ? (
-              <ActivityIndicator size="small" color={theme.semantic.nope.main} />
-            ) : (
-              <MaterialCommunityIcons
-                name="close"
-                size={28}
-                color={theme.semantic.nope.main}
-              />
-            )}
-          </TouchableOpacity>
+      {/* Fixed Action Bar with Glass Effect */}
+      <View style={styles.actionBarContainer}>
+        {Platform.OS === 'ios' && (
+          <>
+            <BlurView
+              style={StyleSheet.absoluteFill}
+              intensity={80}
+              tint={theme.bg.base === '#FFFFFF' ? 'light' : 'dark'}
+            />
+            <View style={[styles.actionBarOverlay, { backgroundColor: theme.bg.base === '#FFFFFF' ? 'rgba(255,255,255,0.75)' : 'rgba(13,13,13,0.6)' }]} />
+          </>
+        )}
+        {Platform.OS === 'android' && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.bg.base }]} />
+        )}
+        <View style={[styles.actionBarBorder, { backgroundColor: theme.border.subtle }]} />
+        <SafeAreaView edges={['bottom']} style={styles.actionBarInner}>
+          <View style={styles.actionBar}>
+            {/* Nope Button */}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.nopeButton,
+                {
+                  borderColor: theme.semantic.nope.main,
+                  backgroundColor: theme.bg.base === '#FFFFFF' ? '#FFFFFF' : theme.bg.elevated,
+                },
+                swipeMutation.isPending && styles.actionButtonDisabled,
+              ]}
+              onPress={handleNope}
+              disabled={swipeMutation.isPending}
+              activeOpacity={0.8}
+            >
+              {swipeMutation.isPending && swipeMutation.variables?.action === 'UNLIKE' ? (
+                <ActivityIndicator size="small" color={theme.semantic.nope.main} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="close"
+                  size={28}
+                  color={theme.semantic.nope.main}
+                />
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              styles.likeButton,
-              { backgroundColor: theme.semantic.like.main },
-              swipeMutation.isPending && styles.actionButtonDisabled,
-            ]}
-            onPress={handleLike}
-            disabled={swipeMutation.isPending}
-          >
-            {swipeMutation.isPending && swipeMutation.variables?.action === 'LIKE' ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <MaterialCommunityIcons name="heart" size={28} color="#FFFFFF" />
-            )}
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+            {/* Super Like Button */}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.superLikeButton,
+                {
+                  borderColor: theme.semantic.superLike.main,
+                  backgroundColor: theme.bg.base === '#FFFFFF' ? '#FFFFFF' : theme.bg.elevated,
+                },
+                swipeMutation.isPending && styles.actionButtonDisabled,
+              ]}
+              onPress={handleSuperLike}
+              disabled={swipeMutation.isPending}
+              activeOpacity={0.8}
+            >
+              {swipeMutation.isPending && swipeMutation.variables?.action === 'SUPER_LIKE' ? (
+                <ActivityIndicator size="small" color={theme.semantic.superLike.main} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="star"
+                  size={22}
+                  color={theme.semantic.superLike.main}
+                />
+              )}
+            </TouchableOpacity>
+
+            {/* Like Button */}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.likeButton,
+                { backgroundColor: theme.semantic.like.main },
+                swipeMutation.isPending && styles.actionButtonDisabled,
+              ]}
+              onPress={handleLike}
+              disabled={swipeMutation.isPending}
+              activeOpacity={0.8}
+            >
+              {swipeMutation.isPending && swipeMutation.variables?.action === 'LIKE' ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <MaterialCommunityIcons name="heart" size={28} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
 
       {/* Image Viewer Modal */}
       <Modal
@@ -1303,16 +1359,28 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    overflow: 'hidden',
+  },
+  actionBarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  actionBarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+  },
+  actionBarInner: {
+    width: '100%',
   },
   actionBar: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
-    gap: SPACING.xl,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    gap: SPACING.lg,
   },
   actionButton: {
     width: 64,
@@ -1320,20 +1388,37 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   nopeButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
   },
-  likeButton: {
-    shadowColor: '#FF4458',
+  superLikeButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    backgroundColor: 'transparent',
+    shadowColor: '#00D4FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
+    elevation: 6,
+  },
+  likeButton: {
+    shadowColor: '#FF4458',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     elevation: 8,
   },
   actionButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
 
   // Image Viewer Modal

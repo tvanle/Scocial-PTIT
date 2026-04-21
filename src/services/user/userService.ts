@@ -8,7 +8,7 @@ class UserService {
     return response.data;
   }
 
-  async updateProfile(data: { fullName?: string; bio?: string; phone?: string; faculty?: string; className?: string }): Promise<User> {
+  async updateProfile(data: { fullName?: string; bio?: string; favoriteMusic?: string | null; phone?: string; faculty?: string; className?: string }): Promise<User> {
     const response = await apiClient.patch(ENDPOINTS.USER.UPDATE_PROFILE, data);
     return response.data;
   }

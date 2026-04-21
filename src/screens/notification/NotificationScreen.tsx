@@ -8,28 +8,194 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
-  Modal,
-  Pressable,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Avatar, EmptyState } from '../../components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout } from '../../constants/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BottomMenu } from '../../components/common';
+import type { BottomMenuItem } from '../../components/common';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { Notification, NotificationType } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { notificationService } from '../../services/notification/notificationService';
 import { userService } from '../../services/user/userService';
 import { useFetch } from '../../hooks';
 import { showAlert } from '../../utils/alert';
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 interface NotificationScreenProps {
   navigation: any;
 }
 
-type FilterChip = 'all' | 'follows' | 'invites';
+type FilterChip = 'all' | 'follows' | 'likes' | 'comments';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+// Notification Item Component
+interface NotificationItemProps {
+  item: Notification;
+  index: number;
+  colors: any;
+  onPress: (item: Notification) => void;
+  onFollowBack?: (userId: string) => void;
+  isFollowed?: boolean;
+  isFollowing?: boolean;
+}
+
+const NotificationItem: React.FC<NotificationItemProps> = React.memo(({
+  item,
+  index,
+  colors,
+  onPress,
+  onFollowBack,
+  isFollowed,
+  isFollowing,
+}) => {
+  const scale = useSharedValue(1);
+
+  const getNotificationIcon = (type: NotificationType) => {
+    const t = type.toUpperCase();
+    switch (t) {
+      case 'LIKE':
+      case 'LIKE_POST':
+        return { name: 'heart', color: '#FFFFFF', bgColor: '#FF3B5C', gradient: ['#FF3B5C', '#FF6B6B'] };
+      case 'COMMENT':
+      case 'COMMENT_POST':
+        return { name: 'chatbubble', color: '#FFFFFF', bgColor: '#3B82F6', gradient: ['#3B82F6', '#60A5FA'] };
+      case 'SHARE_POST':
+        return { name: 'repeat', color: '#FFFFFF', bgColor: '#10B981', gradient: ['#10B981', '#34D399'] };
+      case 'FOLLOW':
+      case 'FOLLOW_BACK':
+        return { name: 'person-add', color: '#FFFFFF', bgColor: '#8B5CF6', gradient: ['#8B5CF6', '#A78BFA'] };
+      case 'MENTION':
+      case 'TAG':
+        return { name: 'at', color: '#FFFFFF', bgColor: '#F59E0B', gradient: ['#F59E0B', '#FBBF24'] };
+      case 'MATCH_CREATED':
+        return { name: 'heart-circle', color: '#FFFFFF', bgColor: '#EC4899', gradient: ['#EC4899', '#F472B6'] };
+      case 'SUPER_LIKE':
+        return { name: 'star', color: '#FFFFFF', bgColor: '#F59E0B', gradient: ['#F59E0B', '#FBBF24'] };
+      case 'MESSAGE':
+        return { name: 'chatbubbles', color: '#FFFFFF', bgColor: '#06B6D4', gradient: ['#06B6D4', '#22D3EE'] };
+      default:
+        return { name: 'notifications', color: '#FFFFFF', bgColor: colors.primary, gradient: [colors.primary, colors.primary] };
+    }
+  };
+
+  const icon = getNotificationIcon(item.type);
+  const isFollowType = item.type.toUpperCase() === 'FOLLOW';
+  const actorId = item.actor?.id;
+  const notificationBody = item.body || item.content || '';
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View entering={FadeInDown.delay(index * 50).duration(300).springify()}>
+      <AnimatedTouchable
+        style={[
+          styles.notificationItem,
+          {
+            backgroundColor: item.isRead ? colors.background : colors.primarySoft,
+            borderColor: item.isRead ? colors.borderLight : colors.primaryLight,
+          },
+          animatedStyle,
+        ]}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress(item);
+        }}
+        activeOpacity={1}
+      >
+        {/* Avatar with Icon Badge */}
+        <View style={styles.avatarContainer}>
+          {item.actor?.avatar ? (
+            <Image source={{ uri: item.actor.avatar }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.gray200 }]}>
+              <Ionicons name="person" size={20} color={colors.gray400} />
+            </View>
+          )}
+          <View style={[styles.iconBadge, { backgroundColor: icon.bgColor }]}>
+            <Ionicons name={icon.name as any} size={10} color={icon.color} />
+          </View>
+        </View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          <Text style={[styles.notificationText, { color: colors.textPrimary }]} numberOfLines={2}>
+            <Text style={styles.actorName}>{item.actor?.fullName}</Text>
+            {' '}{notificationBody}
+          </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="time-outline" size={12} color={colors.textTertiary} />
+            <Text style={[styles.timeText, { color: colors.textTertiary }]}>
+              {formatTimeAgo(item.createdAt)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Action Button or Unread Indicator */}
+        {isFollowType && actorId && onFollowBack ? (
+          <TouchableOpacity
+            style={[
+              styles.followBackButton,
+              {
+                backgroundColor: isFollowed ? 'transparent' : colors.primary,
+                borderWidth: isFollowed ? 1.5 : 0,
+                borderColor: colors.gray300,
+              },
+            ]}
+            onPress={() => !isFollowed && onFollowBack(actorId)}
+            disabled={isFollowed || isFollowing}
+            activeOpacity={0.8}
+          >
+            {isFollowing ? (
+              <ActivityIndicator size="small" color={isFollowed ? colors.textSecondary : '#FFFFFF'} />
+            ) : (
+              <>
+                <Ionicons
+                  name={isFollowed ? 'checkmark' : 'person-add'}
+                  size={14}
+                  color={isFollowed ? colors.textSecondary : '#FFFFFF'}
+                />
+                <Text style={[styles.followBackText, { color: isFollowed ? colors.textSecondary : '#FFFFFF' }]}>
+                  {isFollowed ? 'Đã theo dõi' : 'Theo dõi'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ) : !item.isRead ? (
+          <View style={styles.unreadIndicator}>
+            <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+          </View>
+        ) : null}
+      </AnimatedTouchable>
+    </Animated.View>
+  );
+});
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const { data: notificationsData, loading, refreshing, onRefresh, setData, refetch } = useFetch(
     useCallback(() => notificationService.getNotifications({ page: 1, limit: 50 }), []),
   );
@@ -42,10 +208,12 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const handleFollowBack = async (userId: string) => {
     if (followingInProgress.has(userId)) return;
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFollowingInProgress(prev => new Set(prev).add(userId));
     try {
       await userService.follow(userId);
       setFollowedUsers(prev => new Set(prev).add(userId));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('Failed to follow user:', error);
       showAlert('Lỗi', 'Không thể theo dõi người dùng này');
@@ -59,7 +227,6 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const handleNotificationPress = async (notification: Notification) => {
-    // Mark as read
     if (!notification.isRead) {
       setData(notificationsData ? {
         ...notificationsData,
@@ -74,15 +241,11 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       }
     }
 
-    // Get postId from referenceId or data
     const postId = notification.referenceId || notification.data?.postId;
     const userId = notification.actor?.id;
-
-    // Navigate based on notification type
     const type = notification.type.toUpperCase();
 
     switch (type) {
-      // Post interactions -> go to post detail
       case 'LIKE':
       case 'LIKE_POST':
       case 'COMMENT':
@@ -90,20 +253,12 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       case 'SHARE_POST':
       case 'MENTION':
       case 'TAG':
-        if (postId) {
-          navigation.navigate('PostDetail', { postId });
-        }
+        if (postId) navigation.navigate('PostDetail', { postId });
         break;
-
-      // Follow -> go to user profile
       case 'FOLLOW':
       case 'FOLLOW_BACK':
-        if (userId) {
-          navigation.navigate('UserProfile', { userId });
-        }
+        if (userId) navigation.navigate('UserProfile', { userId });
         break;
-
-      // Dating match -> go to dating chat room
       case 'MATCH_CREATED':
         if (notification.actor) {
           navigation.navigate('DatingChatRoom', {
@@ -116,15 +271,9 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           });
         }
         break;
-
-      // Super like -> go to dating discovery or user
       case 'SUPER_LIKE':
-        if (userId) {
-          navigation.navigate('UserProfile', { userId });
-        }
+        if (userId) navigation.navigate('UserProfile', { userId });
         break;
-
-      // Message -> go to chat
       case 'MESSAGE':
         if (notification.data?.conversationId) {
           navigation.navigate('ChatRoom', { conversationId: notification.data.conversationId });
@@ -132,23 +281,19 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           navigation.navigate('ChatRoom', { userId });
         }
         break;
-
-      // System notification -> no navigation
-      case 'SYSTEM':
-      default:
-        break;
     }
   };
 
   const handleMarkAllRead = async () => {
     setShowMenu(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setData(notificationsData ? {
       ...notificationsData,
       data: notificationsData.data.map((n: Notification) => ({ ...n, isRead: true })),
     } : null);
     try {
       await notificationService.markAllAsRead();
-    } catch (error) {
+    } catch {
       refetch();
     }
   };
@@ -156,18 +301,19 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const handleClearAll = () => {
     setShowMenu(false);
     showAlert(
-      'Xoa tat ca thong bao',
-      'Ban co chac chan muon xoa tat ca thong bao? Hanh dong nay khong the hoan tac.',
+      'Xóa tất cả',
+      'Bạn có chắc muốn xóa tất cả thông báo?',
       [
-        { text: 'Huy', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Xoa tat ca',
+          text: 'Xóa',
           style: 'destructive',
           onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setData(notificationsData ? { ...notificationsData, data: [] } : null);
             try {
               await notificationService.clearAll();
-            } catch (error) {
+            } catch {
               refetch();
             }
           },
@@ -176,123 +322,115 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     );
   };
 
-  const getNotificationIcon = (type: NotificationType): { name: keyof typeof Ionicons.glyphMap; color: string } => {
-    const t = type.toUpperCase();
-    switch (t) {
-      case 'LIKE':
-      case 'LIKE_POST':
-        return { name: 'heart', color: Colors.like };
-      case 'COMMENT':
-      case 'COMMENT_POST':
-        return { name: 'chatbubble', color: Colors.info };
-      case 'SHARE_POST':
-        return { name: 'repeat', color: Colors.success };
-      case 'FOLLOW':
-      case 'FOLLOW_BACK':
-        return { name: 'person-add', color: Colors.primary };
-      case 'MENTION':
-      case 'TAG':
-        return { name: 'at', color: Colors.info };
-      case 'MATCH_CREATED':
-        return { name: 'heart-circle', color: '#FF6B6B' };
-      case 'SUPER_LIKE':
-        return { name: 'star', color: '#FFD700' };
-      case 'MESSAGE':
-        return { name: 'chatbubbles', color: Colors.info };
-      case 'SYSTEM':
-        return { name: 'information-circle', color: Colors.textSecondary };
-      default:
-        return { name: 'notifications', color: Colors.primary };
-    }
-  };
-
-  const filterChips: { key: FilterChip; label: string }[] = [
-    { key: 'all', label: 'Tất cả' },
-    { key: 'follows', label: 'Theo dõi' },
-    { key: 'invites', label: 'Tương tác' },
+  const filterChips: { key: FilterChip; label: string; icon: string; activeIcon: string }[] = [
+    { key: 'all', label: 'Tất cả', icon: 'apps-outline', activeIcon: 'apps' },
+    { key: 'follows', label: 'Theo dõi', icon: 'person-add-outline', activeIcon: 'person-add' },
+    { key: 'likes', label: 'Lượt thích', icon: 'heart-outline', activeIcon: 'heart' },
+    { key: 'comments', label: 'Bình luận', icon: 'chatbubble-outline', activeIcon: 'chatbubble' },
   ];
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === 'all') return notifications;
 
-    const normalizeType = (type: string) => type.toUpperCase();
-
     const typeMap: Record<FilterChip, string[]> = {
       all: [],
       follows: ['FOLLOW', 'FOLLOW_BACK'],
-      invites: ['MENTION', 'TAG', 'MESSAGE', 'MATCH_CREATED', 'SUPER_LIKE'],
+      likes: ['LIKE', 'LIKE_POST', 'SUPER_LIKE'],
+      comments: ['COMMENT', 'COMMENT_POST', 'MENTION', 'TAG'],
     };
 
     return notifications.filter(n =>
-      typeMap[activeFilter]?.includes(normalizeType(n.type))
+      typeMap[activeFilter]?.includes(n.type.toUpperCase())
     );
   }, [notifications, activeFilter]);
 
+  const groupedNotifications = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const groups: { title: string; data: Notification[] }[] = [];
+    const todayItems: Notification[] = [];
+    const yesterdayItems: Notification[] = [];
+    const thisWeekItems: Notification[] = [];
+    const earlierItems: Notification[] = [];
+
+    filteredNotifications.forEach(n => {
+      const date = new Date(n.createdAt);
+      date.setHours(0, 0, 0, 0);
+
+      if (date.getTime() === today.getTime()) {
+        todayItems.push(n);
+      } else if (date.getTime() === yesterday.getTime()) {
+        yesterdayItems.push(n);
+      } else if (date.getTime() > weekAgo.getTime()) {
+        thisWeekItems.push(n);
+      } else {
+        earlierItems.push(n);
+      }
+    });
+
+    if (todayItems.length > 0) groups.push({ title: 'Hôm nay', data: todayItems });
+    if (yesterdayItems.length > 0) groups.push({ title: 'Hôm qua', data: yesterdayItems });
+    if (thisWeekItems.length > 0) groups.push({ title: 'Tuần này', data: thisWeekItems });
+    if (earlierItems.length > 0) groups.push({ title: 'Trước đó', data: earlierItems });
+
+    return groups;
+  }, [filteredNotifications]);
+
   const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
 
-  const renderNotification = ({ item }: { item: Notification }) => {
-    const icon = getNotificationIcon(item.type);
-    const isFollowType = item.type.toUpperCase() === 'FOLLOW';
-    const actorId = item.actor?.id;
-    const isFollowed = actorId ? followedUsers.has(actorId) : false;
-    const isFollowing = actorId ? followingInProgress.has(actorId) : false;
-    const notificationBody = item.body || item.content || '';
+  const menuItems: BottomMenuItem[] = [
+    {
+      label: 'Đánh dấu đã đọc tất cả',
+      icon: 'checkmark-done-outline',
+      onPress: handleMarkAllRead,
+    },
+    {
+      label: 'Xóa tất cả thông báo',
+      icon: 'trash-outline',
+      destructive: true,
+      onPress: handleClearAll,
+    },
+  ];
 
-    return (
-      <TouchableOpacity
-        style={[styles.notificationItem, !item.isRead && styles.unreadItem]}
-        onPress={() => handleNotificationPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.avatarContainer}>
-          <Avatar uri={item.actor?.avatar} name={item.actor?.fullName} size="md" />
-          <View style={[styles.iconBadge, { backgroundColor: icon.color }]}>
-            <Ionicons name={icon.name} size={10} color={Colors.white} />
-          </View>
-        </View>
+  const renderSectionHeader = (title: string, index: number) => (
+    <Animated.View
+      entering={FadeInRight.delay(index * 100).duration(300)}
+      style={styles.sectionHeader}
+    >
+      <View style={[styles.sectionLine, { backgroundColor: colors.borderLight }]} />
+      <Text style={[styles.sectionTitle, { color: colors.textTertiary, backgroundColor: colors.background }]}>
+        {title}
+      </Text>
+    </Animated.View>
+  );
 
-        <View style={styles.content}>
-          <Text style={styles.notificationText}>
-            <Text style={styles.actorName}>{item.actor?.fullName}</Text>
-            {' '}{notificationBody}
-          </Text>
-          <Text style={styles.timeText}>{formatTimeAgo(item.createdAt)}</Text>
-        </View>
-
-        {!item.isRead && !isFollowType && <View style={styles.unreadDot} />}
-
-        {isFollowType && actorId && (
-          <TouchableOpacity
-            style={[
-              styles.followBackButton,
-              isFollowed && styles.followedButton
-            ]}
-            onPress={() => !isFollowed && handleFollowBack(actorId)}
-            disabled={isFollowed || isFollowing}
-          >
-            {isFollowing ? (
-              <ActivityIndicator size="small" color={Colors.white} />
-            ) : (
-              <Text style={[styles.followBackText, isFollowed && styles.followedText]}>
-                {isFollowed ? 'Đã theo dõi' : 'Theo dõi lại'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </TouchableOpacity>
-    );
-  };
+  const renderEmptyState = () => (
+    <Animated.View entering={FadeInDown.duration(400)} style={styles.emptyContainer}>
+      <View style={[styles.emptyIconWrapper, { backgroundColor: colors.primarySoft }]}>
+        <MaterialCommunityIcons name="bell-sleep-outline" size={48} color={colors.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Chưa có thông báo</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.textTertiary }]}>
+        Khi có người tương tác với bạn, thông báo sẽ hiển thị ở đây
+      </Text>
+    </Animated.View>
+  );
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Hoat dong</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Thông báo</Text>
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </SafeAreaView>
       </View>
@@ -300,38 +438,33 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hoat dong</Text>
-          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.markAllButton}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Thông báo</Text>
+            {unreadCount > 0 && (
+              <Animated.View
+                entering={FadeInRight.duration(300)}
+                style={[styles.unreadBadge, { backgroundColor: colors.primary }]}
+              >
+                <Text style={styles.unreadBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              </Animated.View>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowMenu(true);
+            }}
+            style={[styles.menuButton, { backgroundColor: colors.gray100 }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
-
-        {/* Action Menu Modal */}
-        <Modal
-          visible={showMenu}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowMenu(false)}
-        >
-          <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
-            <View style={styles.menuContainer}>
-              <TouchableOpacity style={styles.menuItem} onPress={handleMarkAllRead}>
-                <Ionicons name="checkmark-done-outline" size={20} color={Colors.textPrimary} />
-                <Text style={styles.menuItemText}>Danh dau da doc tat ca</Text>
-              </TouchableOpacity>
-              <View style={styles.menuDivider} />
-              <TouchableOpacity style={styles.menuItem} onPress={handleClearAll}>
-                <Ionicons name="trash-outline" size={20} color={Colors.error} />
-                <Text style={[styles.menuItemText, { color: Colors.error }]}>Xoa tat ca thong bao</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Modal>
 
         {/* Filter Chips */}
         <View style={styles.chipsWrapper}>
@@ -340,48 +473,83 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsContainer}
           >
-          {filterChips.map(chip => (
-            <TouchableOpacity
-              key={chip.key}
-              style={[styles.chip, activeFilter === chip.key && styles.chipActive]}
-              onPress={() => setActiveFilter(chip.key)}
-            >
-              <Text style={[styles.chipText, activeFilter === chip.key && styles.chipTextActive]}>
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+            {filterChips.map((chip, index) => {
+              const isActive = activeFilter === chip.key;
+              return (
+                <Animated.View key={chip.key} entering={FadeInRight.delay(index * 50).duration(300)}>
+                  <TouchableOpacity
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: isActive ? colors.primary : colors.gray100,
+                        borderColor: isActive ? colors.primary : colors.borderLight,
+                      },
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setActiveFilter(chip.key);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={(isActive ? chip.activeIcon : chip.icon) as any}
+                      size={16}
+                      color={isActive ? '#FFFFFF' : colors.textSecondary}
+                    />
+                    <Text style={[styles.chipText, { color: isActive ? '#FFFFFF' : colors.textSecondary }]}>
+                      {chip.label}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
           </ScrollView>
         </View>
 
+        {/* Notifications List */}
         <FlatList
           style={styles.list}
-          data={filteredNotifications}
-          renderItem={renderNotification}
-          keyExtractor={(item) => item.id}
+          data={groupedNotifications}
+          renderItem={({ item: group, index: groupIndex }) => (
+            <View>
+              {renderSectionHeader(group.title, groupIndex)}
+              {group.data.map((notification, index) => (
+                <NotificationItem
+                  key={notification.id}
+                  item={notification}
+                  index={index}
+                  colors={colors}
+                  onPress={handleNotificationPress}
+                  onFollowBack={handleFollowBack}
+                  isFollowed={notification.actor?.id ? followedUsers.has(notification.actor.id) : false}
+                  isFollowing={notification.actor?.id ? followingInProgress.has(notification.actor.id) : false}
+                />
+              ))}
+            </View>
+          )}
+          keyExtractor={(item) => item.title}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <EmptyState
-              icon="notifications-outline"
-              title="Khong co hoat dong nao"
-              subtitle="Khi co nguoi tuong tac, ban se thay o day"
-            />
-          }
-          removeClippedSubviews
-          maxToRenderPerBatch={10}
-          initialNumToRender={10}
-          windowSize={5}
+          contentContainerStyle={[
+            styles.listContent,
+            filteredNotifications.length === 0 && styles.listContentEmpty,
+          ]}
+          ListEmptyComponent={renderEmptyState}
         />
       </SafeAreaView>
+
+      <BottomMenu
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        items={menuItems}
+      />
     </View>
   );
 };
@@ -389,7 +557,6 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   safeArea: {
     flex: 1,
@@ -399,78 +566,117 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingVertical: Spacing.md,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   headerTitle: {
-    fontSize: FontSize.xxl,
+    fontSize: 28,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
-  markAllButton: {
+  unreadBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+  },
+  menuButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipsWrapper: {
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
+    paddingBottom: Spacing.sm,
   },
   chipsContainer: {
     paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
+    gap: Spacing.sm,
   },
   chip: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.gray50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.gray200,
-    marginRight: Spacing.sm,
-  },
-  chipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    gap: 6,
   },
   chipText: {
-    fontSize: FontSize.md,
+    fontSize: 13,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-  },
-  chipTextActive: {
-    color: Colors.white,
   },
   list: {
     flex: 1,
   },
   listContent: {
     paddingBottom: 100,
+    paddingHorizontal: Spacing.sm,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 1,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    paddingHorizontal: Spacing.md,
   },
   notificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-  },
-  unreadItem: {
-    backgroundColor: Colors.primarySoft,
+    marginVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   avatarContainer: {
     position: 'relative',
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  avatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iconBadge: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -478,84 +684,69 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   notificationText: {
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    fontSize: 14,
     lineHeight: 20,
   },
   actorName: {
     fontWeight: FontWeight.bold,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
   timeText: {
-    fontSize: FontSize.xs,
-    color: Colors.textTertiary,
-    marginTop: Spacing.xxs,
+    fontSize: 12,
+  },
+  unreadIndicator: {
+    paddingLeft: Spacing.sm,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   followBackButton: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-    minWidth: 100,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  followedButton: {
-    backgroundColor: Colors.gray100,
-    borderWidth: 1,
-    borderColor: Colors.gray300,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
   },
   followBackText: {
-    fontSize: FontSize.xs,
+    fontSize: 12,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
-  },
-  followedText: {
-    color: Colors.textSecondary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuOverlay: {
+  emptyContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    paddingTop: 100,
-    paddingRight: Spacing.lg,
-  },
-  menuContainer: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    minWidth: 220,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  menuItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md + 2,
-    gap: Spacing.md,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xxl,
   },
-  menuItemText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
+  emptyIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
   },
-  menuDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.gray200,
-    marginHorizontal: Spacing.md,
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
 

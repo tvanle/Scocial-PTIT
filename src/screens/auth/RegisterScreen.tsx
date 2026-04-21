@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
 import { authService } from '../../services/auth/authService';
 import { RegisterData } from '../../types';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -38,6 +39,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const { colors, isDark } = useTheme();
 
   const updateField = (field: keyof RegisterData, value: string) => {
     setFormData({ ...formData, [field]: value });
@@ -82,19 +85,24 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     options?: { secure?: boolean; keyboard?: any; capitalize?: any }
   ) => (
     <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label} <Text style={styles.required}>*</Text></Text>
+      <Text style={[styles.label, { color: colors.textPrimary }]}>{label} <Text style={[styles.required, { color: colors.error }]}>*</Text></Text>
       <View style={[
         styles.inputWrapper,
-        focusedField === field && styles.inputFocused,
-        errors[field] && styles.inputError
+        { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+        focusedField === field && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+        errors[field] && { borderColor: colors.error }
       ]}>
-        <View style={[styles.inputIcon, focusedField === field && styles.inputIconActive]}>
-          <Ionicons name={icon as any} size={18} color={focusedField === field ? Colors.primary : Colors.gray400} />
+        <View style={[
+          styles.inputIcon,
+          { backgroundColor: colors.gray100 },
+          focusedField === field && { backgroundColor: colors.primaryLight }
+        ]}>
+          <Ionicons name={icon as any} size={18} color={focusedField === field ? colors.primary : colors.gray400} />
         </View>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: colors.textPrimary }]}
           placeholder={placeholder}
-          placeholderTextColor={Colors.gray400}
+          placeholderTextColor={colors.gray400}
           value={formData[field]}
           onChangeText={(text) => updateField(field, text)}
           secureTextEntry={options?.secure && !showPassword}
@@ -105,35 +113,35 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
         {options?.secure && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-            <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.gray400} />
+            <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={colors.gray400} />
           </TouchableOpacity>
         )}
       </View>
       {errors[field] && (
         <View style={styles.errorRow}>
-          <Ionicons name="alert-circle" size={14} color={Colors.error} />
-          <Text style={styles.errorText}>{errors[field]}</Text>
+          <Ionicons name="alert-circle" size={14} color={colors.error} />
+          <Text style={[styles.errorText, { color: colors.error }]}>{errors[field]}</Text>
         </View>
       )}
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.gray100 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.inputBackground }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Tao tai khoan</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Tao tai khoan</Text>
             <View style={styles.stepIndicator}>
-              <View style={[styles.stepDot, styles.stepDotActive]} />
-              <View style={styles.stepLine} />
-              <View style={styles.stepDot} />
+              <View style={[styles.stepDot, styles.stepDotActive, { backgroundColor: colors.primary }]} />
+              <View style={[styles.stepLine, { backgroundColor: colors.gray200 }]} />
+              <View style={[styles.stepDot, { backgroundColor: colors.gray300 }]} />
             </View>
           </View>
           <View style={styles.headerRight} />
@@ -149,18 +157,18 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             keyboardShouldPersistTaps="handled"
           >
             {/* Welcome Card */}
-            <View style={styles.welcomeCard}>
-              <View style={styles.welcomeIcon}>
-                <Ionicons name="person-add" size={24} color={Colors.primary} />
+            <View style={[styles.welcomeCard, { backgroundColor: colors.cardBackground }]}>
+              <View style={[styles.welcomeIcon, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name="person-add" size={24} color={colors.primary} />
               </View>
               <View style={styles.welcomeText}>
-                <Text style={styles.welcomeTitle}>Chao mung ban!</Text>
-                <Text style={styles.welcomeSubtitle}>Dien thong tin de tham gia cong dong PTIT</Text>
+                <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Chao mung ban!</Text>
+                <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>Dien thong tin de tham gia cong dong PTIT</Text>
               </View>
             </View>
 
             {/* Form */}
-            <View style={styles.form}>
+            <View style={[styles.form, { backgroundColor: colors.cardBackground }]}>
               {renderInput('fullName', 'Ho va ten', 'person', 'Nguyen Van A', { capitalize: 'words' })}
               {renderInput('studentId', 'Ma sinh vien', 'card', 'B21DCCN001', { capitalize: 'characters' })}
               {renderInput('email', 'Email', 'mail', 'email@example.com', { keyboard: 'email-address' })}
@@ -169,9 +177,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
               {/* API Error */}
               {apiError && (
-                <View style={styles.apiError}>
-                  <Ionicons name="warning" size={20} color={Colors.error} />
-                  <Text style={styles.apiErrorText}>{apiError}</Text>
+                <View style={[styles.apiError, { backgroundColor: colors.errorLight, borderColor: isDark ? colors.error : '#FECACA' }]}>
+                  <Ionicons name="warning" size={20} color={colors.error} />
+                  <Text style={[styles.apiErrorText, { color: colors.error }]}>{apiError}</Text>
                 </View>
               )}
 
@@ -181,34 +189,42 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
                 onPress={() => setAgreeTerms(!agreeTerms)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
-                  {agreeTerms && <Ionicons name="checkmark" size={14} color={Colors.white} />}
+                <View style={[
+                  styles.checkbox,
+                  { borderColor: colors.gray300 },
+                  agreeTerms && { backgroundColor: colors.primary, borderColor: colors.primary }
+                ]}>
+                  {agreeTerms && <Ionicons name="checkmark" size={14} color={colors.white} />}
                 </View>
-                <Text style={styles.termsText}>
-                  Toi dong y voi <Text style={styles.termsLink}>Dieu khoan su dung</Text> va{' '}
-                  <Text style={styles.termsLink}>Chinh sach bao mat</Text>
+                <Text style={[styles.termsText, { color: colors.textSecondary }]}>
+                  Toi dong y voi <Text style={[styles.termsLink, { color: colors.primary }]}>Dieu khoan su dung</Text> va{' '}
+                  <Text style={[styles.termsLink, { color: colors.primary }]}>Chinh sach bao mat</Text>
                 </Text>
               </TouchableOpacity>
               {errors.terms && (
                 <View style={styles.errorRow}>
-                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                  <Text style={styles.errorText}>{errors.terms}</Text>
+                  <Ionicons name="alert-circle" size={14} color={colors.error} />
+                  <Text style={[styles.errorText, { color: colors.error }]}>{errors.terms}</Text>
                 </View>
               )}
 
               {/* Register Button */}
               <TouchableOpacity
-                style={[styles.button, (!agreeTerms || isLoading) && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (!agreeTerms || isLoading) && { backgroundColor: colors.gray300, shadowOpacity: 0, elevation: 0 }
+                ]}
                 onPress={handleRegister}
                 disabled={isLoading || !agreeTerms}
                 activeOpacity={0.8}
               >
                 {isLoading ? (
-                  <ActivityIndicator color={Colors.white} size="small" />
+                  <ActivityIndicator color={colors.white} size="small" />
                 ) : (
                   <>
-                    <Text style={styles.buttonText}>Tao tai khoan</Text>
-                    <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                    <Text style={[styles.buttonText, { color: colors.white }]}>Tao tai khoan</Text>
+                    <Ionicons name="arrow-forward" size={20} color={colors.white} />
                   </>
                 )}
               </TouchableOpacity>
@@ -217,10 +233,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         </KeyboardAvoidingView>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Da co tai khoan? </Text>
+        <View style={[styles.footer, { backgroundColor: colors.cardBackground, borderTopColor: colors.gray100 }]}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Da co tai khoan? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.footerLink}>Dang nhap</Text>
+            <Text style={[styles.footerLink, { color: colors.primary }]}>Dang nhap</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -231,7 +247,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
   },
   safeArea: {
     flex: 1,
@@ -245,15 +260,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -263,7 +275,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 6,
   },
   stepIndicator: {
@@ -274,17 +285,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.gray300,
   },
   stepDotActive: {
-    backgroundColor: Colors.primary,
     width: 24,
     borderRadius: 4,
   },
   stepLine: {
     width: 20,
     height: 2,
-    backgroundColor: Colors.gray200,
     marginHorizontal: 4,
   },
   headerRight: {
@@ -297,7 +305,6 @@ const styles = StyleSheet.create({
   welcomeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: Spacing.lg,
     marginBottom: Spacing.lg,
@@ -311,7 +318,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
@@ -322,15 +328,12 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 2,
   },
   welcomeSubtitle: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
   },
   form: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: Spacing.lg,
     shadowColor: '#000',
@@ -345,44 +348,27 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
-  required: {
-    color: Colors.error,
-  },
+  required: {},
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
-    backgroundColor: Colors.gray50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
     overflow: 'hidden',
-  },
-  inputFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-  },
-  inputError: {
-    borderColor: Colors.error,
   },
   inputIcon: {
     width: 44,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.gray100,
-  },
-  inputIconActive: {
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingHorizontal: Spacing.md,
   },
   eyeBtn: {
@@ -396,23 +382,19 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: FontSize.xs,
-    color: Colors.error,
   },
   apiError: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
     padding: Spacing.md,
     borderRadius: 12,
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: '#FECACA',
   },
   apiErrorText: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.error,
   },
   termsRow: {
     flexDirection: 'row',
@@ -425,67 +407,48 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: Colors.gray300,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
   termsText: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
   termsLink: {
-    color: Colors.primary,
     fontWeight: FontWeight.medium,
   },
   button: {
     flexDirection: 'row',
     height: 54,
-    backgroundColor: Colors.primary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.md,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  buttonDisabled: {
-    backgroundColor: Colors.gray300,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   buttonText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
   },
   footerText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
   },
   footerLink: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.primary,
   },
 });
 

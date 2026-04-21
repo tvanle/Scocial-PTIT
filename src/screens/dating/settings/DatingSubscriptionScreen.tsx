@@ -122,6 +122,7 @@ const SubscriptionInner: React.FC = () => {
 
   const renderTransaction = ({ item, index }: { item: PaymentTransaction; index: number }) => (
     <Animated.View
+      key={item.id}
       entering={FadeInUp.delay(index * 50).duration(DURATION.normal)}
       style={[styles.txnItem, { backgroundColor: theme.bg.surface }]}
     >

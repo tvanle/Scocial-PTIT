@@ -14,10 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, FontSize, FontWeight, Spacing } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing } from '../../constants/theme';
 import { AuthStackParamList } from '../../types';
 import { authService } from '../../services/auth/authService';
 import { showAlert } from '../../utils/alert';
+import { useTheme } from '../../hooks/useThemeColors';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 type VerifyEmailRouteProp = RouteProp<AuthStackParamList, 'VerifyEmail'>;
@@ -35,6 +36,8 @@ const VerifyEmailScreen: React.FC = () => {
   const [countdown, setCountdown] = useState(60);
   const [error, setError] = useState('');
   const inputRefs = useRef<(TextInput | null)[]>([]);
+
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     if (countdown > 0) {
@@ -114,16 +117,16 @@ const VerifyEmailScreen: React.FC = () => {
   const isComplete = otp.every(digit => digit !== '');
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.gray100 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.inputBackground }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Xac thuc email</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Xac thuc email</Text>
           <View style={styles.headerRight} />
         </View>
 
@@ -133,22 +136,22 @@ const VerifyEmailScreen: React.FC = () => {
         >
           <View style={styles.content}>
             {/* Card */}
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
               {/* Icon */}
               <View style={styles.iconContainer}>
-                <View style={styles.iconBg}>
-                  <Ionicons name="mail-open" size={36} color={Colors.primary} />
+                <View style={[styles.iconBg, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="mail-open" size={36} color={colors.primary} />
                 </View>
-                <View style={styles.iconBadge}>
-                  <Ionicons name="notifications" size={14} color={Colors.white} />
+                <View style={[styles.iconBadge, { backgroundColor: colors.primary, borderColor: colors.cardBackground }]}>
+                  <Ionicons name="notifications" size={14} color={colors.white} />
                 </View>
               </View>
 
               {/* Title */}
-              <Text style={styles.title}>Kiem tra email</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Kiem tra email</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                 Chung toi da gui ma xac thuc 6 so den{'\n'}
-                <Text style={styles.email}>{email}</Text>
+                <Text style={[styles.email, { color: colors.primary }]}>{email}</Text>
               </Text>
 
               {/* OTP Input */}
@@ -159,8 +162,9 @@ const VerifyEmailScreen: React.FC = () => {
                     ref={(ref) => { inputRefs.current[index] = ref; }}
                     style={[
                       styles.otpInput,
-                      digit && styles.otpInputFilled,
-                      error && styles.otpInputError,
+                      { borderColor: colors.gray200, backgroundColor: colors.inputBackground, color: colors.textPrimary },
+                      digit && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+                      error && { borderColor: colors.error },
                     ]}
                     value={digit}
                     onChangeText={(value) => handleOtpChange(value, index)}
@@ -173,42 +177,46 @@ const VerifyEmailScreen: React.FC = () => {
               </View>
               {error && (
                 <View style={styles.errorRow}>
-                  <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Ionicons name="alert-circle" size={14} color={colors.error} />
+                  <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
                 </View>
               )}
 
               {/* Verify Button */}
               <TouchableOpacity
-                style={[styles.button, (!isComplete || loading) && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  (!isComplete || loading) && { backgroundColor: colors.gray300, shadowOpacity: 0, elevation: 0 }
+                ]}
                 onPress={handleVerify}
                 disabled={loading || !isComplete}
                 activeOpacity={0.8}
               >
                 {loading ? (
-                  <ActivityIndicator color={Colors.white} />
+                  <ActivityIndicator color={colors.white} />
                 ) : (
                   <>
-                    <Text style={styles.buttonText}>Xac thuc</Text>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
+                    <Text style={[styles.buttonText, { color: colors.white }]}>Xac thuc</Text>
+                    <Ionicons name="checkmark-circle" size={20} color={colors.white} />
                   </>
                 )}
               </TouchableOpacity>
 
               {/* Resend */}
               <View style={styles.resendContainer}>
-                <Text style={styles.resendText}>Khong nhan duoc ma? </Text>
+                <Text style={[styles.resendText, { color: colors.textSecondary }]}>Khong nhan duoc ma? </Text>
                 {countdown > 0 ? (
-                  <View style={styles.countdownBox}>
-                    <Ionicons name="time" size={14} color={Colors.gray400} />
-                    <Text style={styles.countdownText}>{countdown}s</Text>
+                  <View style={[styles.countdownBox, { backgroundColor: colors.gray100 }]}>
+                    <Ionicons name="time" size={14} color={colors.gray400} />
+                    <Text style={[styles.countdownText, { color: colors.gray500 }]}>{countdown}s</Text>
                   </View>
                 ) : (
                   <TouchableOpacity onPress={handleResend} disabled={resending}>
                     {resending ? (
-                      <ActivityIndicator size="small" color={Colors.primary} />
+                      <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
-                      <Text style={styles.resendLink}>Gui lai</Text>
+                      <Text style={[styles.resendLink, { color: colors.primary }]}>Gui lai</Text>
                     )}
                   </TouchableOpacity>
                 )}
@@ -216,10 +224,10 @@ const VerifyEmailScreen: React.FC = () => {
             </View>
 
             {/* Help */}
-            <View style={styles.helpCard}>
-              <Ionicons name="information-circle" size={20} color={Colors.primary} />
-              <Text style={styles.helpText}>
-                Kiem tra thu muc <Text style={styles.helpBold}>Spam</Text> neu ban khong thay email trong hop thu den
+            <View style={[styles.helpCard, { backgroundColor: colors.primarySoft, borderColor: colors.primaryLight }]}>
+              <Ionicons name="information-circle" size={20} color={colors.primary} />
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
+                Kiem tra thu muc <Text style={[styles.helpBold, { color: colors.textPrimary }]}>Spam</Text> neu ban khong thay email trong hop thu den
               </Text>
             </View>
           </View>
@@ -232,7 +240,6 @@ const VerifyEmailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
   },
   safeArea: {
     flex: 1,
@@ -246,22 +253,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   headerRight: {
     width: 42,
@@ -271,7 +274,6 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: Spacing.xl,
     alignItems: 'center',
@@ -289,7 +291,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 24,
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -300,27 +301,22 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: Colors.white,
   },
   title: {
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.xl,
   },
   email: {
-    color: Colors.primary,
     fontWeight: FontWeight.semiBold,
   },
   otpContainer: {
@@ -333,19 +329,9 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
     fontSize: 22,
     fontWeight: FontWeight.bold,
     textAlign: 'center',
-    color: Colors.textPrimary,
-  },
-  otpInputFilled: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-  },
-  otpInputError: {
-    borderColor: Colors.error,
   },
   errorRow: {
     flexDirection: 'row',
@@ -355,33 +341,24 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: FontSize.sm,
-    color: Colors.error,
   },
   button: {
     flexDirection: 'row',
     width: '100%',
     height: 54,
-    backgroundColor: Colors.primary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  buttonDisabled: {
-    backgroundColor: Colors.gray300,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   buttonText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
   resendContainer: {
     flexDirection: 'row',
@@ -389,47 +366,39 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
   },
   countdownBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.gray100,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: 8,
   },
   countdownText: {
     fontSize: FontSize.sm,
-    color: Colors.gray500,
     fontWeight: FontWeight.semiBold,
   },
   resendLink: {
     fontSize: FontSize.md,
-    color: Colors.primary,
     fontWeight: FontWeight.bold,
   },
   helpCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(196, 30, 58, 0.05)',
     padding: Spacing.md,
     borderRadius: 12,
     marginTop: Spacing.lg,
     gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(196, 30, 58, 0.1)',
   },
   helpText: {
     flex: 1,
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
   helpBold: {
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
 });
 

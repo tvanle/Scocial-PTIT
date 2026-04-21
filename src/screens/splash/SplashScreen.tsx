@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Image, StyleSheet, Animated, Dimensions } from 'react-native';
-import { Colors, FontWeight } from '../../constants/theme';
+import { FontWeight } from '../../constants/theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 const { width } = Dimensions.get('window');
 
@@ -9,6 +10,7 @@ interface SplashScreenProps {
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
+  const colors = useThemeColors();
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -62,9 +64,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   });
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeOut }]}>
+    <Animated.View style={[styles.container, { opacity: fadeOut, backgroundColor: colors.background }]}>
       {/* Background glow */}
-      <View style={styles.glowCircle} />
+      <View style={[styles.glowCircle, { backgroundColor: colors.primaryLight }]} />
 
       {/* Logo */}
       <Animated.View
@@ -82,29 +84,29 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
 
       {/* Title */}
       <Animated.View style={[styles.titleRow, { opacity: contentOpacity }]}>
-        <Animated.Text style={styles.titleLight}>Social </Animated.Text>
-        <Animated.Text style={styles.titleBold}>PTIT</Animated.Text>
+        <Animated.Text style={[styles.titleLight, { color: colors.textPrimary }]}>Social </Animated.Text>
+        <Animated.Text style={[styles.titleBold, { color: colors.textPrimary }]}>PTIT</Animated.Text>
       </Animated.View>
 
       {/* Divider + UNIVERSITY NETWORK */}
       <Animated.View style={[styles.dividerRow, { opacity: contentOpacity }]}>
-        <View style={styles.dividerLine} />
-        <Animated.Text style={styles.subtitle}>UNIVERSITY NETWORK</Animated.Text>
-        <View style={styles.dividerLine} />
+        <View style={[styles.dividerLine, { backgroundColor: colors.primary }]} />
+        <Animated.Text style={[styles.subtitle, { color: colors.primary }]}>UNIVERSITY NETWORK</Animated.Text>
+        <View style={[styles.dividerLine, { backgroundColor: colors.primary }]} />
       </Animated.View>
 
       {/* CONNECTING... */}
-      <Animated.Text style={[styles.connecting, { opacity: contentOpacity }]}>
+      <Animated.Text style={[styles.connecting, { opacity: contentOpacity, color: colors.textTertiary }]}>
         CONNECTING...
       </Animated.Text>
 
       {/* Progress bar */}
-      <Animated.View style={[styles.progressTrack, { opacity: contentOpacity }]}>
-        <Animated.View style={[styles.progressBar, { width: barWidth }]} />
+      <Animated.View style={[styles.progressTrack, { opacity: contentOpacity, backgroundColor: colors.gray200 }]}>
+        <Animated.View style={[styles.progressBar, { width: barWidth, backgroundColor: colors.primary }]} />
       </Animated.View>
 
       {/* Footer */}
-      <Animated.Text style={[styles.footer, { opacity: contentOpacity }]}>
+      <Animated.Text style={[styles.footer, { opacity: contentOpacity, color: colors.textSecondary }]}>
         OFFICIAL UNIVERSITY APP
       </Animated.Text>
     </Animated.View>
@@ -114,7 +116,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
@@ -124,7 +125,6 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: 'rgba(179, 38, 30, 0.04)',
     top: '28%',
   },
   logo: {
@@ -140,12 +140,10 @@ const styles = StyleSheet.create({
   titleLight: {
     fontSize: 36,
     fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
   },
   titleBold: {
     fontSize: 36,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -156,38 +154,32 @@ const styles = StyleSheet.create({
   dividerLine: {
     width: 40,
     height: 1.5,
-    backgroundColor: Colors.primary,
   },
   subtitle: {
     fontSize: 12,
     fontWeight: FontWeight.semiBold,
-    color: Colors.primary,
     letterSpacing: 3,
   },
   connecting: {
     fontSize: 11,
     fontWeight: FontWeight.medium,
-    color: Colors.textTertiary,
     letterSpacing: 2,
     marginBottom: 10,
   },
   progressTrack: {
     width: width * 0.4,
     height: 3,
-    backgroundColor: Colors.gray200,
     borderRadius: 2,
     overflow: 'hidden',
     marginBottom: 32,
   },
   progressBar: {
     height: 3,
-    backgroundColor: Colors.primary,
     borderRadius: 2,
   },
   footer: {
     fontSize: 11,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
     letterSpacing: 2,
   },
 });
