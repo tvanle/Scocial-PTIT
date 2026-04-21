@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Conversation, Message, SendMessageData, PaginatedResponse, PaginationParams } from '../../types';
 import apiClient from '../api/apiClient';
 import { ENDPOINTS } from '../../constants/api';
@@ -74,6 +75,43 @@ class ChatService {
   async getUnreadCount(): Promise<number> {
     const response = await apiClient.get(ENDPOINTS.CHAT.UNREAD_COUNT);
     return response.data.count;
+  }
+
+  async uploadVoice(uri: string): Promise<{ id: string; url: string }> {
+    const formData = new FormData();
+
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      formData.append('file', blob, 'voice.m4a');
+    } else {
+      formData.append('file', {
+        uri,
+        type: 'audio/m4a',
+        name: 'voice.m4a',
+      } as any);
+    }
+
+    const response = await apiClient.post(ENDPOINTS.MEDIA.UPLOAD, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      transformRequest: (data: FormData) => data,
+    });
+
+    return response.data;
+  }
+
+  async sendVoiceMessage(conversationId: string, voiceUri: string, duration: number): Promise<Message> {
+    // Upload voice file first
+    const media = await this.uploadVoice(voiceUri);
+
+    // Send message with voice media URL
+    const response = await apiClient.post(ENDPOINTS.CHAT.SEND_MESSAGE(conversationId), {
+      type: 'audio',
+      mediaUrl: media.url,
+      content: `${duration}`, // Store duration in content
+    });
+
+    return response.data;
   }
 }
 

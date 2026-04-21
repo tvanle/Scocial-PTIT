@@ -24,6 +24,8 @@ import { useTheme } from '../../hooks/useThemeColors';
 import { Message, User, Conversation, RootStackParamList } from '../../types';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { chatService } from '../../services/chat/chatService';
+import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
+import VoiceMessage from '../../components/chat/VoiceMessage';
 
 type ChatRoomScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChatRoom'>;
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
@@ -42,6 +44,15 @@ const ChatRoomScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  // Voice recorder
+  const {
+    isRecording,
+    recordingDuration,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+  } = useVoiceRecorder();
 
   const fetchData = async () => {
     try {
@@ -117,6 +128,55 @@ const ChatRoomScreen: React.FC = () => {
 
   const handleAttachment = async () => {
     showAlert('Đính kèm', 'Tính năng đính kèm file đang phát triển');
+  };
+
+  // Voice recording handlers
+  const handleStartRecording = useCallback(async () => {
+    await startRecording();
+  }, [startRecording]);
+
+  const handleStopAndSend = useCallback(async () => {
+    const duration = recordingDuration;
+    const uri = await stopRecording();
+
+    if (uri && conversationId && duration >= 1) {
+      // Send voice message
+      const tempId = Date.now().toString();
+      const newMessage: Message = {
+        id: tempId,
+        conversationId,
+        sender: user!,
+        content: `${duration}`,
+        type: 'audio',
+        status: 'sending',
+        readBy: [],
+        createdAt: new Date().toISOString(),
+        mediaUrl: uri,
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+
+      try {
+        const sentMessage = await chatService.sendVoiceMessage(conversationId, uri, duration);
+        setMessages(prev =>
+          prev.map(m => (m.id === tempId ? sentMessage : m))
+        );
+      } catch (error) {
+        console.error('Failed to send voice message:', error);
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        showAlert('Lỗi', 'Không thể gửi tin nhắn thoại');
+      }
+    }
+  }, [stopRecording, conversationId, recordingDuration, user]);
+
+  const handleCancelRecording = useCallback(async () => {
+    await cancelRecording();
+  }, [cancelRecording]);
+
+  const formatRecordingTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatMessageTime = (dateString: string): string => {
@@ -257,8 +317,18 @@ const ChatRoomScreen: React.FC = () => {
               </TouchableOpacity>
             )}
 
-            {/* Text Content (show if not a post message, or if post message has additional text) */}
-            {item.content && !isPostMessage && (
+            {/* Voice Message */}
+            {item.type.toLowerCase() === 'audio' && item.mediaUrl && (
+              <VoiceMessage
+                uri={item.mediaUrl}
+                duration={item.content ? parseInt(item.content, 10) : undefined}
+                isOwn={isOwn}
+                colors={colors}
+              />
+            )}
+
+            {/* Text Content (show if not a post/audio message) */}
+            {item.content && !isPostMessage && item.type.toLowerCase() !== 'audio' && (
               <Text style={[styles.messageText, { color: isOwn ? colors.white : colors.textPrimary }]}>
                 {item.content}
               </Text>
@@ -378,36 +448,57 @@ const ChatRoomScreen: React.FC = () => {
           </View>
         )}
 
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm), borderTopColor: colors.gray200, backgroundColor: colors.background }]}>
-          <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
-            <Ionicons name="add-circle" size={28} color={colors.primary} />
-          </TouchableOpacity>
-
-          <View style={[styles.textInputContainer, { backgroundColor: colors.gray100 }]}>
-            <TextInput
-              style={[styles.textInput, { color: colors.textPrimary }]}
-              placeholder="Nhập tin nhắn..."
-              placeholderTextColor={colors.textTertiary}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={1000}
-            />
-            <TouchableOpacity style={styles.emojiButton}>
-              <Ionicons name="happy-outline" size={22} color={colors.textTertiary} />
+        {/* Recording UI */}
+        {isRecording ? (
+          <View style={[styles.recordingContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm), borderTopColor: colors.gray200, backgroundColor: colors.background }]}>
+            <TouchableOpacity style={[styles.cancelRecordButton, { backgroundColor: colors.gray200 }]} onPress={handleCancelRecording}>
+              <Ionicons name="trash-outline" size={22} color={colors.error} />
             </TouchableOpacity>
-          </View>
 
-          {inputText.trim() ? (
-            <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]} onPress={handleSend}>
+            <View style={styles.recordingInfo}>
+              <View style={[styles.recordingDot, { backgroundColor: colors.error }]} />
+              <Text style={[styles.recordingTime, { color: colors.error }]}>
+                {formatRecordingTime(recordingDuration)}
+              </Text>
+              <Text style={[styles.recordingLabel, { color: colors.textSecondary }]}>Đang ghi âm...</Text>
+            </View>
+
+            <TouchableOpacity style={[styles.sendRecordButton, { backgroundColor: colors.primary }]} onPress={handleStopAndSend}>
               <Ionicons name="send" size={20} color={colors.white} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.micButton}>
-              <Ionicons name="mic" size={24} color={colors.primary} />
+          </View>
+        ) : (
+          <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm), borderTopColor: colors.gray200, backgroundColor: colors.background }]}>
+            <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
+              <Ionicons name="add-circle" size={28} color={colors.primary} />
             </TouchableOpacity>
-          )}
-        </View>
+
+            <View style={[styles.textInputContainer, { backgroundColor: colors.gray100 }]}>
+              <TextInput
+                style={[styles.textInput, { color: colors.textPrimary }]}
+                placeholder="Nhập tin nhắn..."
+                placeholderTextColor={colors.textTertiary}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={1000}
+              />
+              <TouchableOpacity style={styles.emojiButton}>
+                <Ionicons name="happy-outline" size={22} color={colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+
+            {inputText.trim() ? (
+              <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]} onPress={handleSend}>
+                <Ionicons name="send" size={20} color={colors.white} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.micButton} onPress={handleStartRecording}>
+                <Ionicons name="mic" size={24} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -655,6 +746,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  recordingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+  },
+  recordingInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: Spacing.sm,
+  },
+  recordingTime: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    marginRight: Spacing.sm,
+  },
+  recordingLabel: {
+    fontSize: FontSize.sm,
+  },
+  cancelRecordButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendRecordButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
