@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs/promises';
+import sharp from 'sharp';
 import { userService } from './user.service';
 import { AuthRequest } from '../../shared/types';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constants';
 import { sendSuccess } from '../../shared/utils';
 import { config } from '../../config';
+import { uploadToStorage, deleteFromStorage, parseStorageUrl } from '../../services/storage.service';
+import { prisma } from '../../config/database';
 
 export class UserController {
   async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
@@ -99,13 +100,28 @@ export class UserController {
         return sendSuccess(res, null, 'Không có file được tải lên', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const filename = `avatar-${uuidv4()}${ext}`;
-      const filePath = path.join(config.upload.dir, filename);
+      const filename = `avatar-${uuidv4()}.jpg`;
+      const bucket = config.minio.buckets.avatars;
 
-      await fs.writeFile(filePath, req.file.buffer);
-      const avatarUrl = `${config.baseUrl}/uploads/${filename}`;
+      const buffer = await sharp(req.file.buffer)
+        .resize(512, 512, { fit: 'cover' })
+        .jpeg({ quality: 85 })
+        .toBuffer();
 
+      // Delete old avatar from storage
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.userId },
+        select: { avatar: true },
+      });
+      if (user?.avatar) {
+        const old = parseStorageUrl(user.avatar);
+        if (old) {
+          try { await deleteFromStorage(old.bucket, old.key); }
+          catch (err) { console.warn('Failed to delete old avatar:', err); }
+        }
+      }
+
+      const avatarUrl = await uploadToStorage(bucket, filename, buffer, 'image/jpeg');
       const result = await userService.updateAvatar(req.user!.userId, avatarUrl);
       sendSuccess(res, result);
     } catch (error) {
@@ -119,13 +135,28 @@ export class UserController {
         return sendSuccess(res, null, 'Không có file được tải lên', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const filename = `cover-${uuidv4()}${ext}`;
-      const filePath = path.join(config.upload.dir, filename);
+      const filename = `cover-${uuidv4()}.jpg`;
+      const bucket = config.minio.buckets.avatars;
 
-      await fs.writeFile(filePath, req.file.buffer);
-      const coverUrl = `${config.baseUrl}/uploads/${filename}`;
+      const buffer = await sharp(req.file.buffer)
+        .resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
 
+      // Delete old cover from storage
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.userId },
+        select: { coverImage: true },
+      });
+      if (user?.coverImage) {
+        const old = parseStorageUrl(user.coverImage);
+        if (old) {
+          try { await deleteFromStorage(old.bucket, old.key); }
+          catch (err) { console.warn('Failed to delete old cover:', err); }
+        }
+      }
+
+      const coverUrl = await uploadToStorage(bucket, filename, buffer, 'image/jpeg');
       const result = await userService.updateCoverImage(req.user!.userId, coverUrl);
       sendSuccess(res, result);
     } catch (error) {
