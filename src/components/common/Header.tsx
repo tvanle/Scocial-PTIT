@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface HeaderProps {
   title?: string;
@@ -28,16 +29,17 @@ const Header: React.FC<HeaderProps> = ({
   showBorder = true,
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top },
-        showBorder && styles.border,
+        { paddingTop: insets.top, backgroundColor: colors.background },
+        showBorder && { borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
       ]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.content}>
         {/* Left Section */}
         <View style={styles.leftSection}>
@@ -47,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({
               style={styles.iconButton}
               activeOpacity={0.6}
             >
-              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
           ) : leftComponent ? (
             leftComponent
@@ -61,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({
           {centerComponent ? (
             centerComponent
           ) : title ? (
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
               {title}
             </Text>
           ) : null}
@@ -77,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({
               style={styles.iconButton}
               activeOpacity={0.6}
             >
-              <Ionicons name={rightIcon} size={24} color={Colors.textPrimary} />
+              <Ionicons name={rightIcon} size={24} color={colors.textPrimary} />
             </TouchableOpacity>
           ) : (
             <View style={styles.placeholder} />
@@ -89,13 +91,7 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.white,
-  },
-  border: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
-  },
+  container: {},
   content: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,7 +119,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,

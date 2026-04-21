@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Post, CreatePostData, Comment, CreateCommentData, PaginatedResponse, PaginationParams } from '../../types';
 import apiClient from '../api/apiClient';
 import { ENDPOINTS } from '../../constants/api';
@@ -35,6 +36,14 @@ class PostService {
     await apiClient.delete(ENDPOINTS.POST.LIKE(postId));
   }
 
+  async votePoll(postId: string, optionId: string): Promise<void> {
+    await apiClient.post(ENDPOINTS.POST.VOTE(postId), { optionId });
+  }
+
+  async unvotePoll(postId: string): Promise<void> {
+    await apiClient.delete(ENDPOINTS.POST.VOTE(postId));
+  }
+
   async getComments(postId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
     const response = await apiClient.get(ENDPOINTS.POST.COMMENTS(postId), { params });
     return response.data;
@@ -55,6 +64,19 @@ class PostService {
 
   async unlikeComment(commentId: string): Promise<void> {
     await apiClient.delete(ENDPOINTS.POST.LIKE_COMMENT(commentId));
+  }
+
+  async shareComment(commentId: string): Promise<void> {
+    await apiClient.post(ENDPOINTS.POST.SHARE_COMMENT(commentId));
+  }
+
+  async unshareComment(commentId: string): Promise<void> {
+    await apiClient.delete(ENDPOINTS.POST.SHARE_COMMENT(commentId));
+  }
+
+  async getSharedComments(userId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
+    const response = await apiClient.get(ENDPOINTS.POST.USER_COMMENT_SHARES(userId), { params });
+    return response.data;
   }
 
   async getCommentReplies(commentId: string, params?: PaginationParams): Promise<PaginatedResponse<Comment>> {
@@ -105,6 +127,67 @@ class PostService {
   async getTrendingPosts(params?: PaginationParams): Promise<PaginatedResponse<Post>> {
     const response = await apiClient.get(ENDPOINTS.POST.TRENDING, { params });
     return response.data;
+  }
+
+  async uploadMedia(uri: string, mimeType?: string): Promise<{ id: string; url: string }> {
+    const formData = new FormData();
+
+    // Detect mime type from URI or use provided mimeType
+    const detectedMimeType = mimeType || this.getMimeTypeFromUri(uri);
+    const extension = this.getExtensionFromMimeType(detectedMimeType);
+
+    console.log('Upload media - uri:', uri);
+    console.log('Upload media - provided mimeType:', mimeType);
+    console.log('Upload media - detected mimeType:', detectedMimeType);
+    console.log('Upload media - extension:', extension);
+
+    if (Platform.OS === 'web') {
+      const blob = await fetch(uri).then((r) => r.blob());
+      formData.append('file', blob, `media.${extension}`);
+    } else {
+      formData.append('file', {
+        uri,
+        type: detectedMimeType,
+        name: `media.${extension}`,
+      } as any);
+    }
+
+    const response = await apiClient.post(ENDPOINTS.MEDIA.UPLOAD, formData, {
+      headers: { 'Content-Type': undefined },
+      transformRequest: (data: FormData) => data,
+    });
+    console.log('Upload response:', response.data);
+    return { id: response.data.id, url: response.data.url };
+  }
+
+  private getMimeTypeFromUri(uri: string): string {
+    const extension = uri.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      heic: 'image/heic',
+      heif: 'image/heif',
+      mp4: 'video/mp4',
+      mov: 'video/quicktime',
+    };
+    return mimeTypes[extension || ''] || 'image/jpeg';
+  }
+
+  private getExtensionFromMimeType(mimeType: string): string {
+    const extensions: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/heic': 'heic',
+      'image/heif': 'heif',
+      'video/mp4': 'mp4',
+      'video/quicktime': 'mov',
+    };
+    return extensions[mimeType] || 'jpg';
   }
 }
 

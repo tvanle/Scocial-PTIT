@@ -9,7 +9,8 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 export interface BottomMenuItem {
   label: string;
@@ -26,6 +27,7 @@ interface BottomMenuProps {
 }
 
 const BottomMenu: React.FC<BottomMenuProps> = ({ visible, onClose, items, title }) => {
+  const { colors } = useTheme();
   const slideAnim = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
@@ -55,16 +57,21 @@ const BottomMenu: React.FC<BottomMenuProps> = ({ visible, onClose, items, title 
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.sheet,
                 {
                   transform: [{ translateY: slideAnim }],
+                  backgroundColor: colors.background,
                 },
               ]}
             >
-              <View style={styles.handle} />
-              {title && <Text style={styles.title}>{title}</Text>}
+              <View style={[styles.handle, { backgroundColor: colors.gray300 }]} />
+              {title && (
+                <Text style={[styles.title, { color: colors.textPrimary, borderBottomColor: colors.borderLight }]}>
+                  {title}
+                </Text>
+              )}
               {items.map((item, index) => (
                 <TouchableOpacity
                   key={index}
@@ -78,17 +85,21 @@ const BottomMenu: React.FC<BottomMenuProps> = ({ visible, onClose, items, title 
                     <Ionicons
                       name={item.icon}
                       size={22}
-                      color={item.destructive ? Colors.error : Colors.textPrimary}
+                      color={item.destructive ? colors.error : colors.textPrimary}
                       style={styles.menuIcon}
                     />
                   )}
-                  <Text style={[styles.menuText, item.destructive && styles.destructiveText]}>
+                  <Text style={[
+                    styles.menuText,
+                    { color: colors.textPrimary },
+                    item.destructive && { color: colors.error },
+                  ]}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                <Text style={styles.cancelText}>Hủy</Text>
+              <TouchableOpacity style={[styles.cancelButton, { borderTopColor: colors.borderLight }]} onPress={onClose}>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Hủy</Text>
               </TouchableOpacity>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -105,7 +116,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.white,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     paddingBottom: Spacing.huge,
@@ -115,18 +125,15 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.gray300,
     alignSelf: 'center',
     marginBottom: Spacing.md,
   },
   title: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     textAlign: 'center',
     paddingBottom: Spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.borderLight,
     marginHorizontal: Spacing.lg,
   },
   menuItem: {
@@ -140,24 +147,18 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     fontWeight: FontWeight.medium,
-  },
-  destructiveText: {
-    color: Colors.error,
   },
   cancelButton: {
     marginTop: Spacing.sm,
     paddingVertical: Spacing.lg,
     marginHorizontal: Spacing.lg,
     borderTopWidth: 0.5,
-    borderTopColor: Colors.borderLight,
     alignItems: 'center',
   },
   cancelText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
   },
 });
 

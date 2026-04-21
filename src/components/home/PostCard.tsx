@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, Card } from '../common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { Strings } from '../../constants/strings';
 import { Post } from '../../types';
 import { formatTimeAgo } from '../../utils/dateUtils';
@@ -36,9 +40,12 @@ const PostCard: React.FC<PostCardProps> = ({
   onProfilePress,
   onMenuPress,
 }) => {
+  const { colors } = useTheme();
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [showFullContent, setShowFullContent] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -59,10 +66,17 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    setCurrentImageIndex(index);
+  };
+
   const renderMedia = () => {
     if (!post.media || post.media.length === 0) return null;
 
     const mediaCount = post.media.length;
+    console.log('Post media count:', mediaCount, 'Post ID:', post.id);
 
     if (mediaCount === 1) {
       return (
@@ -76,61 +90,55 @@ const PostCard: React.FC<PostCardProps> = ({
       );
     }
 
-    if (mediaCount === 2) {
-      return (
-        <View style={styles.twoImagesContainer}>
+    // Multiple images - horizontal scroll with pagination dots
+    return (
+      <View style={styles.carouselContainer}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          snapToInterval={SCREEN_WIDTH}
+          snapToAlignment="start"
+        >
           {post.media.map((media, index) => (
             <TouchableOpacity
               key={media.id}
-              style={styles.twoImageWrapper}
               onPress={onPress}
               activeOpacity={0.9}
             >
               <Image
                 source={{ uri: getImageUrl(media.url) }}
-                style={styles.twoImage}
+                style={styles.carouselImage}
                 resizeMode="cover"
               />
             </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Pagination dots */}
+        <View style={styles.paginationContainer}>
+          {post.media.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationDot,
+                {
+                  backgroundColor: index === currentImageIndex ? colors.primary : colors.gray300,
+                },
+              ]}
+            />
           ))}
         </View>
-      );
-    }
 
-    // 3 or more images
-    return (
-      <View style={styles.multiImagesContainer}>
-        <TouchableOpacity
-          style={styles.mainImageWrapper}
-          onPress={onPress}
-          activeOpacity={0.9}
-        >
-          <Image
-            source={{ uri: getImageUrl(post.media[0].url) }}
-            style={styles.mainImage}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-        <View style={styles.sideImagesContainer}>
-          {post.media.slice(1, 3).map((media, index) => (
-            <TouchableOpacity
-              key={media.id}
-              style={styles.sideImageWrapper}
-              onPress={onPress}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={{ uri: getImageUrl(media.url) }}
-                style={styles.sideImage}
-                resizeMode="cover"
-              />
-              {index === 1 && mediaCount > 3 && (
-                <View style={styles.moreOverlay}>
-                  <Text style={styles.moreText}>+{mediaCount - 3}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+        {/* Image counter */}
+        <View style={[styles.imageCounter, { backgroundColor: colors.overlay }]}>
+          <Text style={[styles.imageCounterText, { color: colors.white }]}>
+            {currentImageIndex + 1}/{mediaCount}
+          </Text>
         </View>
       </View>
     );
@@ -154,22 +162,22 @@ const PostCard: React.FC<PostCardProps> = ({
           />
           <View style={styles.userDetails}>
             <View style={styles.nameRow}>
-              <Text style={styles.userName}>{post.author.fullName}</Text>
+              <Text style={[styles.userName, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
               {post.author.isVerified && (
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={Colors.verified}
+                  color={colors.verified}
                   style={styles.verifiedIcon}
                 />
               )}
             </View>
             <View style={styles.postMeta}>
-              <Text style={styles.timeText}>{formatTimeAgo(post.createdAt)}</Text>
+              <Text style={[styles.timeText, { color: colors.textTertiary }]}>{formatTimeAgo(post.createdAt)}</Text>
               <Ionicons
                 name={getPrivacyIcon()}
                 size={12}
-                color={Colors.textTertiary}
+                color={colors.textTertiary}
                 style={styles.privacyIcon}
               />
             </View>
@@ -177,19 +185,19 @@ const PostCard: React.FC<PostCardProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Content */}
       {post.content && (
         <View style={styles.contentContainer}>
-          <Text style={styles.content}>
+          <Text style={[styles.content, { color: colors.textPrimary }]}>
             {shouldTruncate ? post.content.slice(0, 200) + '...' : post.content}
           </Text>
           {contentLength > 200 && (
             <TouchableOpacity onPress={() => setShowFullContent(!showFullContent)}>
-              <Text style={styles.seeMore}>
+              <Text style={[styles.seeMore, { color: colors.textSecondary }]}>
                 {showFullContent ? Strings.common.seeLess : Strings.common.seeMore}
               </Text>
             </TouchableOpacity>
@@ -202,15 +210,15 @@ const PostCard: React.FC<PostCardProps> = ({
         <View style={styles.feelingLocation}>
           {post.feeling && (
             <View style={styles.feelingContainer}>
-              <Text style={styles.feelingText}>
-                đang cảm thấy {post.feeling}
+              <Text style={[styles.feelingText, { color: colors.textSecondary }]}>
+                dang cam thay {post.feeling}
               </Text>
             </View>
           )}
           {post.location && (
             <View style={styles.locationContainer}>
-              <Ionicons name="location" size={14} color={Colors.textSecondary} />
-              <Text style={styles.locationText}>{post.location}</Text>
+              <Ionicons name="location" size={14} color={colors.textSecondary} />
+              <Text style={[styles.locationText, { color: colors.textSecondary }]}>{post.location}</Text>
             </View>
           )}
         </View>
@@ -224,20 +232,20 @@ const PostCard: React.FC<PostCardProps> = ({
         <View style={styles.statsContainer}>
           {likesCount > 0 && (
             <View style={styles.likeStat}>
-              <View style={styles.likeIcon}>
-                <Ionicons name="heart" size={12} color={Colors.textLight} />
+              <View style={[styles.likeIcon, { backgroundColor: colors.like }]}>
+                <Ionicons name="heart" size={12} color={colors.textLight} />
               </View>
-              <Text style={styles.statText}>{likesCount}</Text>
+              <Text style={[styles.statText, { color: colors.textTertiary }]}>{likesCount}</Text>
             </View>
           )}
           <View style={styles.rightStats}>
             {post.commentsCount > 0 && (
-              <Text style={styles.statText}>
+              <Text style={[styles.statText, { color: colors.textTertiary }]}>
                 {post.commentsCount} {Strings.post.comments}
               </Text>
             )}
             {post.sharesCount > 0 && (
-              <Text style={styles.statText}>
+              <Text style={[styles.statText, { color: colors.textTertiary }]}>
                 {post.sharesCount} {Strings.post.shares}
               </Text>
             )}
@@ -246,15 +254,15 @@ const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {/* Actions */}
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
       <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
           <Ionicons
             name={isLiked ? 'heart' : 'heart-outline'}
             size={22}
-            color={isLiked ? Colors.like : Colors.textSecondary}
+            color={isLiked ? colors.like : colors.textSecondary}
           />
-          <Text style={[styles.actionText, isLiked && styles.likedText]}>
+          <Text style={[styles.actionText, { color: colors.textSecondary }, isLiked && { color: colors.like }]}>
             {Strings.post.like}
           </Text>
         </TouchableOpacity>
@@ -263,18 +271,18 @@ const PostCard: React.FC<PostCardProps> = ({
           <Ionicons
             name="chatbox-outline"
             size={22}
-            color={Colors.textSecondary}
+            color={colors.textSecondary}
           />
-          <Text style={styles.actionText}>{Strings.post.comment}</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>{Strings.post.comment}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={onShare}>
           <Ionicons
             name="share-social-outline"
             size={22}
-            color={Colors.textSecondary}
+            color={colors.textSecondary}
           />
-          <Text style={styles.actionText}>{Strings.post.share}</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>{Strings.post.share}</Text>
         </TouchableOpacity>
       </View>
     </Card>
@@ -310,7 +318,6 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   verifiedIcon: {
     marginLeft: Spacing.xs,
@@ -322,7 +329,6 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
   },
   privacyIcon: {
     marginLeft: Spacing.xs,
@@ -336,11 +342,9 @@ const styles = StyleSheet.create({
   },
   content: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     lineHeight: 22,
   },
   seeMore: {
-    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     marginTop: Spacing.xs,
   },
@@ -355,7 +359,6 @@ const styles = StyleSheet.create({
   },
   feelingText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -363,7 +366,6 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginLeft: Spacing.xs,
   },
   // Media styles
@@ -371,51 +373,38 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
   },
-  twoImagesContainer: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  twoImageWrapper: {
-    flex: 1,
-  },
-  twoImage: {
-    width: '100%',
-    height: 200,
-  },
-  multiImagesContainer: {
-    flexDirection: 'row',
-    height: 300,
-    gap: 2,
-  },
-  mainImageWrapper: {
-    flex: 2,
-  },
-  mainImage: {
-    width: '100%',
-    height: '100%',
-  },
-  sideImagesContainer: {
-    flex: 1,
-    gap: 2,
-  },
-  sideImageWrapper: {
-    flex: 1,
+  carouselContainer: {
     position: 'relative',
+    width: SCREEN_WIDTH,
+    alignSelf: 'center',
   },
-  sideImage: {
-    width: '100%',
-    height: '100%',
+  carouselImage: {
+    width: SCREEN_WIDTH,
+    height: 350,
   },
-  moreOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.overlay,
-    alignItems: 'center',
+  paginationContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    gap: 6,
   },
-  moreText: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textLight,
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  imageCounter: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  imageCounterText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
   // Stats
   statsContainer: {
@@ -433,7 +422,6 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: Colors.like,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.xs,
@@ -444,12 +432,10 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
   },
   // Actions
   divider: {
     height: 1,
-    backgroundColor: Colors.borderLight,
     marginHorizontal: Spacing.lg,
   },
   actionsContainer: {
@@ -466,12 +452,8 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     marginLeft: Spacing.xs,
-  },
-  likedText: {
-    color: Colors.like,
   },
 });
 

@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RootNavigator } from './src/navigation';
 import SplashScreen from './src/screens/splash/SplashScreen';
+import { useThemeStore } from './src/store/slices/themeSlice';
 
 // Remove yellow focus outline on web (For testing)
 if (Platform.OS === 'web') {
@@ -35,12 +36,13 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const isDark = useThemeStore((s) => s.isDark);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
           <RootNavigator />
           {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
         </SafeAreaProvider>

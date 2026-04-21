@@ -1,7 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, Spacing, FontSize, FontWeight } from '../../constants/theme';
+import { BorderRadius, Spacing, FontSize, FontWeight } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface IconButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -28,22 +29,24 @@ const IconButton: React.FC<IconButtonProps> = ({
   badge,
   variant = 'default',
 }) => {
+  const { colors } = useTheme();
+
   const getStyles = (): { bg: string; iconColor: string } => {
     switch (variant) {
       case 'primary':
         return {
-          bg: backgroundColor || Colors.textPrimary,
-          iconColor: color || Colors.white,
+          bg: backgroundColor || colors.textPrimary,
+          iconColor: color || colors.white,
         };
       case 'ghost':
         return {
           bg: 'transparent',
-          iconColor: color || Colors.textPrimary,
+          iconColor: color || colors.textPrimary,
         };
       default:
         return {
-          bg: backgroundColor || Colors.gray100,
-          iconColor: color || Colors.textPrimary,
+          bg: backgroundColor || colors.gray100,
+          iconColor: color || colors.textPrimary,
         };
     }
   };
@@ -70,11 +73,11 @@ const IconButton: React.FC<IconButtonProps> = ({
       <Ionicons
         name={icon}
         size={iconSize}
-        color={disabled ? Colors.gray400 : iconColor}
+        color={disabled ? colors.gray400 : iconColor}
       />
       {badge !== undefined && badge > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+        <View style={[styles.badge, { backgroundColor: colors.error, borderColor: colors.background }]}>
+          <Text style={[styles.badgeText, { color: colors.white }]}>{badge > 99 ? '99+' : badge}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -94,7 +97,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: Colors.error,
     borderRadius: BorderRadius.full,
     minWidth: 16,
     height: 16,
@@ -102,10 +104,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.xxs,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   badgeText: {
-    color: Colors.white,
     fontSize: FontSize.xxs,
     fontWeight: FontWeight.bold,
   },

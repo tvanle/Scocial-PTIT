@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '../../constants/theme';
+import { BorderRadius, Spacing } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface CardProps {
   children: React.ReactNode;
@@ -17,6 +18,8 @@ const Card: React.FC<CardProps> = ({
   padding = 'medium',
   variant = 'default',
 }) => {
+  const { colors } = useTheme();
+
   const getPadding = (): number => {
     switch (padding) {
       case 'none':
@@ -34,7 +37,8 @@ const Card: React.FC<CardProps> = ({
 
   const cardStyle: ViewStyle = {
     ...styles.card,
-    ...(variant === 'outlined' ? styles.outlined : {}),
+    backgroundColor: colors.background,
+    ...(variant === 'outlined' ? { borderWidth: 1, borderColor: colors.gray200 } : {}),
     padding: getPadding(),
     ...style,
   };
@@ -52,12 +56,7 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.white,
     borderRadius: BorderRadius.md,
-  },
-  outlined: {
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
 });
 

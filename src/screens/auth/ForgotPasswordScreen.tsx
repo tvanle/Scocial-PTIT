@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing } from '../../constants/theme';
 import { authService } from '../../services/auth/authService';
 import { showAlert } from '../../utils/alert';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface ForgotPasswordScreenProps {
   navigation: any;
@@ -35,6 +36,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
+  const { colors, isDark } = useTheme();
 
   const handleOtpChange = (value: string, index: number) => {
     if (value.length > 1) {
@@ -153,16 +155,16 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
   const currentStep = stepInfo[getStepIndex()];
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.gray100 }]}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: colors.inputBackground }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Khoi phuc mat khau</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Khoi phuc mat khau</Text>
           <View style={styles.headerRight} />
         </View>
 
@@ -179,41 +181,60 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <View style={styles.progressContainer}>
               {[0, 1, 2].map((i) => (
                 <React.Fragment key={i}>
-                  <View style={[styles.progressDot, getStepIndex() >= i && styles.progressDotActive]}>
+                  <View style={[
+                    styles.progressDot,
+                    { backgroundColor: colors.gray200 },
+                    getStepIndex() >= i && { backgroundColor: colors.primary }
+                  ]}>
                     {getStepIndex() > i ? (
-                      <Ionicons name="checkmark" size={14} color={Colors.white} />
+                      <Ionicons name="checkmark" size={14} color={colors.white} />
                     ) : (
-                      <Text style={[styles.progressNum, getStepIndex() >= i && styles.progressNumActive]}>{i + 1}</Text>
+                      <Text style={[
+                        styles.progressNum,
+                        { color: colors.gray500 },
+                        getStepIndex() >= i && { color: colors.white }
+                      ]}>{i + 1}</Text>
                     )}
                   </View>
-                  {i < 2 && <View style={[styles.progressLine, getStepIndex() > i && styles.progressLineActive]} />}
+                  {i < 2 && (
+                    <View style={[
+                      styles.progressLine,
+                      { backgroundColor: colors.gray200 },
+                      getStepIndex() > i && { backgroundColor: colors.primary }
+                    ]} />
+                  )}
                 </React.Fragment>
               ))}
             </View>
 
             {/* Step Card */}
-            <View style={styles.card}>
-              <View style={styles.cardIcon}>
-                <Ionicons name={currentStep.icon as any} size={28} color={Colors.primary} />
+            <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+              <View style={[styles.cardIcon, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name={currentStep.icon as any} size={28} color={colors.primary} />
               </View>
-              <Text style={styles.cardTitle}>{currentStep.title}</Text>
-              <Text style={styles.cardDesc}>{currentStep.desc}</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{currentStep.title}</Text>
+              <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{currentStep.desc}</Text>
 
               {/* Step 1: Email */}
               {step === 'email' && (
                 <View style={styles.formSection}>
                   <View style={[
                     styles.inputWrapper,
-                    focusedField === 'email' && styles.inputFocused,
-                    error && styles.inputError
+                    { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+                    focusedField === 'email' && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+                    error && { borderColor: colors.error }
                   ]}>
-                    <View style={[styles.inputIcon, focusedField === 'email' && styles.inputIconActive]}>
-                      <Ionicons name="person" size={18} color={focusedField === 'email' ? Colors.primary : Colors.gray400} />
+                    <View style={[
+                      styles.inputIcon,
+                      { backgroundColor: colors.gray100 },
+                      focusedField === 'email' && { backgroundColor: colors.primaryLight }
+                    ]}>
+                      <Ionicons name="person" size={18} color={focusedField === 'email' ? colors.primary : colors.gray400} />
                     </View>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       placeholder="Email hoac ma sinh vien"
-                      placeholderTextColor={Colors.gray400}
+                      placeholderTextColor={colors.gray400}
                       value={emailOrStudentId}
                       onChangeText={(text) => {
                         setEmailOrStudentId(text);
@@ -227,17 +248,22 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                   </View>
                   {error && (
                     <View style={styles.errorRow}>
-                      <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                      <Text style={styles.errorText}>{error}</Text>
+                      <Ionicons name="alert-circle" size={14} color={colors.error} />
+                      <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
                     </View>
                   )}
-                  <TouchableOpacity style={styles.button} onPress={handleSendCode} disabled={isLoading} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                    onPress={handleSendCode}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                  >
                     {isLoading ? (
-                      <ActivityIndicator color={Colors.white} size="small" />
+                      <ActivityIndicator color={colors.white} size="small" />
                     ) : (
                       <>
-                        <Text style={styles.buttonText}>Gui ma xac thuc</Text>
-                        <Ionicons name="send" size={18} color={Colors.white} />
+                        <Text style={[styles.buttonText, { color: colors.white }]}>Gui ma xac thuc</Text>
+                        <Ionicons name="send" size={18} color={colors.white} />
                       </>
                     )}
                   </TouchableOpacity>
@@ -252,7 +278,11 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                       <TextInput
                         key={index}
                         ref={(ref) => { otpRefs.current[index] = ref; }}
-                        style={[styles.otpInput, digit && styles.otpInputFilled]}
+                        style={[
+                          styles.otpInput,
+                          { borderColor: colors.gray200, backgroundColor: colors.inputBackground, color: colors.textPrimary },
+                          digit && { borderColor: colors.primary, backgroundColor: colors.cardBackground }
+                        ]}
                         value={digit}
                         onChangeText={(value) => handleOtpChange(value, index)}
                         onKeyPress={(e) => handleOtpKeyPress(e, index)}
@@ -264,19 +294,24 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                   </View>
                   {error && (
                     <View style={[styles.errorRow, { justifyContent: 'center' }]}>
-                      <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                      <Text style={styles.errorText}>{error}</Text>
+                      <Ionicons name="alert-circle" size={14} color={colors.error} />
+                      <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
                     </View>
                   )}
-                  <TouchableOpacity style={styles.button} onPress={handleVerifyOtp} disabled={isLoading} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                    onPress={handleVerifyOtp}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                  >
                     {isLoading ? (
-                      <ActivityIndicator color={Colors.white} size="small" />
+                      <ActivityIndicator color={colors.white} size="small" />
                     ) : (
-                      <Text style={styles.buttonText}>Xac nhan</Text>
+                      <Text style={[styles.buttonText, { color: colors.white }]}>Xac nhan</Text>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity onPress={handleResendCode} disabled={isLoading} style={styles.resendBtn}>
-                    <Text style={styles.resendText}>Khong nhan duoc? <Text style={styles.resendLink}>Gui lai</Text></Text>
+                    <Text style={[styles.resendText, { color: colors.textSecondary }]}>Khong nhan duoc? <Text style={[styles.resendLink, { color: colors.primary }]}>Gui lai</Text></Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -286,15 +321,20 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                 <View style={styles.formSection}>
                   <View style={[
                     styles.inputWrapper,
-                    focusedField === 'password' && styles.inputFocused
+                    { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+                    focusedField === 'password' && { borderColor: colors.primary, backgroundColor: colors.cardBackground }
                   ]}>
-                    <View style={[styles.inputIcon, focusedField === 'password' && styles.inputIconActive]}>
-                      <Ionicons name="lock-closed" size={18} color={focusedField === 'password' ? Colors.primary : Colors.gray400} />
+                    <View style={[
+                      styles.inputIcon,
+                      { backgroundColor: colors.gray100 },
+                      focusedField === 'password' && { backgroundColor: colors.primaryLight }
+                    ]}>
+                      <Ionicons name="lock-closed" size={18} color={focusedField === 'password' ? colors.primary : colors.gray400} />
                     </View>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       placeholder="Mat khau moi"
-                      placeholderTextColor={Colors.gray400}
+                      placeholderTextColor={colors.gray400}
                       value={newPassword}
                       onChangeText={(text) => { setNewPassword(text); if (error) setError(''); }}
                       secureTextEntry={!showPassword}
@@ -302,22 +342,27 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                       onBlur={() => setFocusedField(null)}
                     />
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                      <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.gray400} />
+                      <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={colors.gray400} />
                     </TouchableOpacity>
                   </View>
 
                   <View style={[
                     styles.inputWrapper,
-                    focusedField === 'confirmPassword' && styles.inputFocused,
-                    error && styles.inputError
+                    { backgroundColor: colors.inputBackground, borderColor: colors.gray200 },
+                    focusedField === 'confirmPassword' && { borderColor: colors.primary, backgroundColor: colors.cardBackground },
+                    error && { borderColor: colors.error }
                   ]}>
-                    <View style={[styles.inputIcon, focusedField === 'confirmPassword' && styles.inputIconActive]}>
-                      <Ionicons name="lock-closed" size={18} color={focusedField === 'confirmPassword' ? Colors.primary : Colors.gray400} />
+                    <View style={[
+                      styles.inputIcon,
+                      { backgroundColor: colors.gray100 },
+                      focusedField === 'confirmPassword' && { backgroundColor: colors.primaryLight }
+                    ]}>
+                      <Ionicons name="lock-closed" size={18} color={focusedField === 'confirmPassword' ? colors.primary : colors.gray400} />
                     </View>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       placeholder="Xac nhan mat khau"
-                      placeholderTextColor={Colors.gray400}
+                      placeholderTextColor={colors.gray400}
                       value={confirmPassword}
                       onChangeText={(text) => { setConfirmPassword(text); if (error) setError(''); }}
                       secureTextEntry={!showPassword}
@@ -327,17 +372,22 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                   </View>
                   {error && (
                     <View style={styles.errorRow}>
-                      <Ionicons name="alert-circle" size={14} color={Colors.error} />
-                      <Text style={styles.errorText}>{error}</Text>
+                      <Ionicons name="alert-circle" size={14} color={colors.error} />
+                      <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
                     </View>
                   )}
-                  <TouchableOpacity style={styles.button} onPress={handleResetPassword} disabled={isLoading} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                    onPress={handleResetPassword}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                  >
                     {isLoading ? (
-                      <ActivityIndicator color={Colors.white} size="small" />
+                      <ActivityIndicator color={colors.white} size="small" />
                     ) : (
                       <>
-                        <Text style={styles.buttonText}>Dat lai mat khau</Text>
-                        <Ionicons name="checkmark-circle" size={18} color={Colors.white} />
+                        <Text style={[styles.buttonText, { color: colors.white }]}>Dat lai mat khau</Text>
+                        <Ionicons name="checkmark-circle" size={18} color={colors.white} />
                       </>
                     )}
                   </TouchableOpacity>
@@ -348,10 +398,10 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         </KeyboardAvoidingView>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Nho mat khau? </Text>
+        <View style={[styles.footer, { backgroundColor: colors.cardBackground, borderTopColor: colors.gray100 }]}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Nho mat khau? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.footerLink}>Dang nhap</Text>
+            <Text style={[styles.footerLink, { color: colors.primary }]}>Dang nhap</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -362,7 +412,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
   },
   safeArea: {
     flex: 1,
@@ -376,22 +425,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   headerRight: {
     width: 42,
@@ -409,33 +454,20 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.gray200,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  progressDotActive: {
-    backgroundColor: Colors.primary,
   },
   progressNum: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: Colors.gray500,
-  },
-  progressNumActive: {
-    color: Colors.white,
   },
   progressLine: {
     width: 50,
     height: 3,
-    backgroundColor: Colors.gray200,
     marginHorizontal: Spacing.xs,
     borderRadius: 2,
   },
-  progressLineActive: {
-    backgroundColor: Colors.primary,
-  },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: Spacing.xl,
     alignItems: 'center',
@@ -449,7 +481,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 18,
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
@@ -457,12 +488,10 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 22,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 6,
   },
   cardDesc: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.xl,
     lineHeight: 20,
@@ -475,34 +504,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
-    backgroundColor: Colors.gray50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
     overflow: 'hidden',
-  },
-  inputFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-  },
-  inputError: {
-    borderColor: Colors.error,
   },
   inputIcon: {
     width: 44,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.gray100,
-  },
-  inputIconActive: {
-    backgroundColor: 'rgba(196, 30, 58, 0.1)',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingHorizontal: Spacing.md,
   },
   eyeBtn: {
@@ -515,7 +530,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: FontSize.xs,
-    color: Colors.error,
   },
   otpContainer: {
     flexDirection: 'row',
@@ -527,26 +541,17 @@ const styles = StyleSheet.create({
     height: 54,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
     fontSize: 22,
     fontWeight: FontWeight.bold,
     textAlign: 'center',
-    color: Colors.textPrimary,
-  },
-  otpInputFilled: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
   },
   button: {
     flexDirection: 'row',
     height: 52,
-    backgroundColor: Colors.primary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -555,7 +560,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.white,
   },
   resendBtn: {
     alignItems: 'center',
@@ -563,10 +567,8 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
   },
   resendLink: {
-    color: Colors.primary,
     fontWeight: FontWeight.semiBold,
   },
   footer: {
@@ -574,18 +576,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
   },
   footerText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
   },
   footerLink: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.primary,
   },
 });
 

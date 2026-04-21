@@ -9,7 +9,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, FontSize, FontWeight, Layout, Spacing } from '../../constants/theme';
+import { BorderRadius, FontSize, FontWeight, Layout, Spacing } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -40,6 +41,7 @@ const Input: React.FC<InputProps> = ({
   variant = 'filled',
   ...props
 }) => {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -47,32 +49,42 @@ const Input: React.FC<InputProps> = ({
   const showPassword = isPassword && isPasswordVisible;
 
   const getInputContainerStyle = (): ViewStyle => {
-    const baseStyle = variant === 'filled' ? styles.inputContainerFilled : styles.inputContainer;
+    const baseStyle: ViewStyle = variant === 'filled'
+      ? {
+          ...styles.inputContainerBase,
+          borderColor: colors.gray100,
+          backgroundColor: colors.gray50,
+        }
+      : {
+          ...styles.inputContainerBase,
+          borderColor: colors.gray200,
+          backgroundColor: colors.background,
+        };
 
     if (disabled) {
-      return { ...baseStyle, ...styles.disabled };
+      return { ...baseStyle, backgroundColor: colors.gray100, borderColor: colors.gray200 };
     }
     if (error) {
-      return { ...baseStyle, ...styles.error };
+      return { ...baseStyle, borderColor: colors.error };
     }
     if (isFocused) {
-      return { ...baseStyle, ...styles.focused };
+      return { ...baseStyle, borderColor: colors.primary, backgroundColor: colors.background };
     }
     return baseStyle;
   };
 
   const getIconColor = (): string => {
-    if (error) return Colors.error;
-    if (isFocused) return Colors.primary;
-    return Colors.gray400;
+    if (error) return colors.error;
+    if (isFocused) return colors.primary;
+    return colors.gray400;
   };
 
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.textPrimary }]}>
           {label}
-          {required && <Text style={styles.required}> *</Text>}
+          {required && <Text style={{ color: colors.error }}> *</Text>}
         </Text>
       )}
 
@@ -90,11 +102,12 @@ const Input: React.FC<InputProps> = ({
         <TextInput
           style={[
             styles.input,
+            { color: colors.textPrimary },
             leftIcon && styles.inputWithLeftIcon,
             (rightIcon || isPassword) && styles.inputWithRightIcon,
-            disabled && styles.inputDisabled,
+            disabled && { color: colors.gray400 },
           ]}
-          placeholderTextColor={Colors.gray400}
+          placeholderTextColor={colors.gray400}
           editable={!disabled}
           secureTextEntry={isPassword && !showPassword}
           onFocus={() => setIsFocused(true)}
@@ -111,7 +124,7 @@ const Input: React.FC<InputProps> = ({
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={Colors.gray400}
+              color={colors.gray400}
             />
           </TouchableOpacity>
         ) : rightIcon ? (
@@ -124,16 +137,16 @@ const Input: React.FC<InputProps> = ({
             <Ionicons
               name={rightIcon}
               size={20}
-              color={error ? Colors.error : Colors.gray400}
+              color={error ? colors.error : colors.gray400}
             />
           </TouchableOpacity>
         ) : null}
       </View>
 
       {error && (
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
       )}
-      {hint && !error && <Text style={styles.hintText}>{hint}</Text>}
+      {hint && !error && <Text style={[styles.hintText, { color: colors.textSecondary }]}>{hint}</Text>}
     </View>
   );
 };
@@ -145,40 +158,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
-  required: {
-    color: Colors.error,
-  },
-  inputContainer: {
+  inputContainerBase: {
     flexDirection: 'row',
     alignItems: 'center',
     height: Layout.inputHeight,
     borderWidth: 1.5,
-    borderColor: Colors.border,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.white,
-  },
-  inputContainerFilled: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: Layout.inputHeight,
-    borderWidth: 1.5,
-    borderColor: Colors.gray100,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.gray50,
-  },
-  focused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-  },
-  error: {
-    borderColor: Colors.error,
-  },
-  disabled: {
-    backgroundColor: Colors.gray100,
-    borderColor: Colors.gray200,
   },
   leftIconContainer: {
     paddingLeft: Spacing.xl,
@@ -192,7 +179,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingVertical: 0,
     paddingHorizontal: Spacing.xl,
     outlineStyle: 'none',
@@ -203,18 +189,13 @@ const styles = StyleSheet.create({
   inputWithRightIcon: {
     paddingRight: 0,
   },
-  inputDisabled: {
-    color: Colors.gray400,
-  },
   errorText: {
     fontSize: FontSize.xs,
-    color: Colors.error,
     marginTop: Spacing.xs,
     marginLeft: Spacing.lg,
   },
   hintText: {
     fontSize: FontSize.xs,
-    color: Colors.gray500,
     marginTop: Spacing.xs,
   },
 });

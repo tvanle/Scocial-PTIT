@@ -27,6 +27,10 @@ router.delete('/:postId', authenticate, postController.deletePost);
 router.post('/:postId/like', authenticate, postController.likePost);
 router.delete('/:postId/like', authenticate, postController.unlikePost);
 
+// Poll votes
+router.post('/:postId/vote', authenticate, postController.votePoll);
+router.delete('/:postId/vote', authenticate, postController.unvotePoll);
+
 // Shares (repost)
 router.post('/:postId/share', authenticate, postController.sharePost);
 router.delete('/:postId/share', authenticate, postController.unsharePost);
@@ -42,5 +46,12 @@ router.get('/comments/:commentId/replies', optionalAuth, postController.getComme
 // Comment likes
 router.post('/comments/:commentId/like', authenticate, postController.likeComment);
 router.delete('/comments/:commentId/like', authenticate, postController.unlikeComment);
+
+// Comment shares (repost comment)
+router.post('/comments/:commentId/share', authenticate, postController.shareComment);
+router.delete('/comments/:commentId/share', authenticate, postController.unshareComment);
+
+// User shared comments
+router.get('/user/:userId/comment-shares', optionalAuth, postController.getSharedComments);
 
 export default router;

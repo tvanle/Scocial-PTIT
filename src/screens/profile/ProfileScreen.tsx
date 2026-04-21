@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,22 +9,35 @@ import {
   RefreshControl,
   StatusBar,
   Share,
-  Alert,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
+import { WebView } from 'react-native-webview';
+import { FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Media, Comment } from '../../types';
 import { postService } from '../../services/post/postService';
+import { userService } from '../../services/user/userService';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
-import { BottomMenu } from '../../components/common';
-import type { BottomMenuItem } from '../../components/common';
+import { BottomMenu, MusicPicker, SharePostModal } from '../../components/common';
+import type { BottomMenuItem, SelectedSong } from '../../components/common';
+import songsData from '../../../songs.json';
+import { useTheme } from '../../hooks/useThemeColors';
+
+interface SongItem {
+  title: string;
+  artist: string;
+  artwork_url: string;
+  embed_url: string;
+}
+
+const allSongs = songsData as SongItem[];
 
 interface ProfileScreenProps {
   navigation: any;
@@ -34,13 +47,13 @@ interface ProfileScreenProps {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Image layout component (same as HomeScreen)
-const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
+const PostImages: React.FC<{ media: Media[]; colors: any }> = React.memo(({ media, colors }) => {
   if (!media || media.length === 0) return null;
 
   if (media.length === 1) {
     return (
       <View style={imgStyles.singleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.singleImage} resizeMode="cover" />
+        <Image source={{ uri: media[0].url }} style={[imgStyles.singleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     );
   }
@@ -48,18 +61,18 @@ const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
   if (media.length === 2) {
     return (
       <View style={imgStyles.doubleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.doubleImage} resizeMode="cover" />
-        <Image source={{ uri: media[1].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+        <Image source={{ uri: media[0].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     );
   }
 
   return (
     <View style={imgStyles.tripleContainer}>
-      <Image source={{ uri: media[0].url }} style={imgStyles.tripleLeft} resizeMode="cover" />
+      <Image source={{ uri: media[0].url }} style={[imgStyles.tripleLeft, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       <View style={imgStyles.tripleRight}>
-        <Image source={{ uri: media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
-        <Image source={{ uri: media[2]?.url || media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
+        <Image source={{ uri: media[2]?.url || media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     </View>
   );
@@ -74,7 +87,6 @@ const imgStyles = StyleSheet.create({
   singleImage: {
     width: '100%',
     height: 280,
-    backgroundColor: Colors.gray100,
   },
   doubleContainer: {
     flexDirection: 'row',
@@ -86,7 +98,6 @@ const imgStyles = StyleSheet.create({
   doubleImage: {
     flex: 1,
     height: 220,
-    backgroundColor: Colors.gray100,
   },
   tripleContainer: {
     flexDirection: 'row',
@@ -98,7 +109,6 @@ const imgStyles = StyleSheet.create({
   },
   tripleLeft: {
     flex: 1,
-    backgroundColor: Colors.gray100,
   },
   tripleRight: {
     flex: 1,
@@ -106,7 +116,6 @@ const imgStyles = StyleSheet.create({
   },
   tripleRightImage: {
     flex: 1,
-    backgroundColor: Colors.gray100,
   },
 });
 
@@ -119,45 +128,46 @@ const ProfilePostCard: React.FC<{
   onShare: () => void;
   onProfile: () => void;
   onMore: () => void;
-}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  colors: any;
+}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore, colors }) => {
   const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
-    <View style={styles.postCard}>
+    <View style={[styles.postCard, { backgroundColor: colors.cardBackground }]}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
           <Image
             source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={styles.postAvatar}
+            style={[styles.postAvatar, { backgroundColor: colors.gray200 }]}
           />
           <View style={styles.postHeaderInfo}>
-            <View style={styles.usernameRow}>
-              <Text style={styles.username}>{post.author.fullName}</Text>
+            <View style={styles.postUsernameRow}>
+              <Text style={[styles.username, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
               {post.author.isVerified && (
-                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
+                <Ionicons name="checkmark-circle" size={14} color={colors.verified} style={{ marginLeft: 4 }} />
               )}
             </View>
-            <Text style={styles.timeAgo}>{timeAgo}</Text>
+            <Text style={[styles.timeAgo, { color: colors.textTertiary }]}>{timeAgo}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={onMore} style={styles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Content - tappable to navigate */}
       <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
-        <Text style={styles.postContent}>{post.content}</Text>
+        <Text style={[styles.postContent, { color: colors.textPrimary }]}>{post.content}</Text>
 
         {/* Media */}
         {post.media && post.media.length > 0 && (
-          <PostImages media={post.media} />
+          <PostImages media={post.media} colors={colors} />
         )}
 
         {/* Stats Text Line */}
         {(post.likesCount > 0 || post.commentsCount > 0) && (
-          <Text style={styles.statsText}>
+          <Text style={[styles.statsText, { color: colors.textSecondary }]}>
             {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
             {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
             {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
@@ -166,25 +176,25 @@ const ProfilePostCard: React.FC<{
       </TouchableOpacity>
 
       {/* Interaction Bar */}
-      <View style={styles.interactionBar}>
+      <View style={[styles.interactionBar, { borderTopColor: colors.borderLight }]}>
         <View style={styles.interactionLeft}>
           <TouchableOpacity onPress={onLike} style={styles.interactionButton}>
             <Ionicons
               name={post.isLiked ? 'heart' : 'heart-outline'}
               size={22}
-              color={post.isLiked ? Colors.like : Colors.textSecondary}
+              color={post.isLiked ? colors.like : colors.textSecondary}
             />
             {post.likesCount > 0 && (
-              <Text style={[styles.interactionCount, post.isLiked && { color: Colors.like }]}>
+              <Text style={[styles.interactionCount, { color: colors.textSecondary }, post.isLiked && { color: colors.like }]}>
                 {post.likesCount}
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
-            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chatbox-outline" size={20} color={colors.textSecondary} />
             {post.commentsCount > 0 && (
-              <Text style={styles.interactionCount}>{post.commentsCount}</Text>
+              <Text style={[styles.interactionCount, { color: colors.textSecondary }]}>{post.commentsCount}</Text>
             )}
           </TouchableOpacity>
 
@@ -192,12 +202,12 @@ const ProfilePostCard: React.FC<{
             <Ionicons
               name="repeat-outline"
               size={22}
-              color={post.isShared ? Colors.repost : Colors.textSecondary}
+              color={post.isShared ? colors.repost : colors.textSecondary}
             />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onShare} style={styles.interactionButton}>
-            <Ionicons name="paper-plane-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="paper-plane-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -205,7 +215,7 @@ const ProfilePostCard: React.FC<{
           <Ionicons
             name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={post.isSaved ? Colors.primary : Colors.textSecondary}
+            color={post.isSaved ? colors.primary : colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -217,31 +227,32 @@ const ProfilePostCard: React.FC<{
 const ReplyCard: React.FC<{
   reply: { comment: Comment; post: Post };
   onPress: () => void;
-}> = React.memo(({ reply, onPress }) => {
+  colors: any;
+}> = React.memo(({ reply, onPress, colors }) => {
   const { comment, post } = reply;
   const commentTime = formatTimeAgo(comment.createdAt);
   const postTime = formatTimeAgo(post.createdAt);
 
   return (
-    <TouchableOpacity style={styles.replyCard} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.replyCard, { backgroundColor: colors.cardBackground }]} onPress={onPress} activeOpacity={0.7}>
       {/* Original post (top part of thread) */}
       <View style={styles.threadTop}>
         <View style={styles.threadAvatarCol}>
           <Image
             source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={styles.threadAvatarSmall}
+            style={[styles.threadAvatarSmall, { backgroundColor: colors.gray200 }]}
           />
-          <View style={styles.threadLine} />
+          <View style={[styles.threadLine, { backgroundColor: colors.gray200 }]} />
         </View>
         <View style={styles.threadContent}>
           <View style={styles.threadHeader}>
-            <Text style={styles.threadAuthor}>{post.author.fullName}</Text>
+            <Text style={[styles.threadAuthor, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
             {post.author.isVerified && (
-              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+              <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
             )}
-            <Text style={styles.threadTime}> · {postTime}</Text>
+            <Text style={[styles.threadTime, { color: colors.textTertiary }]}> · {postTime}</Text>
           </View>
-          <Text style={styles.threadPostText} numberOfLines={2}>{post.content}</Text>
+          <Text style={[styles.threadPostText, { color: colors.textSecondary }]} numberOfLines={2}>{post.content}</Text>
         </View>
       </View>
 
@@ -249,20 +260,20 @@ const ReplyCard: React.FC<{
       <View style={styles.threadBottom}>
         <Image
           source={{ uri: comment.author.avatar || DEFAULT_AVATAR }}
-          style={styles.threadAvatarMain}
+          style={[styles.threadAvatarMain, { backgroundColor: colors.gray200 }]}
         />
         <View style={styles.threadReplyContent}>
           <View style={styles.threadHeader}>
-            <Text style={styles.threadReplyAuthor}>{comment.author.fullName}</Text>
+            <Text style={[styles.threadReplyAuthor, { color: colors.textPrimary }]}>{comment.author.fullName}</Text>
             {comment.author.isVerified && (
-              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+              <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
             )}
-            <Text style={styles.threadTime}> · {commentTime}</Text>
+            <Text style={[styles.threadTime, { color: colors.textTertiary }]}> · {commentTime}</Text>
           </View>
-          <Text style={styles.replyingTo}>
-            Đang trả lời <Text style={styles.replyingToName}>@{post.author.fullName}</Text>
+          <Text style={[styles.replyingTo, { color: colors.textTertiary }]}>
+            Đang trả lời <Text style={[styles.replyingToName, { color: colors.primary }]}>@{post.author.fullName}</Text>
           </Text>
-          <Text style={styles.threadReplyText}>{comment.content}</Text>
+          <Text style={[styles.threadReplyText, { color: colors.textPrimary }]}>{comment.content}</Text>
 
           {/* Actions */}
           <View style={styles.threadActions}>
@@ -270,19 +281,84 @@ const ReplyCard: React.FC<{
               <Ionicons
                 name={comment.isLiked ? 'heart' : 'heart-outline'}
                 size={16}
-                color={comment.isLiked ? Colors.like : Colors.textTertiary}
+                color={comment.isLiked ? colors.like : colors.textTertiary}
               />
               {(comment.likesCount || 0) > 0 && (
-                <Text style={[styles.threadActionText, comment.isLiked && { color: Colors.like }]}>
+                <Text style={[styles.threadActionText, { color: colors.textTertiary }, comment.isLiked && { color: colors.like }]}>
                   {comment.likesCount}
                 </Text>
               )}
             </View>
             <View style={styles.threadAction}>
-              <Ionicons name="chatbubble-outline" size={15} color={Colors.textTertiary} />
+              <Ionicons name="chatbubble-outline" size={15} color={colors.textTertiary} />
             </View>
             <View style={styles.threadAction}>
-              <Ionicons name="arrow-redo-outline" size={16} color={Colors.textTertiary} />
+              <Ionicons name="arrow-redo-outline" size={16} color={colors.textTertiary} />
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+// Shared Comment Card - displays a reposted comment
+const SharedCommentCard: React.FC<{
+  comment: Comment & { post?: Post };
+  onPress: () => void;
+  colors: any;
+}> = React.memo(({ comment, onPress, colors }) => {
+  const commentTime = formatTimeAgo(comment.createdAt);
+
+  return (
+    <TouchableOpacity style={[styles.replyCard, { backgroundColor: colors.cardBackground }]} onPress={onPress} activeOpacity={0.7}>
+      {/* Repost indicator */}
+      <View style={styles.repostIndicator}>
+        <Ionicons name="repeat" size={14} color={colors.textTertiary} />
+        <Text style={[styles.repostText, { color: colors.textTertiary }]}>Đã đăng lại</Text>
+      </View>
+
+      {/* Comment content */}
+      <View style={styles.threadBottom}>
+        <Image
+          source={{ uri: comment.author.avatar || DEFAULT_AVATAR }}
+          style={[styles.threadAvatarMain, { backgroundColor: colors.gray200 }]}
+        />
+        <View style={styles.threadReplyContent}>
+          <View style={styles.threadHeader}>
+            <Text style={[styles.threadReplyAuthor, { color: colors.textPrimary }]}>{comment.author.fullName}</Text>
+            {comment.author.isVerified && (
+              <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
+            )}
+            <Text style={[styles.threadTime, { color: colors.textTertiary }]}> · {commentTime}</Text>
+          </View>
+          <Text style={[styles.threadReplyText, { color: colors.textPrimary }]}>{comment.content}</Text>
+
+          {/* Actions */}
+          <View style={styles.threadActions}>
+            <View style={styles.threadAction}>
+              <Ionicons
+                name={comment.isLiked ? 'heart' : 'heart-outline'}
+                size={16}
+                color={comment.isLiked ? colors.like : colors.textTertiary}
+              />
+              {(comment.likesCount || 0) > 0 && (
+                <Text style={[styles.threadActionText, { color: colors.textTertiary }, comment.isLiked && { color: colors.like }]}>
+                  {comment.likesCount}
+                </Text>
+              )}
+            </View>
+            <View style={styles.threadAction}>
+              <Ionicons name="chatbubble-outline" size={15} color={colors.textTertiary} />
+              {(comment.repliesCount || 0) > 0 && (
+                <Text style={[styles.threadActionText, { color: colors.textTertiary }]}>{comment.repliesCount}</Text>
+              )}
+            </View>
+            <View style={styles.threadAction}>
+              <Ionicons name="repeat" size={16} color={colors.repost} />
+              {(comment.sharesCount || 0) > 0 && (
+                <Text style={[styles.threadActionText, { color: colors.repost }]}>{comment.sharesCount}</Text>
+              )}
             </View>
           </View>
         </View>
@@ -292,11 +368,14 @@ const ReplyCard: React.FC<{
 });
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
-  const { user: currentUser, logout } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { user: currentUser, logout, updateUser } = useAuthStore();
+  const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'replies' | 'reposts'>('posts');
   const [posts, setPosts] = useState<Post[]>([]);
   const [sharedPosts, setSharedPosts] = useState<Post[]>([]);
+  const [sharedComments, setSharedComments] = useState<Comment[]>([]);
   const [replies, setReplies] = useState<{ comment: Comment; post: Post }[]>([]);
   const [loading, setLoading] = useState(true);
   const { handleShare, handleToggleRepost, handleToggleLike } = usePostActions();
@@ -305,6 +384,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
   const [menuItems, setMenuItems] = useState<BottomMenuItem[]>([]);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
+
+  // Music picker state
+  const [musicPickerVisible, setMusicPickerVisible] = useState(false);
+  const [savingMusic, setSavingMusic] = useState(false);
+  const [playingSong, setPlayingSong] = useState<SongItem | null>(null);
+
+  // Share modal state
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [sharePostData, setSharePostData] = useState<{ id: string; authorName: string; content?: string } | null>(null);
+
+  const handleSharePost = useCallback((post: Post) => {
+    setSharePostData({
+      id: post.id,
+      authorName: post.author.fullName,
+      content: post.content,
+    });
+    setShareModalVisible(true);
+  }, []);
 
   const isOwnProfile = !route?.params?.userId || route?.params?.userId === currentUser?.id;
   const user = currentUser;
@@ -322,14 +419,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         postService.getUserPosts(userId, { page: 1, limit: 20 }),
         postService.getSharedPosts(userId, { page: 1, limit: 20 }),
         postService.getUserReplies(userId, { page: 1, limit: 20 }),
+        postService.getSharedComments(userId, { page: 1, limit: 20 }),
       ]);
       setPosts(results[0].status === 'fulfilled' ? results[0].value?.data || [] : []);
       setSharedPosts(results[1].status === 'fulfilled' ? results[1].value?.data || [] : []);
       setReplies(results[2].status === 'fulfilled' ? results[2].value?.data || [] : []);
+      setSharedComments(results[3].status === 'fulfilled' ? results[3].value?.data || [] : []);
     } catch {
       setPosts([]);
       setSharedPosts([]);
       setReplies([]);
+      setSharedComments([]);
     } finally {
       setLoading(false);
     }
@@ -473,6 +573,81 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
     setDeletePostId(null);
   }, [deletePostId]);
 
+  // Music handlers
+  const handleSelectMusic = useCallback(async (song: SelectedSong) => {
+    if (savingMusic) return;
+    setSavingMusic(true);
+    const musicString = `${song.title} - ${song.artist}`;
+    // Update UI immediately
+    updateUser({ favoriteMusic: musicString });
+    try {
+      await userService.updateProfile({ favoriteMusic: musicString });
+    } catch (error) {
+      console.error('Failed to save music:', error);
+      // Revert on error
+      updateUser({ favoriteMusic: user?.favoriteMusic });
+    } finally {
+      setSavingMusic(false);
+    }
+  }, [savingMusic, updateUser, user?.favoriteMusic]);
+
+  const handleRemoveMusic = useCallback(async () => {
+    if (savingMusic) return;
+    setSavingMusic(true);
+    const oldMusic = user?.favoriteMusic;
+    // Update UI immediately
+    updateUser({ favoriteMusic: undefined });
+    try {
+      await userService.updateProfile({ favoriteMusic: null });
+    } catch (error) {
+      console.error('Failed to remove music:', error);
+      // Revert on error
+      updateUser({ favoriteMusic: oldMusic });
+    } finally {
+      setSavingMusic(false);
+    }
+  }, [savingMusic, updateUser, user?.favoriteMusic]);
+
+  const handleToggleMusic = useCallback(() => {
+    if (playingSong) {
+      // Stop playing
+      setPlayingSong(null);
+      return;
+    }
+    if (!user?.favoriteMusic) return;
+    const [title] = user.favoriteMusic.split(' - ');
+    // Find song in songs.json
+    const song = allSongs.find(s =>
+      s.title.toLowerCase().includes(title.toLowerCase()) ||
+      title.toLowerCase().includes(s.title.toLowerCase())
+    );
+    if (song) {
+      setPlayingSong(song);
+    }
+  }, [user?.favoriteMusic, playingSong]);
+
+  // Generate SoundCloud embed HTML
+  const getPlayerHtml = useCallback((embedUrl: string) => {
+    const baseUrl = embedUrl.split('&')[0];
+    const fullUrl = `${baseUrl}&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`;
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; }
+            html, body { width: 100%; height: 100%; background: #1a1a1a; }
+            iframe { width: 100%; height: 166px; border: none; }
+          </style>
+        </head>
+        <body>
+          <iframe scrolling="no" frameborder="no" allow="autoplay" src="${fullUrl}"></iframe>
+        </body>
+      </html>
+    `;
+  }, []);
+
   const tabs = [
     { key: 'posts' as const, label: 'Bài đăng' },
     { key: 'replies' as const, label: 'Trả lời' },
@@ -486,76 +661,115 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
       onLike={() => handleLike(post.id)}
       onComment={() => handleComment(post.id)}
       onRepost={() => handleRepostToggle(post.id)}
-      onShare={() => handleShare(post.author.fullName)}
+      onShare={() => handleSharePost(post)}
       onProfile={() => handleProfile(post.author.id)}
       onMore={() => handleMore(post.id)}
+      colors={colors}
     />
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="share-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        <Image
+          source={require('../../../assets/logo.png')}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
         <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings-outline" size={24} color={Colors.textPrimary} />
+          <Ionicons name="menu-outline" size={26} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        {/* Profile Info */}
+        {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View style={styles.profileTop}>
-            <View style={styles.profileInfo}>
-              <Text style={styles.fullName}>{user?.fullName || 'User'}</Text>
-              <Text style={styles.usernameHandle}>@{user?.studentId || 'username'}</Text>
+          {/* Row: Name left, Avatar right */}
+          <View style={styles.profileRow}>
+            <View style={styles.profileLeft}>
+              <Text style={[styles.fullName, { color: colors.textPrimary }]}>{user?.fullName || 'User'}</Text>
+              <View style={styles.usernameRow}>
+                <Text style={[styles.usernameText, { color: colors.textPrimary }]}>{user?.studentId || 'username'}</Text>
+                <View style={[styles.threadsBadge, { backgroundColor: colors.gray200 }]}>
+                  <Text style={[styles.threadsBadgeText, { color: colors.textSecondary }]}>ptit.social</Text>
+                </View>
+              </View>
             </View>
             <Image
               source={{ uri: user?.avatar || DEFAULT_AVATAR }}
-              style={styles.avatar}
+              style={[styles.avatar, { backgroundColor: colors.gray200 }]}
             />
           </View>
 
-          {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
+          {/* Bio */}
+          {user?.bio && (
+            <Text style={[styles.bio, { color: colors.textPrimary }]}>{user.bio}</Text>
+          )}
 
-          {/* Stats - Inline text style */}
-          <Text style={styles.statsInline}>
-            {user?.postsCount || 0} bài đăng . {user?.followersCount || 0} Lượt người theo dõi
-          </Text>
+          {/* Music */}
+          {user?.favoriteMusic ? (
+            <View style={styles.musicRow}>
+              <TouchableOpacity onPress={handleToggleMusic} activeOpacity={0.7}>
+                <Ionicons name={playingSong ? "pause-circle" : "play-circle"} size={20} color={colors.primary} />
+              </TouchableOpacity>
+              <Text style={[styles.musicText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {user.favoriteMusic}
+              </Text>
+              {isOwnProfile && (
+                <TouchableOpacity onPress={() => setMusicPickerVisible(true)} activeOpacity={0.7}>
+                  <Ionicons name="pencil" size={14} color={colors.textTertiary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : isOwnProfile ? (
+            <TouchableOpacity style={styles.musicRow} onPress={() => setMusicPickerVisible(true)} activeOpacity={0.7}>
+              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+              <Text style={[styles.musicText, { color: colors.primary }]}>Thêm nhạc yêu thích</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Followers */}
+          <TouchableOpacity
+            style={styles.followersRow}
+            onPress={() => navigation.navigate('Followers', { userId, tab: 'followers' })}
+          >
+            <Text style={[styles.followersText, { color: colors.textTertiary }]}>
+              {user?.followersCount || 0} người theo dõi
+            </Text>
+          </TouchableOpacity>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
             {isOwnProfile ? (
               <>
                 <TouchableOpacity
-                  style={styles.actionBtn}
+                  style={[styles.actionBtn, { borderColor: colors.gray300 }]}
                   onPress={() => navigation.navigate('EditProfile')}
                 >
-                  <Text style={styles.actionBtnText}>Chỉnh sửa trang cá nhân</Text>
+                  <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Chỉnh sửa trang cá nhân</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.actionBtn}
+                  style={[styles.actionBtn, { borderColor: colors.gray300 }]}
                   onPress={() => Share.share({ message: `Xem trang cá nhân của ${user?.fullName} trên PTIT Social!` })}
                 >
-                  <Text style={styles.actionBtnText}>Chia sẻ trang cá nhân</Text>
+                  <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Chia sẻ trang cá nhân</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <TouchableOpacity style={[styles.actionBtn, styles.followButton]}>
-                  <Text style={styles.followButtonText}>Theo dõi</Text>
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary }]}>
+                  <Text style={[styles.actionBtnText, { color: colors.background }]}>Theo dõi</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}>
-                  <Text style={styles.actionBtnText}>Nhắn tin</Text>
+                <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.gray300 }]}>
+                  <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Đề cập</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -563,14 +777,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { borderBottomColor: colors.gray200, backgroundColor: colors.background }]}>
           {tabs.map((tab) => (
             <TouchableOpacity
               key={tab.key}
-              style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+              style={[styles.tab, activeTab === tab.key && [styles.activeTab, { borderBottomColor: colors.primary }]]}
               onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
+              <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === tab.key && { color: colors.primary, fontWeight: FontWeight.bold }]}>
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -581,24 +795,34 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         <View style={styles.postsSection}>
           {loading ? (
             <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color={Colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           ) : activeTab === 'posts' ? (
             posts.length > 0 ? (
               posts.map(renderPostCard)
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="document-text-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+                <Ionicons name="document-text-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co bai viet nao</Text>
               </View>
             )
           ) : activeTab === 'reposts' ? (
-            sharedPosts.length > 0 ? (
-              sharedPosts.map(renderPostCard)
+            sharedPosts.length > 0 || sharedComments.length > 0 ? (
+              <>
+                {sharedPosts.map(renderPostCard)}
+                {sharedComments.map((comment) => (
+                  <SharedCommentCard
+                    key={`comment-${comment.id}`}
+                    comment={comment}
+                    onPress={() => navigation.navigate('PostDetail', { postId: comment.postId })}
+                    colors={colors}
+                  />
+                ))}
+              </>
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="repeat-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
+                <Ionicons name="repeat-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co bai dang lai nao</Text>
               </View>
             )
           ) : activeTab === 'replies' ? (
@@ -608,12 +832,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
                   key={reply.comment.id}
                   reply={reply}
                   onPress={() => navigation.navigate('PostDetail', { postId: reply.post.id })}
+                  colors={colors}
                 />
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
+                <Ionicons name="chatbox-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co tra loi nao</Text>
               </View>
             )
           ) : null}
@@ -641,68 +866,121 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
           },
         ]}
       />
-    </SafeAreaView>
+
+      {/* Music Picker */}
+      <MusicPicker
+        visible={musicPickerVisible}
+        onClose={() => setMusicPickerVisible(false)}
+        onSelect={handleSelectMusic}
+        currentSong={user?.favoriteMusic}
+      />
+
+      {/* Hidden WebView for audio playback */}
+      {playingSong && (
+        <View style={styles.hiddenWebview}>
+          <WebView
+            source={{ html: getPlayerHtml(playingSong.embed_url) }}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
+        </View>
+      )}
+
+      {/* Share Post Modal */}
+      {sharePostData && (
+        <SharePostModal
+          visible={shareModalVisible}
+          onClose={() => {
+            setShareModalVisible(false);
+            setSharePostData(null);
+          }}
+          postId={sharePostData.id}
+          postAuthorName={sharePostData.authorName}
+          postContent={sharePostData.content}
+        />
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    height: Layout.headerHeight,
+    paddingVertical: Spacing.sm,
+  },
+  headerLogo: {
+    width: 36,
+    height: 36,
   },
   headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.gray50,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: Spacing.xs,
   },
   profileSection: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
   },
-  profileTop: {
+  profileRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  profileInfo: {
+  profileLeft: {
     flex: 1,
+    paddingRight: Spacing.md,
   },
   fullName: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
   },
-  usernameHandle: {
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: Spacing.sm,
+  },
+  usernameText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+  },
+  threadsBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  threadsBadgeText: {
+    fontSize: 11,
   },
   avatar: {
-    width: Layout.avatarSize.xxl,
-    height: Layout.avatarSize.xxl,
-    borderRadius: Layout.avatarSize.xxl / 2,
-    backgroundColor: Colors.gray200,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
   },
   bio: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    marginTop: Spacing.lg,
-    lineHeight: 22,
+    fontSize: 15,
+    marginTop: Spacing.md,
+    lineHeight: 21,
   },
-  statsInline: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    marginTop: Spacing.lg,
+  musicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    gap: 6,
+  },
+  musicText: {
+    fontSize: 14,
+  },
+  followersRow: {
+    marginTop: Spacing.md,
+  },
+  followersText: {
+    fontSize: 15,
   },
   actions: {
     flexDirection: 'row',
@@ -711,34 +989,20 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  followButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  followButtonText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+    fontSize: 14,
+    fontWeight: FontWeight.semiBold,
   },
   tabs: {
     flexDirection: 'row',
     marginTop: Spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   tab: {
     flex: 1,
@@ -747,15 +1011,12 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.textTertiary,
   },
   activeTabText: {
-    color: Colors.primary,
     fontWeight: FontWeight.bold,
   },
   postsSection: {
@@ -763,7 +1024,6 @@ const styles = StyleSheet.create({
   },
   // PostCard styles (same as HomeScreen)
   postCard: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.sm,
     marginVertical: Spacing.xs,
     borderRadius: BorderRadius.xl,
@@ -784,24 +1044,21 @@ const styles = StyleSheet.create({
     width: Layout.avatarSize.md,
     height: Layout.avatarSize.md,
     borderRadius: Layout.avatarSize.md / 2,
-    backgroundColor: Colors.gray200,
   },
   postHeaderInfo: {
     marginLeft: Spacing.md,
     flex: 1,
   },
-  usernameRow: {
+  postUsernameRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   username: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   timeAgo: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
     marginTop: 2,
   },
   moreButton: {
@@ -809,13 +1066,11 @@ const styles = StyleSheet.create({
   },
   postContent: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     lineHeight: 22,
     marginTop: Spacing.md,
   },
   statsText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
   interactionBar: {
@@ -825,7 +1080,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   interactionLeft: {
     flexDirection: 'row',
@@ -839,7 +1093,6 @@ const styles = StyleSheet.create({
   },
   interactionCount: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
   loadingState: {
@@ -854,13 +1107,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.textTertiary,
     marginTop: Spacing.md,
     textAlign: 'center',
   },
   // ReplyCard thread styles
   replyCard: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.sm,
     marginVertical: Spacing.xs,
     borderRadius: BorderRadius.xl,
@@ -878,12 +1129,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.gray200,
   },
   threadLine: {
     width: 2,
     flex: 1,
-    backgroundColor: Colors.gray200,
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
     borderRadius: 1,
@@ -900,15 +1149,12 @@ const styles = StyleSheet.create({
   threadAuthor: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   threadTime: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
   },
   threadPostText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.xxs,
     lineHeight: 20,
   },
@@ -919,7 +1165,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.gray200,
     marginRight: Spacing.md,
   },
   threadReplyContent: {
@@ -928,19 +1173,15 @@ const styles = StyleSheet.create({
   threadReplyAuthor: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   replyingTo: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
     marginTop: 2,
   },
   replyingToName: {
-    color: Colors.primary,
   },
   threadReplyText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     marginTop: Spacing.sm,
     lineHeight: 22,
   },
@@ -956,7 +1197,23 @@ const styles = StyleSheet.create({
   },
   threadActionText: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
+  },
+  repostIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  repostText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  // Hidden WebView for audio
+  hiddenWebview: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
 });
 

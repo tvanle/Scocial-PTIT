@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, Card } from '../common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { Strings } from '../../constants/strings';
 import { User } from '../../types';
 
@@ -21,6 +22,8 @@ const CreatePostBox: React.FC<CreatePostBoxProps> = ({
   onVideoPress,
   onFeelingPress,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <Card style={styles.card} padding="none">
       <View style={styles.inputRow}>
@@ -29,33 +32,33 @@ const CreatePostBox: React.FC<CreatePostBoxProps> = ({
           name={user?.fullName || ''}
           size="md"
         />
-        <TouchableOpacity style={styles.inputPlaceholder} onPress={onPress}>
-          <Text style={styles.placeholderText}>
+        <TouchableOpacity style={[styles.inputPlaceholder, { backgroundColor: colors.backgroundSecondary }]} onPress={onPress}>
+          <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>
             {Strings.home.whatsOnYourMind}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
 
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionItem} onPress={onVideoPress}>
-          <Ionicons name="videocam" size={22} color={Colors.error} />
-          <Text style={styles.actionText}>Live</Text>
+          <Ionicons name="videocam" size={22} color={colors.error} />
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>Live</Text>
         </TouchableOpacity>
 
-        <View style={styles.actionDivider} />
+        <View style={[styles.actionDivider, { backgroundColor: colors.borderLight }]} />
 
         <TouchableOpacity style={styles.actionItem} onPress={onPhotoPress}>
-          <Ionicons name="images" size={22} color={Colors.success} />
-          <Text style={styles.actionText}>{Strings.home.photo}</Text>
+          <Ionicons name="images" size={22} color={colors.success} />
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>{Strings.home.photo}</Text>
         </TouchableOpacity>
 
-        <View style={styles.actionDivider} />
+        <View style={[styles.actionDivider, { backgroundColor: colors.borderLight }]} />
 
         <TouchableOpacity style={styles.actionItem} onPress={onFeelingPress}>
-          <Ionicons name="happy" size={22} color={Colors.warning} />
-          <Text style={styles.actionText}>{Strings.home.feeling}</Text>
+          <Ionicons name="happy" size={22} color={colors.warning} />
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>{Strings.home.feeling}</Text>
         </TouchableOpacity>
       </View>
     </Card>
@@ -77,17 +80,14 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.md,
     height: 40,
     borderRadius: BorderRadius.round,
-    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     paddingHorizontal: Spacing.lg,
   },
   placeholderText: {
     fontSize: FontSize.md,
-    color: Colors.textTertiary,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.borderLight,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -102,11 +102,9 @@ const styles = StyleSheet.create({
   },
   actionDivider: {
     width: 1,
-    backgroundColor: Colors.borderLight,
   },
   actionText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     marginLeft: Spacing.xs,
   },

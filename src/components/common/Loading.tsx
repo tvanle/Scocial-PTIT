@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet, Modal, ViewStyle } from 'react-native';
-import { Colors, FontSize, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface LoadingProps {
   visible?: boolean;
@@ -16,15 +17,18 @@ export const Loading: React.FC<LoadingProps> = ({
   text,
   overlay = false,
   size = 'large',
-  color = Colors.primary,
+  color,
   style,
 }) => {
+  const { colors } = useTheme();
+  const indicatorColor = color || colors.primary;
+
   if (!visible) return null;
 
   const content = (
     <View style={[styles.container, style]}>
-      <ActivityIndicator size={size} color={color} />
-      {text && <Text style={styles.text}>{text}</Text>}
+      <ActivityIndicator size={size} color={indicatorColor} />
+      {text && <Text style={[styles.text, { color: colors.textSecondary }]}>{text}</Text>}
     </View>
   );
 
@@ -32,9 +36,9 @@ export const Loading: React.FC<LoadingProps> = ({
     return (
       <Modal transparent visible={visible} animationType="fade">
         <View style={styles.overlay}>
-          <View style={styles.overlayContent}>
-            <ActivityIndicator size={size} color={color} />
-            {text && <Text style={styles.overlayText}>{text}</Text>}
+          <View style={[styles.overlayContent, { backgroundColor: colors.background }]}>
+            <ActivityIndicator size={size} color={indicatorColor} />
+            {text && <Text style={[styles.overlayText, { color: colors.primary }]}>{text}</Text>}
           </View>
         </View>
       </Modal>
@@ -44,21 +48,30 @@ export const Loading: React.FC<LoadingProps> = ({
   return content;
 };
 
-export const FullScreenLoading: React.FC<{ text?: string }> = ({ text = 'Dang tai...' }) => (
-  <View style={styles.fullScreen}>
-    <ActivityIndicator size="large" color={Colors.primary} />
-    {text && <Text style={styles.text}>{text}</Text>}
-  </View>
-);
+export const FullScreenLoading: React.FC<{ text?: string }> = ({ text = 'Dang tai...' }) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.fullScreen, { backgroundColor: colors.background }]}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      {text && <Text style={[styles.text, { color: colors.textSecondary }]}>{text}</Text>}
+    </View>
+  );
+};
 
 export const InlineLoading: React.FC<{ size?: 'small' | 'large'; color?: string }> = ({
   size = 'small',
-  color = Colors.primary,
-}) => (
-  <View style={styles.inline}>
-    <ActivityIndicator size={size} color={color} />
-  </View>
-);
+  color,
+}) => {
+  const { colors } = useTheme();
+  const indicatorColor = color || colors.primary;
+
+  return (
+    <View style={styles.inline}>
+      <ActivityIndicator size={size} color={indicatorColor} />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -69,7 +82,6 @@ const styles = StyleSheet.create({
   text: {
     marginTop: Spacing.md,
     fontSize: FontSize.sm,
-    color: Colors.gray500,
   },
   overlay: {
     flex: 1,
@@ -78,7 +90,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   overlayContent: {
-    backgroundColor: Colors.white,
     padding: Spacing.xl,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
@@ -87,13 +98,11 @@ const styles = StyleSheet.create({
   overlayText: {
     marginTop: Spacing.md,
     fontSize: FontSize.sm,
-    color: Colors.primary,
   },
   fullScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
   },
   inline: {
     padding: Spacing.md,

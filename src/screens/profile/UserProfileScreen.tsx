@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '../../utils/alert';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { Post, Media, RootStackParamList, UserProfile, Comment } from '../../types';
 import { userService } from '../../services/user/userService';
@@ -26,6 +26,7 @@ import { DEFAULT_AVATAR } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
 import { BottomMenu } from '../../components/common';
 import type { BottomMenuItem } from '../../components/common';
+import { useTheme } from '../../hooks/useThemeColors';
 
 type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
@@ -33,13 +34,13 @@ type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Image layout component (same as HomeScreen)
-const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
+const PostImages: React.FC<{ media: Media[]; colors: any }> = React.memo(({ media, colors }) => {
   if (!media || media.length === 0) return null;
 
   if (media.length === 1) {
     return (
       <View style={imgStyles.singleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.singleImage} resizeMode="cover" />
+        <Image source={{ uri: media[0].url }} style={[imgStyles.singleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     );
   }
@@ -47,18 +48,18 @@ const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
   if (media.length === 2) {
     return (
       <View style={imgStyles.doubleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.doubleImage} resizeMode="cover" />
-        <Image source={{ uri: media[1].url }} style={imgStyles.doubleImage} resizeMode="cover" />
+        <Image source={{ uri: media[0].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     );
   }
 
   return (
     <View style={imgStyles.tripleContainer}>
-      <Image source={{ uri: media[0].url }} style={imgStyles.tripleLeft} resizeMode="cover" />
+      <Image source={{ uri: media[0].url }} style={[imgStyles.tripleLeft, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       <View style={imgStyles.tripleRight}>
-        <Image source={{ uri: media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
-        <Image source={{ uri: media[2]?.url || media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+        <Image source={{ uri: media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
+        <Image source={{ uri: media[2]?.url || media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
       </View>
     </View>
   );
@@ -73,7 +74,6 @@ const imgStyles = StyleSheet.create({
   singleImage: {
     width: '100%',
     height: 280,
-    backgroundColor: Colors.gray100,
   },
   doubleContainer: {
     flexDirection: 'row',
@@ -85,7 +85,6 @@ const imgStyles = StyleSheet.create({
   doubleImage: {
     flex: 1,
     height: 220,
-    backgroundColor: Colors.gray100,
   },
   tripleContainer: {
     flexDirection: 'row',
@@ -97,7 +96,6 @@ const imgStyles = StyleSheet.create({
   },
   tripleLeft: {
     flex: 1,
-    backgroundColor: Colors.gray100,
   },
   tripleRight: {
     flex: 1,
@@ -105,7 +103,6 @@ const imgStyles = StyleSheet.create({
   },
   tripleRightImage: {
     flex: 1,
-    backgroundColor: Colors.gray100,
   },
 });
 
@@ -118,43 +115,44 @@ const UserProfilePostCard: React.FC<{
   onShare: () => void;
   onProfile: () => void;
   onMore: () => void;
-}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  colors: any;
+}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore, colors }) => {
   const timeAgo = formatTimeAgo(post.createdAt);
 
   return (
-    <View style={cardStyles.postCard}>
+    <View style={[cardStyles.postCard, { backgroundColor: colors.cardBackground }]}>
       {/* User Header */}
       <View style={cardStyles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={cardStyles.postHeaderLeft}>
           <Image
             source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={cardStyles.postAvatar}
+            style={[cardStyles.postAvatar, { backgroundColor: colors.gray200 }]}
           />
           <View style={cardStyles.postHeaderInfo}>
             <View style={cardStyles.usernameRow}>
-              <Text style={cardStyles.username}>{post.author.fullName}</Text>
+              <Text style={[cardStyles.username, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
               {post.author.isVerified && (
-                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
+                <Ionicons name="checkmark-circle" size={14} color={colors.verified} style={{ marginLeft: 4 }} />
               )}
             </View>
-            <Text style={cardStyles.timeAgo}>{timeAgo}</Text>
+            <Text style={[cardStyles.timeAgo, { color: colors.textTertiary }]}>{timeAgo}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={onMore} style={cardStyles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Content */}
       <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
-        <Text style={cardStyles.postContent}>{post.content}</Text>
+        <Text style={[cardStyles.postContent, { color: colors.textPrimary }]}>{post.content}</Text>
 
         {post.media && post.media.length > 0 && (
-          <PostImages media={post.media} />
+          <PostImages media={post.media} colors={colors} />
         )}
 
         {(post.likesCount > 0 || post.commentsCount > 0) && (
-          <Text style={cardStyles.statsText}>
+          <Text style={[cardStyles.statsText, { color: colors.textSecondary }]}>
             {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
             {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
             {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
@@ -163,25 +161,25 @@ const UserProfilePostCard: React.FC<{
       </TouchableOpacity>
 
       {/* Interaction Bar */}
-      <View style={cardStyles.interactionBar}>
+      <View style={[cardStyles.interactionBar, { borderTopColor: colors.borderLight }]}>
         <View style={cardStyles.interactionLeft}>
           <TouchableOpacity onPress={onLike} style={cardStyles.interactionButton}>
             <Ionicons
               name={post.isLiked ? 'heart' : 'heart-outline'}
               size={22}
-              color={post.isLiked ? Colors.like : Colors.textSecondary}
+              color={post.isLiked ? colors.like : colors.textSecondary}
             />
             {post.likesCount > 0 && (
-              <Text style={[cardStyles.interactionCount, post.isLiked && { color: Colors.like }]}>
+              <Text style={[cardStyles.interactionCount, { color: colors.textSecondary }, post.isLiked && { color: colors.like }]}>
                 {post.likesCount}
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={cardStyles.interactionButton}>
-            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chatbox-outline" size={20} color={colors.textSecondary} />
             {post.commentsCount > 0 && (
-              <Text style={cardStyles.interactionCount}>{post.commentsCount}</Text>
+              <Text style={[cardStyles.interactionCount, { color: colors.textSecondary }]}>{post.commentsCount}</Text>
             )}
           </TouchableOpacity>
 
@@ -189,12 +187,12 @@ const UserProfilePostCard: React.FC<{
             <Ionicons
               name="repeat-outline"
               size={22}
-              color={post.isShared ? Colors.repost : Colors.textSecondary}
+              color={post.isShared ? colors.repost : colors.textSecondary}
             />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onShare} style={cardStyles.interactionButton}>
-            <Ionicons name="paper-plane-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="paper-plane-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -202,7 +200,7 @@ const UserProfilePostCard: React.FC<{
           <Ionicons
             name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={post.isSaved ? Colors.primary : Colors.textSecondary}
+            color={post.isSaved ? colors.primary : colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -212,7 +210,6 @@ const UserProfilePostCard: React.FC<{
 
 const cardStyles = StyleSheet.create({
   postCard: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.sm,
     marginVertical: Spacing.xs,
     borderRadius: BorderRadius.xl,
@@ -233,7 +230,6 @@ const cardStyles = StyleSheet.create({
     width: Layout.avatarSize.md,
     height: Layout.avatarSize.md,
     borderRadius: Layout.avatarSize.md / 2,
-    backgroundColor: Colors.gray200,
   },
   postHeaderInfo: {
     marginLeft: Spacing.md,
@@ -246,11 +242,9 @@ const cardStyles = StyleSheet.create({
   username: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   timeAgo: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
     marginTop: 2,
   },
   moreButton: {
@@ -258,13 +252,11 @@ const cardStyles = StyleSheet.create({
   },
   postContent: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     lineHeight: 22,
     marginTop: Spacing.md,
   },
   statsText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
   interactionBar: {
@@ -274,7 +266,6 @@ const cardStyles = StyleSheet.create({
     marginTop: Spacing.lg,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   interactionLeft: {
     flexDirection: 'row',
@@ -288,7 +279,6 @@ const cardStyles = StyleSheet.create({
   },
   interactionCount: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
 });
@@ -297,31 +287,32 @@ const cardStyles = StyleSheet.create({
 const ReplyCard: React.FC<{
   reply: { comment: Comment; post: Post };
   onPress: () => void;
-}> = React.memo(({ reply, onPress }) => {
+  colors: any;
+}> = React.memo(({ reply, onPress, colors }) => {
   const { comment, post } = reply;
   const commentTime = formatTimeAgo(comment.createdAt);
   const postTime = formatTimeAgo(post.createdAt);
 
   return (
-    <TouchableOpacity style={replyStyles.replyCard} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[replyStyles.replyCard, { backgroundColor: colors.cardBackground }]} onPress={onPress} activeOpacity={0.7}>
       {/* Original post (top part of thread) */}
       <View style={replyStyles.threadTop}>
         <View style={replyStyles.threadAvatarCol}>
           <Image
             source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={replyStyles.threadAvatarSmall}
+            style={[replyStyles.threadAvatarSmall, { backgroundColor: colors.gray200 }]}
           />
-          <View style={replyStyles.threadLine} />
+          <View style={[replyStyles.threadLine, { backgroundColor: colors.gray200 }]} />
         </View>
         <View style={replyStyles.threadContent}>
           <View style={replyStyles.threadHeader}>
-            <Text style={replyStyles.threadAuthor}>{post.author.fullName}</Text>
+            <Text style={[replyStyles.threadAuthor, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
             {post.author.isVerified && (
-              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+              <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
             )}
-            <Text style={replyStyles.threadTime}> · {postTime}</Text>
+            <Text style={[replyStyles.threadTime, { color: colors.textTertiary }]}> · {postTime}</Text>
           </View>
-          <Text style={replyStyles.threadPostText} numberOfLines={2}>{post.content}</Text>
+          <Text style={[replyStyles.threadPostText, { color: colors.textSecondary }]} numberOfLines={2}>{post.content}</Text>
         </View>
       </View>
 
@@ -329,20 +320,20 @@ const ReplyCard: React.FC<{
       <View style={replyStyles.threadBottom}>
         <Image
           source={{ uri: comment.author.avatar || DEFAULT_AVATAR }}
-          style={replyStyles.threadAvatarMain}
+          style={[replyStyles.threadAvatarMain, { backgroundColor: colors.gray200 }]}
         />
         <View style={replyStyles.threadReplyContent}>
           <View style={replyStyles.threadHeader}>
-            <Text style={replyStyles.threadReplyAuthor}>{comment.author.fullName}</Text>
+            <Text style={[replyStyles.threadReplyAuthor, { color: colors.textPrimary }]}>{comment.author.fullName}</Text>
             {comment.author.isVerified && (
-              <Ionicons name="checkmark-circle" size={12} color={Colors.verified} style={{ marginLeft: 2 }} />
+              <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
             )}
-            <Text style={replyStyles.threadTime}> · {commentTime}</Text>
+            <Text style={[replyStyles.threadTime, { color: colors.textTertiary }]}> · {commentTime}</Text>
           </View>
-          <Text style={replyStyles.replyingTo}>
-            Đang trả lời <Text style={replyStyles.replyingToName}>@{post.author.fullName}</Text>
+          <Text style={[replyStyles.replyingTo, { color: colors.textTertiary }]}>
+            Đang trả lời <Text style={{ color: colors.primary }}>@{post.author.fullName}</Text>
           </Text>
-          <Text style={replyStyles.threadReplyText}>{comment.content}</Text>
+          <Text style={[replyStyles.threadReplyText, { color: colors.textPrimary }]}>{comment.content}</Text>
 
           {/* Actions */}
           <View style={replyStyles.threadActions}>
@@ -350,19 +341,19 @@ const ReplyCard: React.FC<{
               <Ionicons
                 name={comment.isLiked ? 'heart' : 'heart-outline'}
                 size={16}
-                color={comment.isLiked ? Colors.like : Colors.textTertiary}
+                color={comment.isLiked ? colors.like : colors.textTertiary}
               />
               {(comment.likesCount || 0) > 0 && (
-                <Text style={[replyStyles.threadActionText, comment.isLiked && { color: Colors.like }]}>
+                <Text style={[replyStyles.threadActionText, { color: colors.textTertiary }, comment.isLiked && { color: colors.like }]}>
                   {comment.likesCount}
                 </Text>
               )}
             </View>
             <View style={replyStyles.threadAction}>
-              <Ionicons name="chatbubble-outline" size={15} color={Colors.textTertiary} />
+              <Ionicons name="chatbubble-outline" size={15} color={colors.textTertiary} />
             </View>
             <View style={replyStyles.threadAction}>
-              <Ionicons name="arrow-redo-outline" size={16} color={Colors.textTertiary} />
+              <Ionicons name="arrow-redo-outline" size={16} color={colors.textTertiary} />
             </View>
           </View>
         </View>
@@ -373,7 +364,6 @@ const ReplyCard: React.FC<{
 
 const replyStyles = StyleSheet.create({
   replyCard: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.sm,
     marginVertical: Spacing.xs,
     borderRadius: BorderRadius.xl,
@@ -395,12 +385,10 @@ const replyStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.gray200,
   },
   threadLine: {
     width: 2,
     flex: 1,
-    backgroundColor: Colors.gray200,
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
     borderRadius: 1,
@@ -417,15 +405,12 @@ const replyStyles = StyleSheet.create({
   threadAuthor: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   threadTime: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
   },
   threadPostText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.xxs,
     lineHeight: 20,
   },
@@ -436,7 +421,6 @@ const replyStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.gray200,
     marginRight: Spacing.md,
   },
   threadReplyContent: {
@@ -445,19 +429,13 @@ const replyStyles = StyleSheet.create({
   threadReplyAuthor: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   replyingTo: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
     marginTop: 2,
-  },
-  replyingToName: {
-    color: Colors.primary,
   },
   threadReplyText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     marginTop: Spacing.sm,
     lineHeight: 22,
   },
@@ -473,7 +451,6 @@ const replyStyles = StyleSheet.create({
   },
   threadActionText: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
   },
 });
 
@@ -482,6 +459,7 @@ const UserProfileScreen: React.FC = () => {
   const route = useRoute<UserProfileRouteProp>();
   const { userId } = route.params;
   const { user: currentUser } = useAuthStore();
+  const { colors, isDark } = useTheme();
 
   const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -691,112 +669,119 @@ const UserProfileScreen: React.FC = () => {
       onShare={() => handleShare(post.author.fullName)}
       onProfile={() => handleProfile(post.author.id)}
       onMore={() => handleMore(post.id)}
+      colors={colors}
     />
   );
 
   if (loading || !profileUser) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.headerIcon, { backgroundColor: colors.gray100 }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
+          <TouchableOpacity style={[styles.headerIcon, { backgroundColor: colors.gray100 }]}>
+            <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.headerIcon, { backgroundColor: colors.gray100 }]}>
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={Colors.textPrimary} />
+        <TouchableOpacity style={[styles.headerIcon, { backgroundColor: colors.gray100 }]}>
+          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.textPrimary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textPrimary} />
         }
       >
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.profileTop}>
             <View style={styles.profileInfo}>
-              <Text style={styles.fullName}>{profileUser.fullName}</Text>
+              <Text style={[styles.fullName, { color: colors.textPrimary }]}>{profileUser.fullName}</Text>
               <View style={styles.profileUsernameRow}>
-                <Text style={styles.profileUsername}>{profileUser.studentId}</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>ptit.edu.vn</Text>
+                <Text style={[styles.profileUsername, { color: colors.textPrimary }]}>{profileUser.studentId}</Text>
+                <View style={[styles.badge, { backgroundColor: colors.gray100 }]}>
+                  <Text style={[styles.badgeText, { color: colors.textSecondary }]}>ptit.edu.vn</Text>
                 </View>
               </View>
             </View>
             <Image
               source={{ uri: profileUser.avatar }}
-              style={styles.avatar}
+              style={[styles.avatar, { backgroundColor: colors.gray200 }]}
             />
           </View>
 
-          {profileUser.bio && <Text style={styles.bio}>{profileUser.bio}</Text>}
+          {profileUser.bio && <Text style={[styles.bio, { color: colors.textPrimary }]}>{profileUser.bio}</Text>}
 
-          <Text style={styles.followers}>
-            {profileUser.followersCount || 0} người theo dõi
+          <Text style={[styles.followers, { color: colors.textSecondary }]}>
+            {profileUser.followersCount || 0} nguoi theo doi
           </Text>
 
           {/* Action Buttons */}
           <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.actionButton, profileUser.isFollowing ? styles.followingButton : styles.followButton]}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.gray100, borderColor: colors.gray200 },
+                profileUser.isFollowing
+                  ? { backgroundColor: colors.background, borderColor: colors.gray200 }
+                  : { backgroundColor: colors.primary, borderColor: colors.primary }
+              ]}
               onPress={handleFollow}
             >
-              <Text style={profileUser.isFollowing ? styles.followingButtonText : styles.followButtonText}>
-                {profileUser.isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
+              <Text style={profileUser.isFollowing ? [styles.followingButtonText, { color: colors.textPrimary }] : [styles.followButtonText, { color: colors.white }]}>
+                {profileUser.isFollowing ? 'Dang theo doi' : 'Theo doi'}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleMessage}>
-              <Text style={styles.actionButtonText}>Nhắn tin</Text>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]} onPress={handleMessage}>
+              <Text style={[styles.actionButtonText, { color: colors.textPrimary }]}>Nhan tin</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { borderBottomColor: colors.gray200, backgroundColor: colors.background }]}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'posts' && [styles.activeTab, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('posts')}
           >
-            <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
-              Bài đăng
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'posts' && { color: colors.primary, fontWeight: FontWeight.bold }]}>
+              Bai dang
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'replies' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'replies' && [styles.activeTab, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('replies')}
           >
-            <Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>
-              Trả lời
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'replies' && { color: colors.primary, fontWeight: FontWeight.bold }]}>
+              Tra loi
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'reposts' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'reposts' && [styles.activeTab, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('reposts')}
           >
-            <Text style={[styles.tabText, activeTab === 'reposts' && styles.activeTabText]}>
-              Bài đăng lại
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'reposts' && { color: colors.primary, fontWeight: FontWeight.bold }]}>
+              Bai dang lai
             </Text>
           </TouchableOpacity>
         </View>
@@ -808,8 +793,8 @@ const UserProfileScreen: React.FC = () => {
               posts.map(renderPostCard)
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="document-text-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+                <Ionicons name="document-text-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co bai viet nao</Text>
               </View>
             )
           ) : activeTab === 'reposts' ? (
@@ -817,8 +802,8 @@ const UserProfileScreen: React.FC = () => {
               sharedPosts.map(renderPostCard)
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="repeat-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có bài đăng lại nào</Text>
+                <Ionicons name="repeat-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co bai dang lai nao</Text>
               </View>
             )
           ) : activeTab === 'replies' ? (
@@ -828,12 +813,13 @@ const UserProfileScreen: React.FC = () => {
                   key={reply.comment.id}
                   reply={reply}
                   onPress={() => navigation.navigate('PostDetail', { postId: reply.post.id })}
+                  colors={colors}
                 />
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="chatbox-outline" size={48} color={Colors.gray300} />
-                <Text style={styles.emptyText}>Chưa có trả lời nào</Text>
+                <Ionicons name="chatbox-outline" size={48} color={colors.gray200} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chua co tra loi nao</Text>
               </View>
             )
           ) : null}
@@ -854,7 +840,6 @@ const UserProfileScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: 'row',
@@ -867,7 +852,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -886,7 +870,6 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
   profileUsernameRow: {
@@ -895,10 +878,8 @@ const styles = StyleSheet.create({
   },
   profileUsername: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
   },
   badge: {
-    backgroundColor: Colors.gray100,
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xxs,
@@ -906,23 +887,19 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: FontSize.xs,
-    color: Colors.gray500,
   },
   avatar: {
     width: Layout.avatarSize.xl,
     height: Layout.avatarSize.xl,
     borderRadius: Layout.avatarSize.xl / 2,
-    backgroundColor: Colors.gray200,
   },
   bio: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     marginTop: Spacing.md,
     lineHeight: 22,
   },
   followers: {
     fontSize: FontSize.md,
-    color: Colors.gray500,
     marginTop: Spacing.md,
   },
   actions: {
@@ -935,40 +912,29 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   followButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   followButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.white,
   },
   followingButton: {
-    backgroundColor: Colors.white,
-    borderColor: Colors.border,
   },
   followingButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   tabs: {
     flexDirection: 'row',
     marginTop: Spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   tab: {
     flex: 1,
@@ -977,15 +943,12 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
-    color: Colors.gray400,
   },
   activeTabText: {
-    color: Colors.primary,
     fontWeight: FontWeight.bold,
   },
   postsSection: {
@@ -997,7 +960,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.gray400,
     marginTop: Spacing.md,
   },
   loadingContainer: {

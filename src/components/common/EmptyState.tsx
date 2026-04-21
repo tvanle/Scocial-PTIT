@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Spacing } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -15,13 +16,17 @@ const EmptyState: React.FC<EmptyStateProps> = React.memo(({
   title,
   subtitle,
   iconSize = 64,
-}) => (
-  <View style={styles.container}>
-    <Ionicons name={icon} size={iconSize} color={Colors.gray300} />
-    <Text style={styles.title}>{title}</Text>
-    {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-  </View>
-));
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.container}>
+      <Ionicons name={icon} size={iconSize} color={colors.gray300} />
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -34,12 +39,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginTop: Spacing.lg,
   },
   subtitle: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     marginTop: Spacing.sm,
     textAlign: 'center',
   },

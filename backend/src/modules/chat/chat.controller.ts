@@ -58,13 +58,14 @@ export class ChatController {
   async sendMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const conversationId = req.params.conversationId as string;
-      const { content, type, mediaUrl } = req.body;
+      const { content, type, mediaUrl, postId } = req.body;
       const message = await chatService.sendMessage(
         conversationId,
         req.user!.userId,
         content,
         type,
-        mediaUrl
+        mediaUrl,
+        postId
       );
       sendSuccess(res, message, undefined, HTTP_STATUS.CREATED);
     } catch (error) {

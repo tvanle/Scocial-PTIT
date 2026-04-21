@@ -11,3 +11,7 @@ export { default as ScreenHeader } from './ScreenHeader';
 export { default as SearchInput } from './SearchInput';
 export { default as BottomMenu } from './BottomMenu';
 export type { BottomMenuItem } from './BottomMenu';
+export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as MusicPicker } from './MusicPicker';
+export type { SelectedSong } from './MusicPicker';
+export { default as SharePostModal } from './SharePostModal';

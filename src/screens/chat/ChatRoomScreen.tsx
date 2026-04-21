@@ -18,7 +18,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar } from '../../components/common';
+import { DEFAULT_AVATAR } from '../../constants/strings';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { Message, User, Conversation, RootStackParamList } from '../../types';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { chatService } from '../../services/chat/chatService';
@@ -28,6 +30,7 @@ type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 
 const ChatRoomScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const navigation = useNavigation<ChatRoomScreenNavigationProp>();
   const route = useRoute<ChatRoomScreenRouteProp>();
   const { conversationId: routeConversationId, userId } = route.params;
@@ -145,16 +148,84 @@ const ChatRoomScreen: React.FC = () => {
     return currentTime - prevTime > 5 * 60 * 1000; // 5 minutes
   };
 
+  const renderSharedPost = (message: Message, isOwn: boolean) => {
+    const post = message.sharedPost;
+    if (!post) return null;
+
+    // Handle both formats: likesCount/commentsCount or _count.likes/_count.comments
+    const postData = post as any;
+    const likesCount = postData.likesCount ?? postData._count?.likes ?? 0;
+    const commentsCount = postData.commentsCount ?? postData._count?.comments ?? 0;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.sharedPostCard,
+          { backgroundColor: isOwn ? 'rgba(255,255,255,0.15)' : colors.background, borderColor: isOwn ? 'rgba(255,255,255,0.2)' : colors.borderLight },
+        ]}
+        onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+        activeOpacity={0.8}
+      >
+        {/* Post Author */}
+        <View style={styles.sharedPostHeader}>
+          <Image
+            source={{ uri: post.author?.avatar || DEFAULT_AVATAR }}
+            style={styles.sharedPostAvatar}
+          />
+          <Text style={[styles.sharedPostAuthor, { color: isOwn ? colors.white : colors.textPrimary }]} numberOfLines={1}>
+            {post.author?.fullName || 'Unknown'}
+          </Text>
+          {post.author?.isVerified && (
+            <Ionicons name="checkmark-circle" size={12} color={colors.verified} style={{ marginLeft: 2 }} />
+          )}
+        </View>
+
+        {/* Post Content */}
+        {post.content && (
+          <Text style={[styles.sharedPostContent, { color: isOwn ? 'rgba(255,255,255,0.9)' : colors.textSecondary }]} numberOfLines={2}>
+            {post.content}
+          </Text>
+        )}
+
+        {/* Post Media */}
+        {post.media && post.media.length > 0 && (
+          <Image
+            source={{ uri: post.media[0].url }}
+            style={styles.sharedPostImage}
+            resizeMode="cover"
+          />
+        )}
+
+        {/* Post Stats */}
+        <View style={styles.sharedPostStats}>
+          <View style={styles.sharedPostStat}>
+            <Ionicons name="heart-outline" size={12} color={isOwn ? 'rgba(255,255,255,0.7)' : colors.textTertiary} />
+            <Text style={[styles.sharedPostStatText, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]}>
+              {likesCount}
+            </Text>
+          </View>
+          <View style={styles.sharedPostStat}>
+            <Ionicons name="chatbubble-outline" size={12} color={isOwn ? 'rgba(255,255,255,0.7)' : colors.textTertiary} />
+            <Text style={[styles.sharedPostStatText, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]}>
+              {commentsCount}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isOwn = isOwnMessage(item);
     const showAvatar = shouldShowAvatar(item, index);
     const showTime = shouldShowTime(item, index);
     const sender = isOwn ? user : item.sender;
+    const isPostMessage = !!item.sharedPost;
 
     return (
       <View>
         {showTime && (
-          <Text style={styles.timeLabel}>{formatMessageTime(item.createdAt)}</Text>
+          <Text style={[styles.timeLabel, { color: colors.textTertiary, backgroundColor: colors.gray100 }]}>{formatMessageTime(item.createdAt)}</Text>
         )}
         <View style={[styles.messageRow, isOwn && styles.ownMessageRow]}>
           {!isOwn && (
@@ -167,7 +238,15 @@ const ChatRoomScreen: React.FC = () => {
             </View>
           )}
 
-          <View style={[styles.messageBubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
+          <View style={[
+            styles.messageBubble,
+            isOwn ? [styles.ownBubble, { backgroundColor: colors.primary }] : [styles.otherBubble, { backgroundColor: colors.gray100 }],
+            isPostMessage && styles.postMessageBubble,
+          ]}>
+            {/* Shared Post Card */}
+            {isPostMessage && renderSharedPost(item, isOwn)}
+
+            {/* Image Message */}
             {item.type === 'image' && item.media?.[0] && (
               <TouchableOpacity activeOpacity={0.9}>
                 <Image
@@ -177,8 +256,10 @@ const ChatRoomScreen: React.FC = () => {
                 />
               </TouchableOpacity>
             )}
-            {item.content && (
-              <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>
+
+            {/* Text Content (show if not a post message, or if post message has additional text) */}
+            {item.content && !isPostMessage && (
+              <Text style={[styles.messageText, { color: isOwn ? colors.white : colors.textPrimary }]}>
                 {item.content}
               </Text>
             )}
@@ -187,16 +268,16 @@ const ChatRoomScreen: React.FC = () => {
           {isOwn && (
             <View style={styles.statusContainer}>
               {item.status === 'sending' && (
-                <Ionicons name="time-outline" size={14} color={Colors.textTertiary} />
+                <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
               )}
               {item.status === 'sent' && (
-                <Ionicons name="checkmark" size={14} color={Colors.textTertiary} />
+                <Ionicons name="checkmark" size={14} color={colors.textTertiary} />
               )}
               {item.status === 'delivered' && (
-                <Ionicons name="checkmark-done" size={14} color={Colors.textTertiary} />
+                <Ionicons name="checkmark-done" size={14} color={colors.textTertiary} />
               )}
               {item.status === 'read' && (
-                <Ionicons name="checkmark-done" size={14} color={Colors.primary} />
+                <Ionicons name="checkmark-done" size={14} color={colors.primary} />
               )}
             </View>
           )}
@@ -207,17 +288,17 @@ const ChatRoomScreen: React.FC = () => {
 
   if (loading || !conversation) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-        <View style={styles.header}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+        <View style={[styles.header, { borderBottomColor: colors.gray200, backgroundColor: colors.background }]}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+            <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Đang tải...</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Đang tải...</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -233,13 +314,13 @@ const ChatRoomScreen: React.FC = () => {
     : otherParticipant?.avatar;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Custom Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.gray200, backgroundColor: colors.background }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -253,12 +334,12 @@ const ChatRoomScreen: React.FC = () => {
         >
           <View style={styles.headerAvatarWrapper}>
             <Avatar uri={chatAvatar} name={chatName} size="sm" />
-            {isPrivate && otherParticipant?.isOnline && <View style={styles.onlineDot} />}
+            {isPrivate && otherParticipant?.isOnline && <View style={[styles.onlineDot, { borderColor: colors.background }]} />}
           </View>
           <View style={styles.headerInfo}>
-            <Text style={styles.headerName} numberOfLines={1}>{chatName}</Text>
+            <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>{chatName}</Text>
             {isPrivate && (
-              <Text style={[styles.headerStatus, otherParticipant?.isOnline && styles.headerStatusOnline]}>
+              <Text style={[styles.headerStatus, { color: otherParticipant?.isOnline ? colors.success : colors.textTertiary }]}>
                 {otherParticipant?.isOnline ? 'Đang hoạt động' : 'Offline'}
               </Text>
             )}
@@ -267,10 +348,10 @@ const ChatRoomScreen: React.FC = () => {
 
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="call-outline" size={22} color={Colors.textPrimary} />
+            <Ionicons name="call-outline" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="videocam-outline" size={24} color={Colors.textPrimary} />
+            <Ionicons name="videocam-outline" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -293,37 +374,37 @@ const ChatRoomScreen: React.FC = () => {
         {isTyping && otherParticipant && (
           <View style={styles.typingIndicator}>
             <Avatar uri={otherParticipant.avatar} name={otherParticipant.fullName} size="xs" />
-            <Text style={styles.typingText}>đang nhập...</Text>
+            <Text style={[styles.typingText, { color: colors.textTertiary }]}>đang nhập...</Text>
           </View>
         )}
 
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, Spacing.sm), borderTopColor: colors.gray200, backgroundColor: colors.background }]}>
           <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
-            <Ionicons name="add-circle" size={28} color={Colors.primary} />
+            <Ionicons name="add-circle" size={28} color={colors.primary} />
           </TouchableOpacity>
 
-          <View style={styles.textInputContainer}>
+          <View style={[styles.textInputContainer, { backgroundColor: colors.gray100 }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.textPrimary }]}
               placeholder="Nhập tin nhắn..."
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={1000}
             />
             <TouchableOpacity style={styles.emojiButton}>
-              <Ionicons name="happy-outline" size={22} color={Colors.textTertiary} />
+              <Ionicons name="happy-outline" size={22} color={colors.textTertiary} />
             </TouchableOpacity>
           </View>
 
           {inputText.trim() ? (
-            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Ionicons name="send" size={20} color={Colors.white} />
+            <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]} onPress={handleSend}>
+              <Ionicons name="send" size={20} color={colors.white} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.micButton}>
-              <Ionicons name="mic" size={24} color={Colors.primary} />
+              <Ionicons name="mic" size={24} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -335,7 +416,6 @@ const ChatRoomScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   flex: {
     flex: 1,
@@ -346,8 +426,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   backButton: {
     width: 44,
@@ -359,7 +437,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     textAlign: 'center',
   },
   headerCenter: {
@@ -377,9 +454,8 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.success,
     borderWidth: 2,
-    borderColor: Colors.white,
+    // backgroundColor applied inline for theme support
   },
   headerInfo: {
     marginLeft: Spacing.sm,
@@ -388,14 +464,12 @@ const styles = StyleSheet.create({
   headerName: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   headerStatus: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
   },
   headerStatusOnline: {
-    color: Colors.success,
+    // Color applied inline for theme support
   },
   headerRight: {
     flexDirection: 'row',
@@ -413,10 +487,8 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
     textAlign: 'center',
     marginVertical: Spacing.md,
-    backgroundColor: Colors.gray100,
     alignSelf: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
@@ -444,27 +516,75 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   ownBubble: {
-    backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
   },
   otherBubble: {
-    backgroundColor: Colors.gray100,
     borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     lineHeight: 22,
   },
   ownMessageText: {
-    color: Colors.white,
+    // Color applied inline for theme support
   },
   messageImage: {
     width: 200,
     height: 150,
     borderRadius: BorderRadius.md,
+  },
+  postMessageBubble: {
+    padding: Spacing.xs,
+    maxWidth: '85%',
+  },
+  sharedPostCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+    minWidth: 200,
+  },
+  sharedPostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  sharedPostAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: Spacing.xs,
+  },
+  sharedPostAuthor: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    flex: 1,
+  },
+  sharedPostContent: {
+    fontSize: FontSize.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingBottom: Spacing.xs,
+    lineHeight: 18,
+  },
+  sharedPostImage: {
+    width: '100%',
+    height: 120,
+  },
+  sharedPostStats: {
+    flexDirection: 'row',
+    padding: Spacing.sm,
+    paddingTop: Spacing.xs,
+    gap: Spacing.md,
+  },
+  sharedPostStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sharedPostStatText: {
+    fontSize: FontSize.xs,
   },
   statusContainer: {
     marginLeft: Spacing.xs,
@@ -478,7 +598,6 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
     marginLeft: Spacing.xs,
     fontStyle: 'italic',
   },
@@ -488,8 +607,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   attachButton: {
     width: 40,
@@ -501,7 +618,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: Colors.gray100,
     borderRadius: 24,
     marginHorizontal: Spacing.xs,
     paddingLeft: Spacing.md,
@@ -513,7 +629,6 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     paddingVertical: Spacing.sm,
     maxHeight: 100,
   },
@@ -527,7 +642,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

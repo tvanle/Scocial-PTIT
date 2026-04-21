@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Spacing, BorderRadius } from '../../constants/theme';
+import { FontSize, Spacing, BorderRadius } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface SearchInputProps {
   value: string;
@@ -13,29 +14,32 @@ const SearchInput: React.FC<SearchInputProps> = React.memo(({
   value,
   onChangeText,
   placeholder = 'Tìm kiếm...',
-}) => (
-  <View style={styles.container}>
-    <Ionicons name="search" size={18} color={Colors.textTertiary} />
-    <TextInput
-      style={styles.input}
-      placeholder={placeholder}
-      placeholderTextColor={Colors.textTertiary}
-      value={value}
-      onChangeText={onChangeText}
-    />
-    {value.length > 0 && (
-      <TouchableOpacity onPress={() => onChangeText('')}>
-        <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
-      </TouchableOpacity>
-    )}
-  </View>
-));
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.gray100 }]}>
+      <Ionicons name="search" size={18} color={colors.textTertiary} />
+      <TextInput
+        style={[styles.input, { color: colors.textPrimary }]}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
+        value={value}
+        onChangeText={onChangeText}
+      />
+      {value.length > 0 && (
+        <TouchableOpacity onPress={() => onChangeText('')}>
+          <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray100,
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.md,
     height: 40,
@@ -46,7 +50,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     height: '100%',
     outlineStyle: 'none',
   } as any,

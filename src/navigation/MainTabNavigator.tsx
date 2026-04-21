@@ -8,7 +8,8 @@ import { ProfileScreen } from '../screens/profile';
 import { ChatListScreen } from '../screens/chat';
 import { SearchScreen } from '../screens/search';
 import { NotificationScreen } from '../screens/notification';
-import { Colors, Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
+import { Spacing, Layout, Shadow, BorderRadius } from '../constants/theme';
+import { useTheme } from '../hooks/useThemeColors';
 import { MainTabParamList } from '../types';
 import datingService from '../services/dating/datingService';
 
@@ -16,17 +17,21 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // Placeholder screens
 const CreatePostScreen = () => null;
-const DatingPlaceholder = () => (
-  <View style={{ flex: 1, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' }}>
-    <Ionicons name="heart" size={48} color={Colors.primary} />
-    <Text style={{ marginTop: 12, fontSize: 16, color: Colors.textSecondary }}>Sắp ra mắt</Text>
-  </View>
-);
+const DatingPlaceholder = () => {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons name="heart" size={48} color={colors.primary} />
+      <Text style={{ marginTop: 12, fontSize: 16, color: colors.textSecondary }}>Sắp ra mắt</Text>
+    </View>
+  );
+};
 
 // PTIT-style Tab Bar with floating red FAB
 const PTITTabBar = ({ state, navigation }: any) => {
   const insets = useSafeAreaInsets();
   const checkingRef = useRef(false);
+  const { colors } = useTheme();
 
   const handleDatingPress = useCallback(async () => {
     if (checkingRef.current) return;
@@ -54,7 +59,7 @@ const PTITTabBar = ({ state, navigation }: any) => {
   ];
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom || Spacing.sm }]}>
+    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom || Spacing.sm, backgroundColor: colors.background, borderTopColor: colors.borderLight }]}>
       <View style={styles.tabBar}>
         {tabs.map((tab, index) => {
           const isFocused = state.index === index;
@@ -78,8 +83,8 @@ const PTITTabBar = ({ state, navigation }: any) => {
                 style={styles.fabContainer}
                 activeOpacity={0.8}
               >
-                <View style={styles.fabButton}>
-                  <Ionicons name="add" size={28} color={Colors.white} />
+                <View style={[styles.fabButton, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="add" size={28} color={colors.white} />
                 </View>
               </TouchableOpacity>
             );
@@ -95,9 +100,9 @@ const PTITTabBar = ({ state, navigation }: any) => {
               <Ionicons
                 name={(isFocused ? tab.iconFocused : tab.icon) as keyof typeof Ionicons.glyphMap}
                 size={24}
-                color={isFocused ? Colors.primary : Colors.gray400}
+                color={isFocused ? colors.primary : colors.gray400}
               />
-              {isFocused && <View style={styles.activeIndicator} />}
+              {isFocused && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
             </TouchableOpacity>
           );
         })}
@@ -125,9 +130,7 @@ const MainTabNavigator: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabBarContainer: {
-    backgroundColor: Colors.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   tabBar: {
     flexDirection: 'row',
@@ -144,7 +147,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.primary,
     marginTop: 4,
   },
   fabContainer: {
@@ -156,7 +158,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadow.red,

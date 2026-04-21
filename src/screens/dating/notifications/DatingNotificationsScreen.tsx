@@ -4,7 +4,7 @@
  * List of dating-related notifications (matches, likes, messages)
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -152,11 +153,41 @@ const NotificationItemRow: React.FC<NotificationItemProps> = React.memo(({ item,
   );
 });
 
+const STORAGE_KEY = 'dating_notif_read_ids';
+
 const NotificationsInner: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { theme } = useDatingTheme();
   const queryClient = useQueryClient();
   const [readIds, setReadIds] = React.useState<Set<string>>(new Set());
+  const [isLoadingReadIds, setIsLoadingReadIds] = React.useState(true);
+
+  // Load read IDs from SecureStore on mount
+  useEffect(() => {
+    const loadReadIds = async () => {
+      try {
+        const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as string[];
+          setReadIds(new Set(parsed));
+        }
+      } catch (error) {
+        console.error('Failed to load read notification IDs:', error);
+      } finally {
+        setIsLoadingReadIds(false);
+      }
+    };
+    loadReadIds();
+  }, []);
+
+  // Save read IDs to SecureStore when changed
+  const saveReadIds = useCallback(async (ids: Set<string>) => {
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify([...ids]));
+    } catch (error) {
+      console.error('Failed to save read notification IDs:', error);
+    }
+  }, []);
 
   const { data: matchesData, isLoading } = useQuery({
     queryKey: ['dating', 'matches'],
@@ -176,6 +207,15 @@ const NotificationsInner: React.FC = () => {
 
   const handleNotificationPress = useCallback(
     (item: DatingNotificationItem) => {
+      // Mark as read
+      if (!readIds.has(item.id)) {
+        const newReadIds = new Set(readIds);
+        newReadIds.add(item.id);
+        setReadIds(newReadIds);
+        saveReadIds(newReadIds);
+      }
+
+      // Navigate
       if (item.type === 'match' && item.data) {
         navigation.navigate('DatingTabs', { screen: 'DatingChatsTab' });
       } else if (item.type === 'like') {
@@ -184,7 +224,7 @@ const NotificationsInner: React.FC = () => {
         navigation.navigate('DatingTabs', { screen: 'DatingChatsTab' });
       }
     },
-    [navigation]
+    [navigation, readIds, saveReadIds]
   );
 
   const unreadNotifications = useMemo(
@@ -204,13 +244,15 @@ const NotificationsInner: React.FC = () => {
           text: 'Dong y',
           onPress: () => {
             const allIds = notifications.map((n) => n.id);
-            setReadIds(new Set(allIds));
+            const newReadIds = new Set(allIds);
+            setReadIds(newReadIds);
+            saveReadIds(newReadIds);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
         },
       ]
     );
-  }, [notifications, unreadNotifications.length]);
+  }, [notifications, unreadNotifications.length, saveReadIds]);
 
   const renderItem = useCallback(
     ({ item, index }: { item: DatingNotificationItem; index: number }) => (
@@ -249,7 +291,7 @@ const NotificationsInner: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {isLoading ? (
+        {isLoading || isLoadingReadIds ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={theme.brand.primary} />
           </View>

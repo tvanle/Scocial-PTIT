@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors, FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, Layout } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface ScreenHeaderProps {
   title: string;
@@ -18,20 +19,21 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = React.memo(({
   onRightPress,
 }) => {
   const navigation = useNavigation();
+  const { colors } = useTheme();
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.gray200 }]}>
       {showBack ? (
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       ) : (
         <View style={styles.iconButton} />
       )}
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
       {rightIcon ? (
         <TouchableOpacity onPress={onRightPress} style={styles.iconButton}>
-          <Ionicons name={rightIcon} size={24} color={Colors.textPrimary} />
+          <Ionicons name={rightIcon} size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       ) : (
         <View style={styles.iconButton} />
@@ -47,9 +49,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     height: Layout.headerHeight,
-    backgroundColor: Colors.white,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
   },
   iconButton: {
     width: 40,
@@ -60,7 +60,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
 });
 

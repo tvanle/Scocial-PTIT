@@ -21,10 +21,12 @@ import { useAuthStore } from '../../store/slices/authSlice';
 import { userService } from '../../services/user/userService';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { getImageUrl } from '../../utils/image';
+import { useTheme } from '../../hooks/useThemeColors';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, updateUser } = useAuthStore();
+  const { colors } = useTheme();
 
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [bio, setBio] = useState(user?.bio || '');
@@ -87,22 +89,22 @@ const EditProfileScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.gray200 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Ionicons name="close" size={28} color={Colors.textPrimary} />
+          <Ionicons name="close" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chỉnh sửa trang cá nhân</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Chỉnh sửa trang cá nhân</Text>
         <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading}
           style={styles.headerButton}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color={Colors.textPrimary} />
+            <ActivityIndicator size="small" color={colors.textPrimary} />
           ) : (
-            <Text style={styles.saveText}>Lưu</Text>
+            <Text style={[styles.saveText, { color: colors.textPrimary }]}>Lưu</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -116,80 +118,80 @@ const EditProfileScreen: React.FC = () => {
           <TouchableOpacity style={styles.avatarSection} onPress={pickAvatar}>
             <Image
               source={{ uri: avatar.startsWith('file://') ? avatar : (getImageUrl(avatar) || DEFAULT_AVATAR) }}
-              style={styles.avatar}
+              style={[styles.avatar, { backgroundColor: colors.gray200 }]}
             />
-            <View style={styles.cameraIcon}>
-              <Ionicons name="camera" size={16} color={Colors.white} />
+            <View style={[styles.cameraIcon, { backgroundColor: colors.textPrimary, borderColor: colors.background }]}>
+              <Ionicons name="camera" size={16} color={colors.background} />
             </View>
           </TouchableOpacity>
 
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.field}>
-              <Text style={styles.label}>Tên</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Tên</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="Nhập tên của bạn"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Tiểu sử</Text>
-              <View style={[styles.inputContainer, styles.bioInputContainer]}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Tiểu sử</Text>
+              <View style={[styles.inputContainer, styles.bioInputContainer, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]}>
                 <TextInput
-                  style={[styles.input, styles.bioInput]}
+                  style={[styles.input, styles.bioInput, { color: colors.textPrimary }]}
                   value={bio}
                   onChangeText={setBio}
                   placeholder="Viết gì đó về bản thân..."
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.textSecondary}
                   multiline
                   maxLength={150}
                 />
               </View>
-              <Text style={styles.charCount}>{bio.length}/150</Text>
+              <Text style={[styles.charCount, { color: colors.textSecondary }]}>{bio.length}/150</Text>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Số điện thoại</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Số điện thoại</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   value={phone}
                   onChangeText={setPhone}
                   placeholder="Nhập số điện thoại"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.textSecondary}
                   keyboardType="phone-pad"
                 />
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Khoa</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Khoa</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   value={faculty}
                   onChangeText={setFaculty}
                   placeholder="VD: Công nghệ Thông tin"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Lớp</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Lớp</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.gray100, borderColor: colors.gray200 }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   value={className}
                   onChangeText={setClassName}
                   placeholder="VD: D21CQCN01-N"
-                  placeholderTextColor={Colors.gray400}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
             </View>
@@ -203,7 +205,6 @@ const EditProfileScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: 'row',
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     height: Layout.headerHeight,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
   },
   headerButton: {
     padding: Spacing.xs,
@@ -220,12 +220,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   saveText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   content: {
     paddingBottom: 100,
@@ -238,7 +236,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.gray200,
   },
   cameraIcon: {
     position: 'absolute',
@@ -247,11 +244,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   form: {
     paddingHorizontal: Spacing.lg,
@@ -262,15 +257,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
-    color: Colors.gray500,
     marginBottom: Spacing.sm,
   },
   inputContainer: {
     height: Layout.inputHeight,
-    backgroundColor: Colors.gray50,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
-    borderColor: Colors.gray100,
     paddingHorizontal: Spacing.lg,
     justifyContent: 'center',
   },
@@ -281,7 +273,6 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
   },
   bioInput: {
     height: '100%',
@@ -289,7 +280,6 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: FontSize.xs,
-    color: Colors.gray400,
     textAlign: 'right',
     marginTop: Spacing.xxs,
   },

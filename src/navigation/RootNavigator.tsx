@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Linking } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions, Theme } from '@react-navigation/native';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
 import { DatingTabNavigator } from './DatingTabNavigator';
@@ -11,7 +11,7 @@ import { useAuthInitializer } from '../hooks';
 import socketService from '../services/socket/socketService';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { RootStackParamList } from '../types';
-import { Colors } from '../constants/theme';
+import { useTheme } from '../hooks/useThemeColors';
 import { FullScreenLoading } from '../components/common';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
 import PostDetailScreen from '../screens/home/PostDetailScreen';
@@ -104,9 +104,41 @@ const RootNavigator: React.FC = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const { isInitialized } = useAuthInitializer();
+  const { colors, isDark } = useTheme();
 
   // Initialize push notifications
   usePushNotifications();
+
+  // Create navigation theme based on current theme mode
+  const navigationTheme: Theme = useMemo(() => ({
+    dark: isDark,
+    colors: {
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.cardBackground,
+      text: colors.textPrimary,
+      border: colors.border,
+      notification: colors.primary,
+    },
+    fonts: {
+      regular: {
+        fontFamily: 'System',
+        fontWeight: '400',
+      },
+      medium: {
+        fontFamily: 'System',
+        fontWeight: '500',
+      },
+      bold: {
+        fontFamily: 'System',
+        fontWeight: '600',
+      },
+      heavy: {
+        fontFamily: 'System',
+        fontWeight: '700',
+      },
+    },
+  }), [isDark, colors]);
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -122,13 +154,13 @@ const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking} theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
           contentStyle: {
-            backgroundColor: Colors.background,
+            backgroundColor: colors.background,
           },
         }}
       >

@@ -19,6 +19,7 @@ export class MediaService {
   async uploadFile(file: Express.Multer.File, postId?: string) {
     const bucket = config.minio.buckets.posts;
     const isImage = file.mimetype.startsWith('image/');
+    const isHeic = file.mimetype === 'image/heic' || file.mimetype === 'image/heif';
 
     let width: number | undefined;
     let height: number | undefined;
@@ -26,7 +27,8 @@ export class MediaService {
     let mimeType = file.mimetype;
     let filename: string;
 
-    if (isImage) {
+    // Process image with sharp (skip HEIC/HEIF as sharp may not have plugin)
+    if (isImage && !isHeic) {
       const image = sharp(file.buffer);
       const metadata = await image.metadata();
       width = metadata.width;
@@ -40,6 +42,7 @@ export class MediaService {
       filename = `${uuidv4()}.jpg`;
       mimeType = 'image/jpeg';
     } else {
+      // Save HEIC, videos, and other file types directly
       filename = `${uuidv4()}${path.extname(file.originalname)}`;
     }
 
