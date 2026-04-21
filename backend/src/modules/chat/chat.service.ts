@@ -216,6 +216,17 @@ export class ChatService {
           select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
         },
         readBy: true,
+        sharedPost: {
+          include: {
+            author: {
+              select: { id: true, fullName: true, avatar: true, isVerified: true },
+            },
+            media: true,
+            _count: {
+              select: { likes: true, comments: true },
+            },
+          },
+        },
       },
     });
 
@@ -232,7 +243,8 @@ export class ChatService {
     senderId: string,
     content: string,
     type: string = 'TEXT',
-    mediaUrl?: string
+    mediaUrl?: string,
+    postId?: string
   ) {
     // Normalize type to uppercase for Prisma enum (frontend may send lowercase)
     const normalizedType = (type?.toUpperCase() || 'TEXT') as MessageType;
@@ -261,6 +273,7 @@ export class ChatService {
           content,
           type: normalizedType,
           mediaUrl,
+          sharedPostId: postId,
         },
       });
 
@@ -297,6 +310,17 @@ export class ChatService {
             select: { id: true, fullName: true, avatar: true, lastActiveAt: true },
           },
           readBy: true,
+          sharedPost: {
+            include: {
+              author: {
+                select: { id: true, fullName: true, avatar: true, isVerified: true },
+              },
+              media: true,
+              _count: {
+                select: { likes: true, comments: true },
+              },
+            },
+          },
         },
       });
     });

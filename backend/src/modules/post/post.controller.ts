@@ -7,7 +7,8 @@ import { sendSuccess } from '../../shared/utils';
 export class PostController {
   async createPost(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const post = await postService.createPost(req.user!.userId, req.body);
+      const { mediaIds, ...data } = req.body;
+      const post = await postService.createPost(req.user!.userId, data, mediaIds);
       sendSuccess(res, post, SUCCESS_MESSAGES.POST_CREATED, HTTP_STATUS.CREATED);
     } catch (error) {
       next(error);
@@ -89,6 +90,27 @@ export class PostController {
       const postId = req.params.postId as string;
       await postService.unlikePost(req.user!.userId, postId);
       sendSuccess(res, null);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async votePoll(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const postId = req.params.postId as string;
+      const { optionId } = req.body;
+      const result = await postService.votePoll(req.user!.userId, postId, optionId);
+      sendSuccess(res, result, 'Đã bình chọn');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unvotePoll(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const postId = req.params.postId as string;
+      await postService.unvotePoll(req.user!.userId, postId);
+      sendSuccess(res, null, 'Đã hủy bình chọn');
     } catch (error) {
       next(error);
     }
@@ -203,6 +225,42 @@ export class PostController {
       const commentId = req.params.commentId as string;
       await postService.deleteComment(commentId, req.user!.userId);
       sendSuccess(res, null, SUCCESS_MESSAGES.COMMENT_DELETED);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async shareComment(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const commentId = req.params.commentId as string;
+      await postService.shareComment(req.user!.userId, commentId);
+      sendSuccess(res, null, 'Comment shared');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unshareComment(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const commentId = req.params.commentId as string;
+      await postService.unshareComment(req.user!.userId, commentId);
+      sendSuccess(res, null, 'Comment unshared');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSharedComments(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.params.userId as string;
+      const { page, limit } = req.query;
+      const result = await postService.getSharedComments(
+        userId,
+        req.user?.userId,
+        page as string,
+        limit as string
+      );
+      sendSuccess(res, result);
     } catch (error) {
       next(error);
     }

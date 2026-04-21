@@ -10,21 +10,22 @@ datasource db {
 // ============== AUTH & USER ==============
 
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  password        String
-  studentId       String?   @unique
+  id        String  @id @default(uuid())
+  email     String  @unique
+  password  String
+  studentId String? @unique
 
   // Profile
-  fullName        String?
-  avatar          String?
-  coverImage      String?
-  bio             String?
-  dateOfBirth     DateTime?
-  gender          Gender?
-  phone           String?
-  faculty         String?
-  className       String?
+  fullName      String?
+  avatar        String?
+  coverImage    String?
+  bio           String?
+  favoriteMusic String? // Song name - Artist
+  dateOfBirth   DateTime?
+  gender        Gender?
+  phone         String?
+  faculty       String?
+  className     String?
 
   // Status
   isVerified      Boolean   @default(false)
@@ -33,30 +34,31 @@ model User {
   lastActiveAt    DateTime?
 
   // Two-Factor Authentication
-  twoFactorEnabled Boolean  @default(false)
+  twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
 
   // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  posts           Post[]
-  comments        Comment[]
-  likes           Like[]
-  commentLikes    CommentLike[]
-  shares          Share[]
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  commentLikes  CommentLike[]
+  shares        Share[]
+  commentShares CommentShare[]
 
   // Follow system
-  followers       Follow[]  @relation("Following")
-  following       Follow[]  @relation("Followers")
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Followers")
 
   // Notifications
   sentNotifications     Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
 
   // Refresh tokens
-  refreshTokens   RefreshToken[]
+  refreshTokens RefreshToken[]
 
   // Verification codes
   verificationCodes VerificationCode[]
@@ -67,37 +69,37 @@ model User {
   messageReadStatuses      MessageReadStatus[]       @relation("MessageReadBy")
 
   // Dating
-  datingProfile            DatingProfile?
-  swipesSent               DatingSwipe[]  @relation("SwipeFrom")
-  swipesReceived           DatingSwipe[]  @relation("SwipeTo")
-  matchesAsA               DatingMatch[]  @relation("MatchUserA")
-  matchesAsB               DatingMatch[]  @relation("MatchUserB")
+  datingProfile  DatingProfile?
+  swipesSent     DatingSwipe[]  @relation("SwipeFrom")
+  swipesReceived DatingSwipe[]  @relation("SwipeTo")
+  matchesAsA     DatingMatch[]  @relation("MatchUserA")
+  matchesAsB     DatingMatch[]  @relation("MatchUserB")
 
   // Dating Subscription & Payment
-  datingSubscription       DatingSubscription?
-  datingUsageDaily         DatingUsageDaily[]
-  paymentTransactions      PaymentTransaction[]
+  datingSubscription  DatingSubscription?
+  datingUsageDaily    DatingUsageDaily[]
+  paymentTransactions PaymentTransaction[]
 
   // Block
-  blockedUsers             UserBlock[]    @relation("BlockedBy")
-  blockedByUsers           UserBlock[]    @relation("BlockedUser")
+  blockedUsers   UserBlock[] @relation("BlockedBy")
+  blockedByUsers UserBlock[] @relation("BlockedUser")
 
   // Push Notifications
-  deviceTokens             DeviceToken[]
+  deviceTokens DeviceToken[]
 
   @@index([email])
   @@index([studentId])
 }
 
 model VerificationCode {
-  id          String             @id @default(uuid())
-  code        String
-  type        VerificationCodeType
-  userId      String
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime
-  isUsed      Boolean            @default(false)
-  createdAt   DateTime           @default(now())
+  id        String               @id @default(uuid())
+  code      String
+  type      VerificationCodeType
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  isUsed    Boolean              @default(false)
+  createdAt DateTime             @default(now())
 
   @@index([userId, type])
   @@index([code, type])
@@ -106,26 +108,26 @@ model VerificationCode {
 // ============== PUSH NOTIFICATIONS ==============
 
 model DeviceToken {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token       String   @unique
-  platform    String   // 'ios' | 'android'
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String // 'ios' | 'android'
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([token])
 }
 
 model RefreshToken {
-  id          String   @id @default(uuid())
-  token       String   @unique
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([token])
@@ -137,8 +139,8 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@index([followerId])
@@ -148,46 +150,94 @@ model Follow {
 // ============== POST ==============
 
 model Post {
-  id          String      @id @default(uuid())
-  content     String?
-  authorId    String
-  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id       String  @id @default(uuid())
+  content  String?
+  authorId String
+  author   User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // Privacy
-  privacy     PostPrivacy @default(PUBLIC)
+  privacy PostPrivacy @default(PUBLIC)
+
+  // Location
+  locationName String?
+  latitude     Float?
+  longitude    Float?
 
   // Timestamps
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  media       Media[]
-  comments    Comment[]
-  likes       Like[]
-  shares      Share[]
+  media    Media[]
+  comments Comment[]
+  likes    Like[]
+  shares   Share[]
+  sharedInMessages Message[]
+  poll     Poll?
 
   @@index([authorId])
   @@index([createdAt])
 }
 
+model Poll {
+  id        String   @id @default(uuid())
+  postId    String   @unique
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  question  String?
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  options   PollOption[]
+
+  @@index([postId])
+}
+
+model PollOption {
+  id     String @id @default(uuid())
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text   String
+  order  Int    @default(0)
+
+  votes  PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id       String     @id @default(uuid())
+  optionId String
+  option   PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  voterId  String
+
+  createdAt DateTime @default(now())
+
+  @@unique([optionId, voterId])
+  @@index([optionId])
+  @@index([voterId])
+}
+
 model Comment {
-  id          String    @id @default(uuid())
-  content     String
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  postId      String
-  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  content  String
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   // Reply
-  parentId    String?
-  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     Comment[] @relation("CommentReplies")
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
 
-  // Likes
-  likes       CommentLike[]
+  // Likes & Shares
+  likes  CommentLike[]
+  shares CommentShare[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([postId])
   @@index([authorId])
@@ -195,12 +245,25 @@ model Comment {
 }
 
 model CommentLike {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  commentId   String
-  comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model CommentShare {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@unique([userId, commentId])
   @@index([commentId])
@@ -236,43 +299,42 @@ model Share {
 // ============== MEDIA ==============
 
 model Media {
-  id          String    @id @default(uuid())
-  url         String
-  type        MediaType
-  filename    String
-  mimeType    String
-  size        Int
-  width       Int?
-  height      Int?
-  duration    Int?      // For video/audio
+  id       String    @id @default(uuid())
+  url      String
+  type     MediaType
+  filename String
+  mimeType String
+  size     Int
+  width    Int?
+  height   Int?
+  duration Int? // For video/audio
 
-  postId      String?
-  post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([postId])
 }
 
-
 // ============== NOTIFICATION ==============
 
 model Notification {
-  id          String           @id @default(uuid())
-  type        NotificationType
-  content     String?
-  isRead      Boolean          @default(false)
+  id      String           @id @default(uuid())
+  type    NotificationType
+  content String?
+  isRead  Boolean          @default(false)
 
-  senderId    String?
-  sender      User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId String?
+  sender   User?   @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  receiverId  String
-  receiver    User             @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   // Reference
-  referenceId String?          // postId, commentId, groupId, etc.
+  referenceId String? // postId, commentId, groupId, etc.
 
-  createdAt   DateTime         @default(now())
+  createdAt DateTime @default(now())
 
   @@index([receiverId])
   @@index([senderId])
@@ -300,7 +362,6 @@ enum MediaType {
   DOCUMENT
 }
 
-
 enum NotificationType {
   LIKE
   COMMENT
@@ -314,11 +375,11 @@ enum NotificationType {
 // ============== CHAT ==============
 
 model Conversation {
-  id            String              @id @default(uuid())
-  type          ConversationType    @default(PRIVATE)
-  context       ConversationContext  @default(SOCIAL)
-  name          String?
-  avatar        String?
+  id      String              @id @default(uuid())
+  type    ConversationType    @default(PRIVATE)
+  context ConversationContext @default(SOCIAL)
+  name    String?
+  avatar  String?
 
   // For unique 1:1 constraint – always store sorted (smaller UUID first)
   participantAId String?
@@ -329,11 +390,11 @@ model Conversation {
   lastMessageSenderId  String?
   lastMessageCreatedAt DateTime?
 
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  participants  ConversationParticipant[]
-  messages      Message[]
+  participants ConversationParticipant[]
+  messages     Message[]
 
   @@unique([participantAId, participantBId, context])
   @@index([updatedAt(sort: Desc)])
@@ -341,12 +402,12 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id              String       @id @default(uuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt        DateTime     @default(now())
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
 
   @@unique([conversationId, userId])
   @@index([userId])
@@ -354,32 +415,37 @@ model ConversationParticipant {
 }
 
 model Message {
-  id              String       @id @default(uuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId        String
-  sender          User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  content         String
-  type            MessageType  @default(TEXT)
-  mediaUrl        String?
-  isRead          Boolean      @default(false)
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  type           MessageType  @default(TEXT)
+  mediaUrl       String?
+  isRead         Boolean      @default(false)
 
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  // Shared post reference
+  sharedPostId   String?
+  sharedPost     Post?        @relation(fields: [sharedPostId], references: [id], onDelete: SetNull)
 
-  readBy          MessageReadStatus[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readBy MessageReadStatus[]
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([senderId])
+  @@index([sharedPostId])
 }
 
 model MessageReadStatus {
-  id         String   @id @default(uuid())
-  messageId  String
-  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation("MessageReadBy", fields: [userId], references: [id], onDelete: Cascade)
-  readAt     DateTime @default(now())
+  id        String   @id @default(uuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("MessageReadBy", fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime @default(now())
 
   @@unique([messageId, userId])
   @@index([userId])
@@ -401,6 +467,7 @@ enum MessageType {
   IMAGE
   VIDEO
   FILE
+  POST
 }
 
 enum VerificationCodeType {
@@ -412,20 +479,20 @@ enum VerificationCodeType {
 // ============== DATING ==============
 
 model DatingProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  bio         String?
-  isActive    Boolean  @default(true)
+  bio      String?
+  isActive Boolean @default(true)
 
   // Location (GPS)
-  latitude    Float?
-  longitude   Float?
+  latitude          Float?
+  longitude         Float?
   locationUpdatedAt DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   photos      DatingProfilePhoto[]
@@ -440,101 +507,101 @@ model DatingProfile {
 }
 
 model DatingProfilePhoto {
-  id          String         @id @default(uuid())
-  profileId    String
-  profile     DatingProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  profileId String
+  profile   DatingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  url         String
-  order       Int             // 0-5 for ordering photos
+  url   String
+  order Int // 0-5 for ordering photos
 
-  createdAt   DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@index([profileId])
   @@index([profileId, order])
 }
 
 model DatingProfilePrompt {
-  id          String         @id @default(uuid())
-  profileId   String
-  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  profileId String
+  profile   DatingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  question    String
-  answer      String
+  question String
+  answer   String
 
-  order       Int            // 0-2 for ordering prompts
+  order Int // 0-2 for ordering prompts
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([profileId])
   @@index([profileId, order])
 }
 
 model DatingProfileSong {
-  id          String         @id @default(uuid())
-  profileId   String
-  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  profileId String
+  profile   DatingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  title       String
-  artist      String
-  artworkUrl  String?
-  embedUrl    String         // SoundCloud embed URL
+  title      String
+  artist     String
+  artworkUrl String?
+  embedUrl   String // SoundCloud embed URL
 
-  order       Int       @default(0)     // 0-2 for ordering songs (max 3)
-  startTime   Int?           // Start time in seconds
-  endTime     Int?           // End time in seconds
+  order     Int  @default(0) // 0-2 for ordering songs (max 3)
+  startTime Int? // Start time in seconds
+  endTime   Int? // End time in seconds
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([profileId, order])
   @@index([profileId])
 }
 
 model DatingProfileLifestyle {
-  id          String         @id @default(uuid())
-  profileId   String         @unique
-  profile     DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  profileId String        @unique
+  profile   DatingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  education   String?
-  job         String?
-  smoking     FrequencyLevel?
-  drinking    FrequencyLevel?
-  exercise    FrequencyLevel?
-  height      Int?           // in cm
-  religion    String?
+  education String?
+  job       String?
+  smoking   FrequencyLevel?
+  drinking  FrequencyLevel?
+  exercise  FrequencyLevel?
+  height    Int? // in cm
+  religion  String?
 
-  updatedAt   DateTime       @updatedAt
+  updatedAt DateTime @updatedAt
 
   @@index([profileId])
 }
 
 model DatingPreferences {
-  id              String         @id @default(uuid())
-  profileId       String         @unique
-  profile         DatingProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  profileId String        @unique
+  profile   DatingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  ageMin          Int            @default(18)
-  ageMax          Int            @default(99)
-  maxDistance      Int?           // in km, null = no limit
-  gender          Gender?        // Preferred gender
-  preferredMajors String[]       @default([])
-  sameYearOnly    Boolean        @default(false)
+  ageMin          Int      @default(18)
+  ageMax          Int      @default(99)
+  maxDistance     Int? // in km, null = no limit
+  gender          Gender? // Preferred gender
+  preferredMajors String[] @default([])
+  sameYearOnly    Boolean  @default(false)
 
-  updatedAt       DateTime       @updatedAt
+  updatedAt DateTime @updatedAt
 
   @@index([profileId])
 }
 
 model DatingSwipe {
-  id          String      @id @default(uuid())
-  fromUserId  String
-  fromUser    User        @relation("SwipeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUserId    String
-  toUser      User        @relation("SwipeTo", fields: [toUserId], references: [id], onDelete: Cascade)
-  action      SwipeAction
+  id         String      @id @default(uuid())
+  fromUserId String
+  fromUser   User        @relation("SwipeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User        @relation("SwipeTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  action     SwipeAction
 
-  createdAt   DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([fromUserId, toUserId])
   @@index([fromUserId])
@@ -543,13 +610,13 @@ model DatingSwipe {
 }
 
 model DatingMatch {
-  id          String   @id @default(uuid())
-  userAId     String
-  userA       User     @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId     String
-  userB       User     @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  userAId String
+  userA   User   @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId String
+  userB   User   @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userAId, userBId])
   @@index([userAId])
@@ -586,54 +653,54 @@ model UserBlock {
 // ============== DATING SUBSCRIPTION & PAYMENT ==============
 
 model DatingSubscription {
-  id              String             @id @default(uuid())
-  userId          String             @unique
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  tier            SubscriptionTier   @default(FREE)
-  status          SubscriptionStatus @default(ACTIVE)
+  tier   SubscriptionTier   @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
 
   // Thời gian Premium
-  startDate       DateTime?
-  endDate         DateTime?
+  startDate DateTime?
+  endDate   DateTime?
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  transactions    PaymentTransaction[]
+  transactions PaymentTransaction[]
 
   @@index([userId])
   @@index([status, endDate])
 }
 
 model PaymentTransaction {
-  id                String             @id @default(uuid())
-  userId            String
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subscriptionId    String
-  subscription      DatingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  subscription   DatingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   // VNPay fields
-  vnpTxnRef         String             @unique  // Mã giao dịch của mình
-  vnpTransactionNo  String?            // Mã giao dịch VNPay
-  vnpBankCode       String?            // Ngân hàng
-  vnpCardType       String?            // Loại thẻ
+  vnpTxnRef        String  @unique // Mã giao dịch của mình
+  vnpTransactionNo String? // Mã giao dịch VNPay
+  vnpBankCode      String? // Ngân hàng
+  vnpCardType      String? // Loại thẻ
 
   // Payment info
-  amount            Int                // VND
-  description       String
-  planType          PaymentPlanType    // MONTHLY, QUARTERLY, YEARLY
-  status            TransactionStatus  @default(PENDING)
+  amount      Int // VND
+  description String
+  planType    PaymentPlanType // MONTHLY, QUARTERLY, YEARLY
+  status      TransactionStatus @default(PENDING)
 
   // Metadata
-  ipAddress         String?
-  vnpResponseCode   String?
-  rawResponse       Json?              // Lưu response từ VNPay
+  ipAddress       String?
+  vnpResponseCode String?
+  rawResponse     Json? // Lưu response từ VNPay
 
   // Timestamps
-  paidAt            DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
   @@index([subscriptionId])
@@ -643,17 +710,17 @@ model PaymentTransaction {
 }
 
 model DatingUsageDaily {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  date            DateTime @db.Date  // Chỉ lưu ngày
-  swipeCount      Int      @default(0)
-  superLikeCount  Int      @default(0)
-  rewindCount     Int      @default(0)
+  date           DateTime @db.Date // Chỉ lưu ngày
+  swipeCount     Int      @default(0)
+  superLikeCount Int      @default(0)
+  rewindCount    Int      @default(0)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId])

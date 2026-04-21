@@ -26,8 +26,10 @@ export class MediaService {
     let width: number | undefined;
     let height: number | undefined;
 
-    // Process image with sharp
-    if (file.mimetype.startsWith('image/')) {
+    // Process image with sharp (skip HEIC/HEIF as sharp may not have plugin)
+    const isHeic = file.mimetype === 'image/heic' || file.mimetype === 'image/heif';
+
+    if (file.mimetype.startsWith('image/') && !isHeic) {
       const image = sharp(file.buffer);
       const metadata = await image.metadata();
       width = metadata.width;
@@ -39,7 +41,7 @@ export class MediaService {
         .jpeg({ quality: 85 })
         .toFile(uploadPath);
     } else {
-      // Save other file types directly
+      // Save HEIC, videos, and other file types directly
       await fs.writeFile(uploadPath, file.buffer);
     }
 
