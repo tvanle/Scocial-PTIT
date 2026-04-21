@@ -10,20 +10,24 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
+import { FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, Media, RootStackParamList } from '../../types';
+import { Post, Media, Poll, RootStackParamList } from '../../types';
 import { postService } from '../../services/post/postService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { formatTimeAgo } from '../../utils/dateUtils';
-import { EmptyState, BottomMenu } from '../../components/common';
+import { EmptyState, BottomMenu, SharePostModal, ConfirmDialog } from '../../components/common';
 import type { BottomMenuItem } from '../../components/common';
 import { DEFAULT_AVATAR } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
+import { useTheme } from '../../hooks/useThemeColors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
@@ -34,34 +38,69 @@ interface HomeScreenProps {
   navigation: HomeScreenNavigationProp;
 }
 
-// Image layout component
-const PostImages: React.FC<{ media: Media[] }> = React.memo(({ media }) => {
+// Image carousel component
+const PostImages: React.FC<{ media: Media[]; colors: any; onPress?: () => void }> = React.memo(({ media, colors, onPress }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   if (!media || media.length === 0) return null;
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / CONTENT_WIDTH);
+    setCurrentIndex(index);
+  };
+
+  // Single image - tappable
   if (media.length === 1) {
     return (
-      <View style={imgStyles.singleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.singleImage} resizeMode="cover" />
-      </View>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={imgStyles.singleContainer}>
+        <Image source={{ uri: media[0].url }} style={[imgStyles.singleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
+      </TouchableOpacity>
     );
   }
 
-  if (media.length === 2) {
-    return (
-      <View style={imgStyles.doubleContainer}>
-        <Image source={{ uri: media[0].url }} style={imgStyles.doubleImage} resizeMode="cover" />
-        <Image source={{ uri: media[1].url }} style={imgStyles.doubleImage} resizeMode="cover" />
-      </View>
-    );
-  }
-
-  // 3+ images: vertical split layout (1 large left, 2 stacked right)
+  // Multiple images - carousel (swipeable)
   return (
-    <View style={imgStyles.tripleContainer}>
-      <Image source={{ uri: media[0].url }} style={imgStyles.tripleLeft} resizeMode="cover" />
-      <View style={imgStyles.tripleRight}>
-        <Image source={{ uri: media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
-        <Image source={{ uri: media[2]?.url || media[1].url }} style={imgStyles.tripleRightImage} resizeMode="cover" />
+    <View style={imgStyles.carouselContainer}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        snapToInterval={CONTENT_WIDTH}
+        snapToAlignment="start"
+        nestedScrollEnabled
+      >
+        {media.map((item, index) => (
+          <Image
+            key={item.id || index}
+            source={{ uri: item.url }}
+            style={[imgStyles.carouselImage, { backgroundColor: colors.gray100 }]}
+            resizeMode="cover"
+          />
+        ))}
+      </ScrollView>
+
+      {/* Pagination dots */}
+      <View style={imgStyles.paginationContainer}>
+        {media.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              imgStyles.paginationDot,
+              { backgroundColor: index === currentIndex ? colors.primary : colors.gray300 },
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* Image counter */}
+      <View style={[imgStyles.imageCounter, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+        <Text style={imgStyles.imageCounterText}>
+          {currentIndex + 1}/{media.length}
+        </Text>
       </View>
     </View>
   );
@@ -76,39 +115,163 @@ const imgStyles = StyleSheet.create({
   singleImage: {
     width: '100%',
     height: 280,
-    backgroundColor: Colors.gray100,
   },
-  doubleContainer: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
+  carouselContainer: {
+    position: 'relative',
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     marginTop: Spacing.md,
   },
-  doubleImage: {
-    flex: 1,
-    height: 220,
-    backgroundColor: Colors.gray100,
-  },
-  tripleContainer: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginTop: Spacing.md,
+  carouselImage: {
+    width: CONTENT_WIDTH,
     height: 300,
   },
-  tripleLeft: {
-    flex: 1,
-    backgroundColor: Colors.gray100,
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    gap: 6,
   },
-  tripleRight: {
-    flex: 1,
-    gap: Spacing.xs,
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  tripleRightImage: {
+  imageCounter: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  imageCounterText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    color: '#fff',
+  },
+});
+
+// Poll component
+const PostPoll: React.FC<{
+  poll: Poll;
+  postId: string;
+  colors: any;
+  onVote: (optionId: string) => void;
+}> = React.memo(({ poll, postId, colors, onVote }) => {
+  const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
+
+  // Calculate total votes
+  const totalVotes = poll.options.reduce((sum, opt) => sum + (opt._count?.votes || 0), 0);
+
+  const handleVote = async (optionId: string) => {
+    if (votedOptionId) return; // Already voted
+    setVotedOptionId(optionId);
+    onVote(optionId);
+  };
+
+  const getPercentage = (votes: number) => {
+    if (totalVotes === 0) return 0;
+    return Math.round((votes / totalVotes) * 100);
+  };
+
+  return (
+    <View style={pollStyles.container}>
+      {poll.options.map((option) => {
+        const votes = option._count?.votes || 0;
+        const percentage = getPercentage(votes);
+        const isVoted = votedOptionId === option.id;
+        const hasVoted = votedOptionId !== null;
+
+        return (
+          <TouchableOpacity
+            key={option.id}
+            onPress={() => handleVote(option.id)}
+            disabled={hasVoted}
+            style={[
+              pollStyles.option,
+              { borderColor: isVoted ? colors.primary : colors.borderLight },
+            ]}
+            activeOpacity={0.7}
+          >
+            {/* Progress bar background */}
+            <View
+              style={[
+                pollStyles.progressBar,
+                {
+                  width: hasVoted ? `${percentage}%` : '0%',
+                  backgroundColor: isVoted ? colors.primary + '30' : colors.gray200,
+                },
+              ]}
+            />
+            <View style={pollStyles.optionContent}>
+              <Text style={[pollStyles.optionText, { color: colors.textPrimary }]}>
+                {option.text}
+              </Text>
+              {hasVoted && (
+                <Text style={[pollStyles.percentageText, { color: colors.textSecondary }]}>
+                  {percentage}%
+                </Text>
+              )}
+            </View>
+            {isVoted && (
+              <Ionicons name="checkmark-circle" size={18} color={colors.primary} style={pollStyles.checkIcon} />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+      <Text style={[pollStyles.totalVotes, { color: colors.textTertiary }]}>
+        {totalVotes} lượt bình chọn
+      </Text>
+    </View>
+  );
+});
+
+const pollStyles = StyleSheet.create({
+  container: {
+    marginTop: Spacing.md,
+  },
+  option: {
+    position: 'relative',
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    borderRadius: BorderRadius.md,
+  },
+  optionContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  optionText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
     flex: 1,
-    backgroundColor: Colors.gray100,
+  },
+  percentageText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    marginLeft: Spacing.sm,
+  },
+  checkIcon: {
+    position: 'absolute',
+    right: Spacing.md,
+    top: '50%',
+    marginTop: -9,
+  },
+  totalVotes: {
+    fontSize: FontSize.xs,
+    marginTop: Spacing.xs,
   },
 });
 
@@ -121,45 +284,106 @@ const PostCard: React.FC<{
   onShare: () => void;
   onProfile: () => void;
   onMore: () => void;
-}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore }) => {
+  onVote: (optionId: string) => void;
+  colors: any;
+}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore, onVote, colors }) => {
   const timeAgo = formatTimeAgo(post.createdAt);
 
+  const dynamicStyles = {
+    postCard: {
+      backgroundColor: colors.cardBackground,
+      marginHorizontal: Spacing.sm,
+      marginVertical: Spacing.xs,
+      borderRadius: BorderRadius.xl,
+      padding: Spacing.lg,
+      ...Shadow.sm,
+    },
+    postAvatar: {
+      width: Layout.avatarSize.md,
+      height: Layout.avatarSize.md,
+      borderRadius: Layout.avatarSize.md / 2,
+      backgroundColor: colors.gray200,
+    },
+    username: {
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.bold,
+      color: colors.textPrimary,
+    },
+    timeAgo: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    postContent: {
+      fontSize: FontSize.md,
+      color: colors.textPrimary,
+      lineHeight: 22,
+      marginTop: Spacing.md,
+    },
+    statsText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: Spacing.md,
+    },
+    interactionBar: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      marginTop: Spacing.lg,
+      paddingTop: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    interactionCount: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      fontWeight: FontWeight.medium,
+    },
+  };
+
   return (
-    <View style={styles.postCard}>
+    <View style={dynamicStyles.postCard}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
           <Image
             source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={styles.postAvatar}
+            style={dynamicStyles.postAvatar}
           />
           <View style={styles.postHeaderInfo}>
             <View style={styles.usernameRow}>
-              <Text style={styles.username}>{post.author.fullName}</Text>
+              <Text style={dynamicStyles.username}>{post.author.fullName}</Text>
               {post.author.isVerified && (
-                <Ionicons name="checkmark-circle" size={14} color={Colors.verified} style={{ marginLeft: 4 }} />
+                <Ionicons name="checkmark-circle" size={14} color={colors.verified} style={{ marginLeft: 4 }} />
               )}
             </View>
-            <Text style={styles.timeAgo}>{timeAgo}</Text>
+            <Text style={dynamicStyles.timeAgo}>{timeAgo}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={onMore} style={styles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Content - tappable to navigate */}
       <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
-        <Text style={styles.postContent}>{post.content}</Text>
+        <Text style={dynamicStyles.postContent}>{post.content}</Text>
+      </TouchableOpacity>
 
-        {/* Media */}
-        {post.media && post.media.length > 0 && (
-          <PostImages media={post.media} />
-        )}
+      {/* Media - outside TouchableOpacity so carousel can swipe */}
+      {post.media && post.media.length > 0 && (
+        <PostImages media={post.media} colors={colors} onPress={onComment} />
+      )}
 
-        {/* Stats Text Line */}
+      {/* Poll */}
+      {post.poll && post.poll.options && post.poll.options.length > 0 && (
+        <PostPoll poll={post.poll} postId={post.id} colors={colors} onVote={onVote} />
+      )}
+
+      {/* Stats Text Line */}
+      <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
         {(post.likesCount > 0 || post.commentsCount > 0) && (
-          <Text style={styles.statsText}>
+          <Text style={dynamicStyles.statsText}>
             {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
             {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
             {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
@@ -168,25 +392,25 @@ const PostCard: React.FC<{
       </TouchableOpacity>
 
       {/* Interaction Bar */}
-      <View style={styles.interactionBar}>
+      <View style={dynamicStyles.interactionBar}>
         <View style={styles.interactionLeft}>
           <TouchableOpacity onPress={onLike} style={styles.interactionButton}>
             <Ionicons
               name={post.isLiked ? 'heart' : 'heart-outline'}
               size={22}
-              color={post.isLiked ? Colors.like : Colors.textSecondary}
+              color={post.isLiked ? colors.like : colors.textSecondary}
             />
             {post.likesCount > 0 && (
-              <Text style={[styles.interactionCount, post.isLiked && { color: Colors.like }]}>
+              <Text style={[dynamicStyles.interactionCount, post.isLiked && { color: colors.like }]}>
                 {post.likesCount}
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
-            <Ionicons name="chatbox-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chatbox-outline" size={20} color={colors.textSecondary} />
             {post.commentsCount > 0 && (
-              <Text style={styles.interactionCount}>{post.commentsCount}</Text>
+              <Text style={dynamicStyles.interactionCount}>{post.commentsCount}</Text>
             )}
           </TouchableOpacity>
 
@@ -194,28 +418,21 @@ const PostCard: React.FC<{
             <Ionicons
               name="repeat-outline"
               size={22}
-              color={post.isShared ? Colors.repost : Colors.textSecondary}
+              color={post.isShared ? colors.repost : colors.textSecondary}
             />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onShare} style={styles.interactionButton}>
-            <Ionicons name="paper-plane-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="paper-plane-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity>
-          <Ionicons
-            name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
-            size={20}
-            color={post.isSaved ? Colors.primary : Colors.textSecondary}
-          />
-        </TouchableOpacity>
       </View>
     </View>
   );
 });
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const { user, accessToken } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -310,8 +527,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('UserProfile', { userId });
   }, [navigation]);
 
+  const handleVote = useCallback(async (postId: string, optionId: string) => {
+    try {
+      await postService.votePoll(postId, optionId);
+      // Optimistically update the UI - increment vote count for the selected option
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId || !p.poll) return p;
+        return {
+          ...p,
+          poll: {
+            ...p.poll,
+            options: p.poll.options.map(opt => ({
+              ...opt,
+              _count: {
+                votes: opt.id === optionId ? (opt._count?.votes || 0) + 1 : (opt._count?.votes || 0),
+              },
+            })),
+          },
+        };
+      }));
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
+
+  // Share modal state
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [sharePostData, setSharePostData] = useState<{ id: string; authorName: string; content?: string } | null>(null);
+
+  const handleSharePost = useCallback((post: Post) => {
+    setSharePostData({
+      id: post.id,
+      authorName: post.author.fullName,
+      content: post.content,
+    });
+    setShareModalVisible(true);
+  }, []);
 
   const handleMore = useCallback((postId: string) => {
     const post = posts.find(p => p.id === postId);
@@ -373,19 +627,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       onLike={() => handleLike(item.id)}
       onComment={() => handleComment(item.id)}
       onRepost={() => handleRepostToggle(item.id)}
-      onShare={() => handleShare(item.author.fullName)}
+      onShare={() => handleSharePost(item)}
       onProfile={() => handleProfile(item.author.id)}
       onMore={() => handleMore(item.id)}
+      onVote={(optionId) => handleVote(item.id, optionId)}
+      colors={colors}
     />
-  ), [handleLike, handleComment, handleRepostToggle, handleShare, handleProfile, handleMore]);
+  ), [handleLike, handleComment, handleRepostToggle, handleSharePost, handleProfile, handleMore, handleVote, colors]);
 
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.borderLight }]}>
       <TouchableOpacity
         style={styles.headerIconButton}
         onPress={() => (navigation as any).navigate('Notifications')}
       >
-        <Ionicons name="notifications-outline" size={24} color={Colors.gray400} />
+        <Ionicons name="notifications-outline" size={24} color={colors.gray400} />
       </TouchableOpacity>
       <Image
         source={require('../../../assets/logo.png')}
@@ -396,26 +652,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         style={styles.headerIconButton}
         onPress={() => (navigation as any).navigate('Search')}
       >
-        <Ionicons name="search-outline" size={24} color={Colors.gray400} />
+        <Ionicons name="search-outline" size={24} color={colors.gray400} />
       </TouchableOpacity>
     </View>
   );
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.gray50 }]} edges={['top']}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
         {renderHeader()}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.gray50 }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       {renderHeader()}
@@ -430,8 +686,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         contentContainerStyle={styles.feedContent}
@@ -454,19 +710,31 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         items={menuItems}
       />
 
-      <BottomMenu
+      <ConfirmDialog
         visible={deleteConfirmVisible}
         onClose={() => setDeleteConfirmVisible(false)}
-        title="Bạn có chắc muốn xóa bài viết này?"
-        items={[
-          {
-            label: 'Xóa',
-            icon: 'trash-outline',
-            destructive: true,
-            onPress: handleConfirmDelete,
-          },
-        ]}
+        onConfirm={handleConfirmDelete}
+        title="Xóa bài viết?"
+        message="Bài viết này sẽ bị xóa vĩnh viễn và không thể khôi phục."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmDestructive
+        icon="trash"
       />
+
+      {/* Share Post Modal */}
+      {sharePostData && (
+        <SharePostModal
+          visible={shareModalVisible}
+          onClose={() => {
+            setShareModalVisible(false);
+            setSharePostData(null);
+          }}
+          postId={sharePostData.id}
+          postAuthorName={sharePostData.authorName}
+          postContent={sharePostData.content}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -474,7 +742,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
   },
   header: {
     flexDirection: 'row',
@@ -482,9 +749,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: Layout.headerHeight,
     paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   headerLogo: {
     width: 55,
@@ -501,14 +766,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   // Post Card
-  postCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.sm,
-    marginVertical: Spacing.xs,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    ...Shadow.sm,
-  },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -519,12 +776,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  postAvatar: {
-    width: Layout.avatarSize.md,
-    height: Layout.avatarSize.md,
-    borderRadius: Layout.avatarSize.md / 2,
-    backgroundColor: Colors.gray200,
-  },
   postHeaderInfo: {
     marginLeft: Spacing.md,
     flex: 1,
@@ -533,38 +784,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  username: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  timeAgo: {
-    fontSize: FontSize.xs,
-    color: Colors.textTertiary,
-    marginTop: 2,
-  },
   moreButton: {
     padding: Spacing.sm,
-  },
-  postContent: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-    marginTop: Spacing.md,
-  },
-  statsText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.md,
-  },
-  interactionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   interactionLeft: {
     flexDirection: 'row',
@@ -576,11 +797,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
   },
-  interactionCount: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -591,17 +807,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
-  },
-  emptyTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginTop: Spacing.lg,
-  },
-  emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    marginTop: Spacing.sm,
   },
 });
 

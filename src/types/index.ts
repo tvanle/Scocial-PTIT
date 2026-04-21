@@ -7,6 +7,7 @@ export interface User {
   avatar?: string;
   coverPhoto?: string;
   bio?: string;
+  favoriteMusic?: string;
   faculty?: string;
   className?: string;
   phone?: string;
@@ -68,6 +69,31 @@ export interface AuthState {
   error: string | null;
 }
 
+// Poll Types
+export interface PollOption {
+  id: string;
+  text: string;
+  order: number;
+  _count?: { votes: number };
+}
+
+export interface Poll {
+  id: string;
+  question?: string;
+  expiresAt?: string;
+  options: PollOption[];
+}
+
+export interface CreatePollOption {
+  text: string;
+  order?: number;
+}
+
+export interface CreatePoll {
+  question?: string;
+  options: CreatePollOption[];
+}
+
 // Post Types
 export interface Post {
   id: string;
@@ -76,6 +102,9 @@ export interface Post {
   media?: Media[];
   feeling?: string;
   location?: string;
+  locationName?: string;
+  latitude?: number;
+  longitude?: number;
   taggedUsers?: User[];
   privacy: PostPrivacy;
   likesCount: number;
@@ -85,6 +114,7 @@ export interface Post {
   isSaved: boolean;
   isShared: boolean;
   sharedPost?: Post;
+  poll?: Poll;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,10 +124,15 @@ export type PostPrivacy = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
 export interface CreatePostData {
   content: string;
   media?: string[];
+  mediaIds?: string[];
   feeling?: string;
   location?: string;
+  locationName?: string;
+  latitude?: number;
+  longitude?: number;
   taggedUserIds?: string[];
   privacy: PostPrivacy;
+  poll?: CreatePoll;
 }
 
 export interface Media {
@@ -122,7 +157,9 @@ export interface Comment {
   replies?: Comment[];
   repliesCount: number;
   likesCount: number;
+  sharesCount: number;
   isLiked: boolean;
+  isShared: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -161,9 +198,18 @@ export interface Message {
   status: MessageStatus;
   readBy: string[];
   createdAt: string;
+  // Shared post data
+  sharedPost?: {
+    id: string;
+    content?: string;
+    author: User;
+    media?: Media[];
+    likesCount: number;
+    commentsCount: number;
+  };
 }
 
-export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'sticker' | 'system';
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'sticker' | 'system' | 'post';
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 export interface SendMessageData {
@@ -171,6 +217,7 @@ export interface SendMessageData {
   media?: string[];
   replyToId?: string;
   type: MessageType;
+  postId?: string; // For sharing posts
 }
 
 // Notification Types
