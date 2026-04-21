@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Spacing, FontSize } from '../../constants/theme';
+import { Spacing, FontSize } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface DividerProps {
   text?: string;
@@ -13,16 +14,19 @@ interface DividerProps {
 const Divider: React.FC<DividerProps> = ({
   text,
   style,
-  color = Colors.border,
+  color,
   thickness = 0.5,
   spacing = Spacing.md,
 }) => {
+  const { colors } = useTheme();
+  const dividerColor = color || colors.gray200;
+
   if (text) {
     return (
       <View style={[styles.container, { marginVertical: spacing }, style]}>
-        <View style={[styles.line, { backgroundColor: color, height: thickness }]} />
-        <Text style={styles.text}>{text}</Text>
-        <View style={[styles.line, { backgroundColor: color, height: thickness }]} />
+        <View style={[styles.line, { backgroundColor: dividerColor, height: thickness }]} />
+        <Text style={[styles.text, { color: colors.textSecondary }]}>{text}</Text>
+        <View style={[styles.line, { backgroundColor: dividerColor, height: thickness }]} />
       </View>
     );
   }
@@ -31,7 +35,7 @@ const Divider: React.FC<DividerProps> = ({
     <View
       style={[
         styles.simpleLine,
-        { backgroundColor: color, height: thickness, marginVertical: spacing },
+        { backgroundColor: dividerColor, height: thickness, marginVertical: spacing },
         style,
       ]}
     />
@@ -48,7 +52,6 @@ const styles = StyleSheet.create({
   },
   text: {
     marginHorizontal: Spacing.md,
-    color: Colors.gray400,
     fontSize: FontSize.sm,
   },
   simpleLine: {

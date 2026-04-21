@@ -1,7 +1,8 @@
 // PTIT Social Theme - PTIT Red Brand Design
 // Modern, clean UI with PTIT Red accent color
 
-export const Colors = {
+// Light Mode Colors
+export const LightColors = {
   // Primary - PTIT Red
   primary: '#B3261E',
   primaryDark: '#8C1D18',
@@ -82,6 +83,92 @@ export const Colors = {
   text: '#111827',
   gray: '#6B7280',
 };
+
+// Dark Mode Colors
+export const DarkColors = {
+  // Primary - PTIT Red (slightly lighter for dark mode)
+  primary: '#E53935',
+  primaryDark: '#B3261E',
+  primaryLight: 'rgba(229, 57, 53, 0.15)',
+  primarySoft: 'rgba(229, 57, 53, 0.08)',
+
+  // Accent
+  accent: '#E53935',
+  accentLight: 'rgba(229, 57, 53, 0.15)',
+
+  // Core Colors
+  white: '#FFFFFF',
+  black: '#000000',
+
+  // Grayscale (inverted)
+  gray50: '#1F2937',
+  gray100: '#374151',
+  gray200: '#4B5563',
+  gray300: '#6B7280',
+  gray400: '#9CA3AF',
+  gray500: '#D1D5DB',
+  gray600: '#E5E7EB',
+  gray700: '#F3F4F6',
+  gray800: '#F9FAFB',
+  gray900: '#FFFFFF',
+
+  // Background
+  background: '#111827',
+  backgroundSecondary: '#1F2937',
+  backgroundTertiary: '#374151',
+  backgroundDark: '#0D1117',
+
+  // Text
+  textPrimary: '#F9FAFB',
+  textSecondary: '#9CA3AF',
+  textTertiary: '#6B7280',
+  textLight: '#FFFFFF',
+  textLink: '#E53935',
+
+  // Borders
+  border: '#374151',
+  borderLight: '#1F2937',
+  borderDark: '#4B5563',
+
+  // Status
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  info: '#3B82F6',
+
+  // Interactions
+  like: '#E53935',
+  repost: '#10B981',
+  comment: '#F9FAFB',
+  share: '#F9FAFB',
+
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  overlayLight: 'rgba(255, 255, 255, 0.04)',
+
+  // Verified badge
+  verified: '#3B82F6',
+
+  // Online status
+  online: '#10B981',
+  offline: '#6B7280',
+
+  // Legacy compatibility
+  cardBackground: '#1F2937',
+  inputBackground: '#374151',
+  secondary: '#9CA3AF',
+  gradientStart: '#E53935',
+  gradientMiddle: '#D32F2F',
+  gradientEnd: '#B3261E',
+  errorLight: '#7F1D1D',
+
+  // Text aliases
+  text: '#F9FAFB',
+  gray: '#9CA3AF',
+};
+
+// Default export (Light mode)
+export const Colors = LightColors;
 
 export const Spacing = {
   xxs: 2,

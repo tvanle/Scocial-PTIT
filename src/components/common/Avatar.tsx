@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, FontWeight, Layout } from '../../constants/theme';
+import { FontSize, FontWeight, Layout } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 import { getImageUrl } from '../../utils/image';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'profile';
@@ -29,6 +30,7 @@ const Avatar: React.FC<AvatarProps> = ({
   showEditButton = false,
   onEditPress,
 }) => {
+  const { colors } = useTheme();
   const avatarSize = typeof size === 'number' ? size : Layout.avatarSize[size];
 
   const getInitials = (fullName: string): string => {
@@ -108,6 +110,7 @@ const Avatar: React.FC<AvatarProps> = ({
               width: avatarSize,
               height: avatarSize,
               borderRadius: avatarSize / 2,
+              backgroundColor: colors.gray200,
             },
           ]}
         />
@@ -119,10 +122,11 @@ const Avatar: React.FC<AvatarProps> = ({
               width: avatarSize,
               height: avatarSize,
               borderRadius: avatarSize / 2,
+              backgroundColor: colors.primaryLight,
             },
           ]}
         >
-          <Text style={[styles.initials, { fontSize: getFontSize() }]}>
+          <Text style={[styles.initials, { fontSize: getFontSize(), color: colors.primary }]}>
             {getInitials(name)}
           </Text>
         </View>
@@ -136,15 +140,20 @@ const Avatar: React.FC<AvatarProps> = ({
               width: getOnlineIndicatorSize(),
               height: getOnlineIndicatorSize(),
               borderRadius: getOnlineIndicatorSize() / 2,
-              backgroundColor: isOnline ? Colors.online : Colors.gray400,
+              backgroundColor: isOnline ? colors.online : colors.gray400,
+              borderColor: colors.background,
             },
           ]}
         />
       )}
 
       {showEditButton && (
-        <TouchableOpacity style={styles.editButton} onPress={onEditPress} activeOpacity={0.7}>
-          <Ionicons name="camera" size={14} color={Colors.white} />
+        <TouchableOpacity
+          style={[styles.editButton, { backgroundColor: colors.primary, borderColor: colors.background }]}
+          onPress={onEditPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="camera" size={14} color={colors.white} />
         </TouchableOpacity>
       )}
     </View>
@@ -165,16 +174,12 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
   },
-  image: {
-    backgroundColor: Colors.gray200,
-  },
+  image: {},
   placeholder: {
-    backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    color: Colors.primary,
     fontWeight: FontWeight.bold,
   },
   onlineIndicator: {
@@ -182,7 +187,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   editButton: {
     position: 'absolute',
@@ -191,11 +195,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
 });
 

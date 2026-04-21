@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, FontSize, FontWeight, Layout, Spacing, Shadow } from '../../constants/theme';
+import { BorderRadius, FontSize, FontWeight, Layout, Spacing, Shadow } from '../../constants/theme';
+import { useTheme } from '../../hooks/useThemeColors';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -40,6 +41,7 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   ...props
 }) => {
+  const { colors } = useTheme();
   const isDisabled = disabled || loading;
 
   const getButtonStyle = (): ViewStyle => {
@@ -50,18 +52,18 @@ const Button: React.FC<ButtonProps> = ({
     };
 
     if (isDisabled) {
-      return { ...baseStyle, ...styles.disabled };
+      return { ...baseStyle, backgroundColor: colors.gray200, shadowOpacity: 0, elevation: 0 };
     }
 
     switch (variant) {
       case 'primary':
-        return { ...baseStyle, ...styles.primary };
+        return { ...baseStyle, backgroundColor: colors.primary, ...Shadow.red };
       case 'secondary':
-        return { ...baseStyle, ...styles.secondary };
+        return { ...baseStyle, backgroundColor: colors.gray100 };
       case 'outline':
-        return { ...baseStyle, ...styles.outline };
+        return { ...baseStyle, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.gray200 };
       case 'ghost':
-        return { ...baseStyle, ...styles.ghost };
+        return { ...baseStyle, backgroundColor: 'transparent' };
       default:
         return baseStyle;
     }
@@ -74,34 +76,34 @@ const Button: React.FC<ButtonProps> = ({
     };
 
     if (isDisabled) {
-      return { ...baseTextStyle, ...styles.disabledText };
+      return { ...baseTextStyle, color: colors.gray400 };
     }
 
     switch (variant) {
       case 'primary':
-        return { ...baseTextStyle, ...styles.primaryText };
+        return { ...baseTextStyle, color: colors.white };
       case 'secondary':
-        return { ...baseTextStyle, ...styles.secondaryText };
+        return { ...baseTextStyle, color: colors.textPrimary };
       case 'outline':
       case 'ghost':
-        return { ...baseTextStyle, ...styles.outlineText };
+        return { ...baseTextStyle, color: colors.primary };
       default:
         return baseTextStyle;
     }
   };
 
   const getIconColor = (): string => {
-    if (isDisabled) return Colors.gray400;
+    if (isDisabled) return colors.gray400;
     switch (variant) {
       case 'primary':
-        return Colors.white;
+        return colors.white;
       case 'secondary':
-        return Colors.textPrimary;
+        return colors.textPrimary;
       case 'outline':
       case 'ghost':
-        return Colors.primary;
+        return colors.primary;
       default:
-        return Colors.white;
+        return colors.white;
     }
   };
 
@@ -142,7 +144,7 @@ const Button: React.FC<ButtonProps> = ({
     <View style={styles.contentContainer}>
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? Colors.white : Colors.primary}
+          color={variant === 'primary' ? colors.white : colors.primary}
           size="small"
         />
       ) : (
@@ -211,26 +213,6 @@ const styles = StyleSheet.create({
     height: Layout.buttonHeight,
     paddingHorizontal: Spacing.xxl,
   },
-  primary: {
-    backgroundColor: Colors.primary,
-    ...Shadow.red,
-  },
-  secondary: {
-    backgroundColor: Colors.gray100,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  disabled: {
-    backgroundColor: Colors.gray200,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   text: {
     fontWeight: FontWeight.bold,
   },
@@ -242,18 +224,6 @@ const styles = StyleSheet.create({
   },
   largeText: {
     fontSize: FontSize.lg,
-  },
-  primaryText: {
-    color: Colors.white,
-  },
-  secondaryText: {
-    color: Colors.textPrimary,
-  },
-  outlineText: {
-    color: Colors.primary,
-  },
-  disabledText: {
-    color: Colors.gray400,
   },
   iconLeft: {
     marginRight: Spacing.sm,
