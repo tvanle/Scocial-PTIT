@@ -2156,7 +2156,7 @@ Token Refresh -> Send refreshToken
 > A: Dự án có quy mô vừa, team nhỏ (2-3 người). Monorepo giúp chia sẻ types/interfaces giữa frontend-backend, đơn giản hóa deployment, và dễ debug. Microservices phù hợp khi cần scale từng service độc lập, nhưng tăng complexity không cần thiết cho dự án này.
 
 **Q: Cơ chế Refresh Token hoạt động như thế nào?**
-> A: Access token có thời hạn ngắn (15-30 phút). Khi hết hạn, client gửi refresh token (30 ngày) để lấy cặp token mới. Refresh token được lưu trong DB, mỗi lần dùng sẽ xóa cũ và tạo mới (rotation). Đổi password sẽ xóa tất cả refresh tokens (force logout all devices).
+> A: Access token có thời hạn 7 ngày (cấu hình qua `JWT_EXPIRES_IN`, default `7d`). Refresh token có thời hạn 30 ngày. Khi access token hết hạn, client gửi refresh token để lấy cặp token mới. Refresh token được lưu trong DB, mỗi lần dùng sẽ xóa cũ và tạo mới (rotation). Đổi password sẽ xóa tất cả refresh tokens (force logout all devices).
 
 **Q: Socket.io xử lý khi user offline ra sao?**
 > A: Tin nhắn vẫn được lưu vào DB qua HTTP API. Khi user online lại, app fetch messages qua GET API (phân trang). Socket.io chỉ phục vụ real-time delivery, không phải message persistence. Online status dựa trên lastActiveAt (5 phút threshold).
