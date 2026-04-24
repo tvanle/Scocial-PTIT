@@ -1927,53 +1927,254 @@ createdAt   DateTime         @default(now())
 
 # PRESENTER: Thuyết Trình & Demo
 
+> **Nguyên tắc thuyết trình:** Trình bày theo hướng **nghiệp vụ và giá trị sản phẩm**, không sa đà vào kỹ thuật. Giảng viên/hội đồng muốn nghe: **Tại sao sản phẩm này cần tồn tại? Nó giải quyết vấn đề gì? Tại sao sinh viên nên dùng nó?**
+
+---
+
 ## 1. Cấu trúc Slide đề xuất
 
-### Slide 1-2: Giới thiệu
-- Tên dự án: **PTIT Social** - Mạng xã hội dành cho sinh viên PTIT
+### Slide 1-2: Mở đầu ấn tượng
+
+**Slide 1 - Câu hỏi mở:**
+> *"Mỗi ngày, 15.000+ sinh viên PTIT online trên Facebook, Zalo, Instagram... nhưng khi muốn tìm bạn cùng lớp để hỏi bài, tìm anh chị khóa trên để xin kinh nghiệm, hay đơn giản là kết bạn mới trong trường - các bạn mở app nào?"*
+
+**Slide 2 - Giới thiệu sản phẩm:**
+- Tên: **PTIT Social** - Mạng xã hội dành riêng cho sinh viên PTIT
+- Slogan: *"Kết nối đúng người, đúng trường, đúng lúc"*
 - Nhóm thực hiện: [Tên thành viên]
 - Giảng viên hướng dẫn: [Tên GV]
 
-### Slide 3-4: Bài toán & Mục tiêu
-- Nhu cầu kết nối sinh viên PTIT
-- Mục tiêu: Xây dựng mạng xã hội với đầy đủ tính năng (đăng bài, chat, follow, notification)
-- Đối tượng: Sinh viên Học viện CNBCVT
+---
 
-### Slide 5-7: Công nghệ sử dụng
-- Frontend: React Native + Expo 54 + TypeScript
-- Backend: Express.js + TypeScript + Prisma ORM
-- Database: PostgreSQL
-- Cache: Redis
-- Real-time: Socket.io
-- Storage: MinIO (S3-compatible)
-- Auth: JWT + 2FA (TOTP)
-- Push: Firebase Cloud Messaging
+### Slide 3-5: Vấn đề thực tế (Problem Statement)
 
-### Slide 8-10: Kiến trúc hệ thống
-- Sơ đồ System Architecture
-- Monorepo structure
-- API request flow: Mobile -> Express -> Prisma -> PostgreSQL
-- Real-time flow: Mobile <-> Socket.io <-> Express
+**Slide 3 - Sinh viên PTIT đang gặp khó khăn gì?**
 
-### Slide 11-12: Database Design
-- ERD diagram (21 bảng chính)
-- Quan hệ chính: User -> Post -> Comment -> Like/Share
-- Conversation -> Message -> MessageReadStatus
+| Vấn đề | Thực trạng |
+|--------|-----------|
+| **Kết nối rời rạc** | Thông tin sinh viên nằm rải rác trên Facebook groups, Zalo nhóm, email. Không có 1 nơi tập trung |
+| **Khó tìm đúng người** | Muốn tìm bạn cùng khoa CNTT khóa 2021? Phải hỏi lung tung trên groups |
+| **Không có danh tính xác thực** | Trên Facebook/Zalo, ai cũng có thể giả mạo sinh viên PTIT |
+| **Kết bạn/hẹn hò khó** | Tinder/Bumble không filter được "cùng trường", "cùng khoa", "cùng khóa" |
+| **Thông tin academic rời rạc** | Hỏi bài, chia sẻ tài liệu, thảo luận môn học phải qua group Facebook lộn xộn |
 
-### Slide 13-15: Tính năng chính
-- Authentication: Register, Login, Email OTP, 2FA
-- Social: Post, Like, Comment, Share, Poll, Feed
-- Messaging: Real-time chat, Voice messages, Online status
-- Notification: Push notification, In-app notification
+**Slide 4 - Tại sao Facebook/Zalo/Instagram không giải quyết được?**
 
-### Slide 16-18: Demo
-- Live demo hoặc video quay sẵn
-- Theo các luồng chính (xem mục Demo bên dưới)
+| Nền tảng | Hạn chế cho sinh viên PTIT |
+|----------|---------------------------|
+| **Facebook** | Quá đông đúc, quảng cáo nhiều, thuật toán ẩn bài viết, không verify sinh viên thật, groups lộn xộn |
+| **Zalo** | Thiên về nhắn tin, không có feed/community mạnh, không có dating, không verify student ID |
+| **Instagram** | Thiên về hình ảnh/lifestyle, không có chat nhóm tốt, không phù hợp thảo luận học tập |
+| **Tinder/Bumble** | Không filter được cùng trường/khoa/khóa, phải trả phí cao, không có tính năng social |
+| **Twitter/X** | Hướng global, không có community nội bộ, ngôn ngữ chủ yếu tiếng Anh |
 
-### Slide 19-20: Kết luận
-- Kết quả đạt được
-- Hạn chế
-- Hướng phát triển
+**Slide 5 - Khoảng trống thị trường:**
+> *"Chưa có nền tảng nào kết hợp mạng xã hội + nhắn tin real-time + hẹn hò trong cùng một hệ sinh thái, dành RIÊNG cho sinh viên PTIT với danh tính xác thực."*
+
+---
+
+### Slide 6-8: Giải pháp - PTIT Social (Solution)
+
+**Slide 6 - Tổng quan giải pháp:**
+
+PTIT Social là **nền tảng all-in-one** cho sinh viên PTIT gồm 3 trụ cột:
+
+```
++---------------------------+
+|      PTIT Social          |
++---------------------------+
+|                           |
+|  1. SOCIAL NETWORK        |  Đăng bài, like, comment, share, poll
+|     (Kết nối)             |  Follow bạn bè, feed cá nhân
+|                           |
+|  2. REAL-TIME MESSAGING   |  Chat 1-1, voice message
+|     (Trò chuyện)          |  Chia sẻ bài viết trong chat
+|                           |
+|  3. CAMPUS DATING         |  Match theo trường/khoa/khóa
+|     (Hẹn hò)             |  Swipe, Super Like, Premium
+|                           |
++---------------------------+
+|  XÁC THỰC DANH TÍNH      |  Mã sinh viên + Email OTP + 2FA
+|  (Nền tảng an toàn)       |  Chỉ sinh viên PTIT thật mới vào được
++---------------------------+
+```
+
+**Slide 7 - Tại sao PTIT Social, không phải app khác?**
+
+| Tiêu chí | Facebook | Zalo | Tinder | **PTIT Social** |
+|----------|:--------:|:----:|:------:|:-----------:|
+| Xác thực sinh viên (Student ID) | - | - | - | **+** |
+| Feed bài viết | + | - | - | **+** |
+| Chat real-time | + | + | + | **+** |
+| Voice message | + | + | - | **+** |
+| Hẹn hò campus | - | - | +/- | **+** |
+| Filter theo khoa/khóa | - | - | - | **+** |
+| Poll/Bình chọn | + | - | - | **+** |
+| Không quảng cáo | - | - | - | **+** |
+| Cộng đồng nội bộ PTIT | - | - | - | **+** |
+| Dark mode | + | + | + | **+** |
+| Push notification | + | + | + | **+** |
+| Miễn phí | +/- | + | +/- | **+** |
+
+**Slide 8 - Unique Selling Points (USP):**
+
+> **USP 1: "Chỉ sinh viên PTIT thật"**
+> - Đăng ký bằng mã sinh viên (B21DCCN001, T24...)
+> - Email OTP xác thực
+> - 2FA bảo vệ tài khoản (Google Authenticator)
+> - Không fake account, không spam
+
+> **USP 2: "Hẹn hò đúng người cùng trường"**
+> - Match theo khoa (CNTT, Viễn thông, ATTT...)
+> - Filter cùng khóa (cùng năm nhập học)
+> - Tính khoảng cách trong campus (GPS)
+> - Thuật toán scoring: tuổi (30đ) + giới tính (20đ) + khoa (20đ) + cùng khóa (10đ) + profile hoàn thiện (10đ) + hoạt động gần đây (10đ)
+
+> **USP 3: "All-in-one, không cần mở 5 app"**
+> - Feed + Chat + Dating + Notification trong 1 app duy nhất
+> - Thấy bài hay? Nhấn share vào chat luôn
+> - Match xong? Tự động tạo conversation, chat ngay
+
+---
+
+### Slide 9-10: Đối tượng người dùng (Target Users)
+
+**Slide 9 - User Personas:**
+
+**Persona 1: Tân sinh viên (Năm 1)**
+- *"Mình mới nhập học, chưa quen ai. Muốn tìm bạn cùng lớp, cùng khoa."*
+- Nhu cầu: Kết bạn, tìm nhóm học, hỏi thông tin
+- PTIT Social giúp: Search theo khoa/lớp, follow, chat ngay
+
+**Persona 2: Sinh viên năm 2-3 (Active user)**
+- *"Muốn chia sẻ kinh nghiệm, tìm bạn làm project, tham gia cộng đồng."*
+- Nhu cầu: Đăng bài, tạo poll hỏi ý kiến, thảo luận
+- PTIT Social giúp: Feed, poll, comment, voice message
+
+**Persona 3: Sinh viên muốn hẹn hò**
+- *"Muốn quen bạn khác khoa nhưng không biết bắt đầu từ đâu."*
+- Nhu cầu: Tìm người phù hợp trong trường, an toàn
+- PTIT Social giúp: Dating với filter khoa/khóa, verified profile, match tự động tạo chat
+
+**Persona 4: Sinh viên năm cuối / Cựu sinh viên**
+- *"Muốn kết nối lại với bạn cũ, chia sẻ cơ hội việc làm."*
+- Nhu cầu: Networking, chia sẻ thông tin tuyển dụng
+- PTIT Social giúp: Profile với thông tin faculty/class, search theo tên/MSSV
+
+**Slide 10 - Quy mô thị trường:**
+- Học viện CNBCVT có **~15.000 sinh viên** (cả 2 cơ sở HN + HCM)
+- Mỗi năm tuyển mới **~3.000-4.000 sinh viên**
+- 100% sinh viên có smartphone
+- Potential users year 1: **5.000-8.000** (early adopters)
+- Có thể mở rộng sang các trường đại học khác (HUST, UET, VNU...)
+
+---
+
+### Slide 11-13: Tính năng chi tiết (Features Walkthrough)
+
+**Slide 11 - Social Network:**
+
+| Tính năng | Mô tả | Giá trị cho sinh viên |
+|-----------|-------|----------------------|
+| **Đăng bài viết** | Text + ảnh + video + vị trí | Chia sẻ khoảnh khắc campus, tài liệu học tập |
+| **Poll/Bình chọn** | Tạo poll 2-4 options | "Môn nào khó nhất kỳ này?", "Quán ăn nào ngon gần trường?" |
+| **Like/Comment/Share** | Tương tác bài viết | Xây dựng cộng đồng, thảo luận |
+| **Follow** | Theo dõi bạn bè/anh chị | Cập nhật thông tin từ người quan tâm |
+| **Tìm kiếm** | Search theo tên, MSSV | Tìm đúng người cần tìm trong trường |
+| **Profile cá nhân** | Avatar, cover, bio, bài hát yêu thích | Thể hiện cá tính, kết nối qua sở thích |
+
+**Slide 12 - Real-time Messaging:**
+
+| Tính năng | Mô tả | Giá trị cho sinh viên |
+|-----------|-------|----------------------|
+| **Chat 1-1** | Nhắn tin trực tiếp | Trao đổi nhanh, hỏi bài |
+| **Tin nhắn thoại** | Ghi âm & gửi voice message | Tiện khi đang di chuyển, giải thích dài |
+| **Chia sẻ bài viết** | Share post vào chat | "Ê xem bài này hay nè" |
+| **Trạng thái online** | Biết ai đang online | Biết lúc nào bạn rảnh để chat |
+| **Typing indicator** | "đang nhập..." | Trải nghiệm tự nhiên như chat trực tiếp |
+| **Push notification** | Thông báo tin nhắn mới | Không bỏ lỡ tin nhắn quan trọng |
+
+**Slide 13 - Campus Dating (PTIT Connect):**
+
+| Tính năng | Mô tả | Giá trị cho sinh viên |
+|-----------|-------|----------------------|
+| **Swipe matching** | Like / Unlike / Super Like | Dễ dùng, quen thuộc |
+| **Filter thông minh** | Theo khoa, khóa, tuổi, khoảng cách | Tìm người THẬT SỰ phù hợp |
+| **Profile phong phú** | 6 ảnh, câu hỏi mở, bài hát yêu thích | Hiểu nhau trước khi match |
+| **Verified identity** | MSSV hiển thị trên dating profile | An toàn, không fake |
+| **Auto-chat on match** | Match = tự động tạo phòng chat | Không cần thêm bước, chat ngay |
+| **Premium** | Unlimited swipes, Super Like, Rewind | Thanh toán VNPay/VietQR (tiện cho SV Việt) |
+
+---
+
+### Slide 14-15: Lợi thế cạnh tranh (Competitive Advantage)
+
+**Slide 14 - So sánh trực tiếp:**
+
+```
+                     Facebook    Zalo    Tinder    PTIT Social
+                     ────────    ────    ──────    ───────────
+An toàn/Verified      Thấp      Thấp    Trung     ██████ CAO
+Tìm đúng người PTIT  Khó       Khó     Không     ██████ DỄ
+Hẹn hò campus        Không     Không    Chung     ██████ RIÊNG
+Feed + Chat + Date    2 app     1 app   1 app     ██████ 1 APP
+Không quảng cáo       ✗         ✗       ✗         ██████ ✓
+Tiếng Việt native     ✓/✗       ✓       ✗         ██████ ✓
+Thanh toán VN (VNPay) ✗         ✗       ✗         ██████ ✓
+```
+
+**Slide 15 - Mô hình kinh doanh tiềm năng:**
+
+| Nguồn thu | Mô tả |
+|-----------|-------|
+| **Freemium Dating** | Free: 50 swipes/ngày, 1 Super Like. Premium: unlimited, 5 Super Likes, Rewind |
+| **Thanh toán nội địa** | VNPay, VietQR, SePay - phù hợp sinh viên Việt Nam (không cần thẻ quốc tế) |
+| **Gói subscription** | Monthly / Quarterly / Yearly (giảm giá khi mua dài hạn) |
+| **Mở rộng trường khác** | Mô hình có thể nhân bản sang HUST, UET, FPT University... |
+
+---
+
+### Slide 16-18: Demo sản phẩm
+
+*(Xem mục "Kịch bản Demo" bên dưới)*
+
+---
+
+### Slide 19-20: Kết luận & Tầm nhìn
+
+**Slide 19 - Kết quả đạt được:**
+- Xây dựng thành công nền tảng all-in-one: Social + Chat + Dating
+- 21 bảng database, ~60 API endpoints, 30+ màn hình mobile
+- Xác thực danh tính nhiều lớp (MSSV + Email OTP + 2FA)
+- Chat real-time với Socket.io, push notification
+- Hệ thống dating với thuật toán matching thông minh
+- Thanh toán Việt Nam (VNPay/VietQR)
+- Cross-platform: iOS + Android từ 1 codebase (React Native)
+
+**Slide 20 - Tầm nhìn phát triển:**
+
+```
+Giai đoạn 1 (Hiện tại): PTIT Social - Mạng xã hội sinh viên PTIT
+     ↓
+Giai đoạn 2: Mở rộng tính năng
+  - Group Chat (nhóm lớp, nhóm CLB)
+  - Story/Reel (nội dung ngắn)
+  - Video/Voice Call
+  - Admin Dashboard
+     ↓
+Giai đoạn 3: Mở rộng quy mô
+  - UniSocial - Nền tảng cho TẤT CẢ đại học Việt Nam
+  - Mỗi trường có instance riêng
+  - Kết nối liên trường (inter-university networking)
+     ↓
+Giai đoạn 4: Hệ sinh thái
+  - Marketplace (mua bán đồ cũ giữa SV)
+  - Job Board (tuyển dụng/thực tập)
+  - Event Management (sự kiện trường)
+  - Alumni Network (cựu sinh viên)
+```
+
+> *"PTIT Social không chỉ là một đồ án - đây là nền tảng có thể trở thành UniSocial, mạng xã hội cho mọi sinh viên Việt Nam."*
 
 ---
 
@@ -2110,41 +2311,89 @@ Token Refresh -> Send refreshToken
 
 ## 3. Kịch bản Demo
 
-### Demo 1: Đăng ký & Xác thực (2 phút)
-1. Mở app -> RegisterScreen
-2. Nhập email, password, studentId
-3. Hiển thị VerifyEmailScreen
-4. Nhập OTP 6 số
-5. Chuyển đến HomeScreen
+> **Nguyên tắc demo:** Kể một câu chuyện người dùng thật, không liệt kê tính năng. Mỗi demo trả lời câu hỏi: "Sinh viên PTIT dùng cái này để làm gì?"
 
-### Demo 2: Tạo bài viết & Tương tác (3 phút)
-1. Nhấn FAB "+" -> CreatePostScreen
-2. Nhập nội dung, đính kèm ảnh, tạo poll
-3. Đăng bài -> Hiển thị trên Feed
-4. Like bài viết (animation heart)
-5. Vote poll -> hiển thị kết quả %
-6. Comment bài viết, reply comment
+### Demo 1: "Ngày đầu nhập học" - Đăng ký & Tìm bạn (3 phút)
 
-### Demo 3: Chat Real-time (3 phút)
-1. Vào ChatListScreen -> hiển thị conversations
-2. Mở ChatRoomScreen với user khác
-3. Gửi tin nhắn text -> hiện real-time
-4. Gửi voice message
-5. Share bài viết vào chat
-6. Typing indicator (3 dots animation)
-7. Online status (green dot)
+**Kịch bản:** *Minh là tân sinh viên khoa CNTT, vừa nhập học PTIT, chưa quen ai.*
 
-### Demo 4: Notification & Follow (2 phút)
-1. Follow user -> tạo notification
-2. Vào NotificationScreen -> hiển thị grouped by date
-3. Filter theo type (Likes, Comments, Follows)
-4. Nhấn notification -> navigate đến bài viết/profile
+1. **Mở app** -> Màn hình đăng ký đẹp, màu đỏ PTIT
+2. **Đăng ký** -> Nhập email, mật khẩu, **mã sinh viên B24DCCN001**
+   > *Nhấn mạnh: "Mã sinh viên là danh tính xác thực - chỉ sinh viên PTIT thật mới vào được"*
+3. **Xác thực email** -> Nhập OTP 6 số nhận qua email
+   > *"Lớp bảo mật đầu tiên - chống tạo tài khoản ảo"*
+4. **Vào app** -> Cập nhật profile: avatar, khoa CNTT, lớp D21CQCN01
+5. **Tìm kiếm** -> Gõ "CNTT" -> Hiện danh sách sinh viên cùng khoa
+   > *"Trên Facebook, bạn không thể search 'sinh viên khoa CNTT PTIT' và ra kết quả chính xác"*
+6. **Follow** -> Follow vài bạn cùng khoa -> Nhận notification
 
-### Demo 5: Profile & Search (2 phút)
-1. ProfileScreen: cover, avatar, stats, posts
-2. EditProfileScreen: đổi avatar, bio
-3. SearchScreen: tìm user, xem history
-4. UserProfileScreen: follow/unfollow, nhắn tin
+---
+
+### Demo 2: "Giờ ra chơi" - Đăng bài & Tương tác (3 phút)
+
+**Kịch bản:** *Minh muốn hỏi ý kiến về môn Cấu trúc dữ liệu và giải thuật.*
+
+1. **Tạo bài viết** -> Nhấn FAB "+" (nút đỏ nổi bật)
+2. **Viết bài** -> "Các bạn ơi, môn DSA kỳ này thầy nào dạy dễ hiểu nhất?"
+3. **Tạo Poll** -> Thêm 3 options: "Thầy A", "Thầy B", "Thầy C"
+   > *"Tính năng Poll giúp thu thập ý kiến cộng đồng nhanh chóng - Facebook không có"*
+4. **Đính kèm ảnh** -> Chụp ảnh thời khóa biểu
+5. **Đăng bài** -> Bài hiện trên Feed
+6. **Tương tác** -> Like (animation heart), Comment "Thầy B hay lắm!", Vote poll
+   > *"Mọi tương tác đều tạo notification cho tác giả - không bỏ lỡ phản hồi nào"*
+
+---
+
+### Demo 3: "Hỏi bài lúc 11 giờ đêm" - Chat Real-time (3 phút)
+
+**Kịch bản:** *Minh cần hỏi bạn về bài tập, cần phản hồi ngay.*
+
+1. **Mở Chat** -> Thấy danh sách conversations, online status (chấm xanh)
+   > *"Biết ai đang online để hỏi ngay, không cần chờ"*
+2. **Nhắn tin** -> Gửi text "Ê, bài tập DSA câu 3 làm sao?"
+   > *Tin nhắn hiện real-time trên máy người nhận (demo 2 điện thoại)*
+3. **Voice message** -> Ghi âm giải thích cách làm
+   > *"Giải thích code bằng voice nhanh hơn gõ text rất nhiều"*
+4. **Share bài viết** -> Gửi poll DSA vào chat: "Xem kết quả poll này nè"
+   > *"Kết nối feed và chat - thấy bài hay, share vào chat cho bạn ngay"*
+5. **Typing indicator** -> Hiện animation "đang nhập..." khi đối phương gõ
+6. **Push notification** -> Khi app ở background, vẫn nhận được thông báo
+
+---
+
+### Demo 4: "Cuối tuần chill" - Profile & Kết nối (2 phút)
+
+**Kịch bản:** *Minh muốn cập nhật profile và khám phá cộng đồng.*
+
+1. **Profile** -> Cover photo campus PTIT, avatar, bio "SV năm 2 CNTT - Yêu code & coffee"
+2. **Bài hát yêu thích** -> Gắn bài hát đang nghe (tính năng cá nhân hóa)
+3. **Stats** -> 15 bài viết, 120 followers, 85 following
+   > *"Profile thể hiện bạn là ai trong cộng đồng PTIT"*
+4. **Dark Mode** -> Toggle sang giao diện tối
+   > *"Học đêm? Dark mode bảo vệ mắt"*
+5. **Notification** -> Grouped by "Hôm nay", "Hôm qua" -> Filter "Follows"
+   > *"Biết ai vừa follow mình, like bài mình - tất cả ở 1 nơi"*
+
+---
+
+### Demo 5 (Nếu còn thời gian): "Bảo mật" - 2FA (1 phút)
+
+1. **Settings** -> Security -> Bật 2FA
+2. **QR Code** -> Quét bằng Google Authenticator
+3. **Nhập mã 6 số** -> 2FA enabled
+   > *"Tài khoản được bảo vệ 3 lớp: password + email OTP + 2FA. Facebook Groups cũng chưa chắc an toàn bằng"*
+
+---
+
+### Tips trình bày Demo:
+
+| Tip | Chi tiết |
+|-----|----------|
+| **Dùng 2 thiết bị** | Demo chat real-time giữa 2 máy cùng lúc, ấn tượng hơn video |
+| **Chuẩn bị data sẵn** | Tạo sẵn 5-10 tài khoản demo với avatar, bài viết, conversations |
+| **Kết nối câu chuyện** | Mỗi demo là 1 tình huống thực tế của sinh viên, không phải "click nút A ra kết quả B" |
+| **So sánh ngay** | Sau mỗi tính năng, nói: *"Trên Facebook/Zalo, bạn phải làm X, Y, Z. Ở đây chỉ cần 1 bước"* |
+| **Quay video backup** | Phòng trường hợp mất mạng khi demo live |
 
 ---
 
@@ -2152,29 +2401,534 @@ Token Refresh -> Send refreshToken
 
 ### Câu hỏi thường gặp & Gợi ý trả lời
 
-**Q: Tại sao chọn monorepo thay vì microservices?**
-> A: Dự án có quy mô vừa, team nhỏ (2-3 người). Monorepo giúp chia sẻ types/interfaces giữa frontend-backend, đơn giản hóa deployment, và dễ debug. Microservices phù hợp khi cần scale từng service độc lập, nhưng tăng complexity không cần thiết cho dự án này.
+---
 
-**Q: Cơ chế Refresh Token hoạt động như thế nào?**
-> A: Access token có thời hạn 7 ngày (cấu hình qua `JWT_EXPIRES_IN`, default `7d`). Refresh token có thời hạn 30 ngày. Khi access token hết hạn, client gửi refresh token để lấy cặp token mới. Refresh token được lưu trong DB, mỗi lần dùng sẽ xóa cũ và tạo mới (rotation). Đổi password sẽ xóa tất cả refresh tokens (force logout all devices).
+### Q1: Tại sao chọn kiến trúc monolith monorepo thay vì microservices?
 
-**Q: Socket.io xử lý khi user offline ra sao?**
-> A: Tin nhắn vẫn được lưu vào DB qua HTTP API. Khi user online lại, app fetch messages qua GET API (phân trang). Socket.io chỉ phục vụ real-time delivery, không phải message persistence. Online status dựa trên lastActiveAt (5 phút threshold).
+**Trả lời:**
 
-**Q: Prisma ORM có ưu/nhược điểm gì?**
-> A: Ưu: Type-safe queries (TypeScript), auto-generate types từ schema, migration management, readable query syntax. Nhược: Không hỗ trợ complex raw queries tốt, performance overhead nhỏ so với raw SQL, learning curve cho advanced features.
+Dự án có quy mô vừa với team 2-3 người, monolith monorepo là lựa chọn phù hợp nhất vì:
 
-**Q: Bảo mật API được xử lý ra sao?**
-> A: JWT Bearer token cho mọi protected route, rate limiting (1000 req/15min/IP), Zod validation cho input, bcrypt hash password (salt: 12), 2FA TOTP support, CORS configuration, refresh token rotation, force logout all devices khi đổi password.
+1. **Chia sẻ code**: Folder `/src/` (mobile) và `/backend/` nằm cùng repo, dễ dàng đồng bộ TypeScript types/interfaces giữa frontend và backend mà không cần publish package riêng.
 
-**Q: Tại sao dùng MinIO thay vì lưu file local?**
-> A: MinIO tương thích S3 API, dễ migrate sang AWS S3 khi production. Hỗ trợ CDN, access control, versioning. Local storage không scale được, không có redundancy, khó backup.
+2. **Đơn giản hóa deployment**: Chỉ cần 1 server Express trên port 3001 phục vụ cả HTTP API lẫn Socket.io, thay vì phải deploy và quản lý nhiều service riêng biệt.
 
-**Q: Hệ thống notification hoạt động như thế nào?**
-> A: Backend tự động tạo Notification record khi có event (like, comment, follow). Push notification qua Firebase Cloud Messaging (FCM) gửi đến device token đã đăng ký. Frontend có filter theo type, grouped by date, mark read/unread.
+3. **Debug dễ hơn**: Khi có bug, chỉ cần trace qua 1 codebase duy nhất. Ví dụ: luồng tạo bài viết đi từ `PostDetailScreen` -> `postService.createPost()` -> `POST /api/v1/posts` -> `postController.createPost()` -> `postService.createPost()` -> Prisma -> PostgreSQL, tất cả trong cùng 1 repo.
 
-**Q: Xử lý upload file lớn như thế nào?**
-> A: Image tự động resize (max 1920px) và compress JPEG 85% bằng Sharp. Avatar resize 512x512. Video/audio lưu nguyên. Upload qua multipart form-data, memory storage, max 10 files/request. MinIO xử lý storage với bucket policy.
+4. **Database duy nhất**: Tất cả modules (Auth, User, Post, Chat, Notification, Media) đều dùng chung 1 PostgreSQL database, truy vấn qua Prisma ORM. Không cần xử lý distributed transactions hay eventual consistency.
+
+5. **Chi phí vận hành thấp**: Docker Compose chỉ cần 4 containers (API, PostgreSQL, Redis, MinIO), không cần service mesh, API gateway, hay container orchestration phức tạp.
+
+**Khi nào nên chuyển sang microservices?** Khi số lượng user tăng lên hàng triệu, cần scale riêng module Chat (tốn tài nguyên Socket.io) hoặc module Media (tốn băng thông upload), hoặc khi team mở rộng >10 người.
+
+---
+
+### Q2: Cơ chế xác thực (Authentication) hoạt động như thế nào?
+
+**Trả lời:**
+
+Hệ thống sử dụng **JWT (JSON Web Token)** với cơ chế **Access Token + Refresh Token**:
+
+**Cấu hình** (file `backend/src/config/index.ts`):
+- Access Token: hết hạn **7 ngày** (config `JWT_EXPIRES_IN || '7d'`)
+- Refresh Token: hết hạn **30 ngày** (config `JWT_REFRESH_EXPIRES_IN || '30d'`)
+- Hai secret key riêng biệt: `JWT_SECRET` cho access, `JWT_REFRESH_SECRET` cho refresh
+
+**Luồng hoạt động:**
+
+```
+1. User đăng nhập (POST /auth/login)
+   -> Backend verify email + password (bcrypt compare)
+   -> Generate cặp tokens (accessToken + refreshToken)
+   -> Lưu refreshToken vào bảng RefreshToken trong DB
+   -> Trả tokens cho client
+
+2. Client gọi API (mọi request)
+   -> Gắn header: Authorization: Bearer <accessToken>
+   -> Middleware `authenticate` verify token bằng jwt.verify()
+   -> Decode ra { userId, email } gắn vào req.user
+
+3. Token hết hạn (401 response)
+   -> Axios interceptor tự động bắt lỗi 401
+   -> Gọi POST /auth/refresh-token với refreshToken
+   -> Backend: verify signature -> kiểm tra token tồn tại trong DB
+   -> XÓA refreshToken cũ, tạo cặp token MỚI (rotation)
+   -> Lưu refreshToken mới vào DB
+   -> Client retry request ban đầu với token mới
+
+4. Đổi mật khẩu / Reset password
+   -> Gọi logoutAll(): xóa TẤT CẢ refreshTokens của user
+   -> Buộc đăng nhập lại trên mọi thiết bị
+```
+
+**Token Rotation** là biện pháp bảo mật quan trọng: mỗi lần dùng refreshToken để lấy token mới, token cũ bị xóa khỏi DB. Nếu attacker đánh cắp refreshToken cũ, nó đã bị invalidate.
+
+**Frontend** (file `src/utils/tokenStorage.ts`): Token được lưu trong **Expo SecureStore** (encrypted storage trên device), không dùng AsyncStorage thông thường.
+
+---
+
+### Q3: Bảo mật API được xử lý ra sao?
+
+**Trả lời:**
+
+Hệ thống áp dụng **7 lớp bảo mật**:
+
+| Lớp | Công nghệ | Chi tiết |
+|-----|-----------|----------|
+| **1. Rate Limiting** | express-rate-limit | 1000 requests / 15 phút / IP. Trả lỗi "Too many requests" khi vượt quá |
+| **2. Security Headers** | Helmet.js | Tự động thêm Content-Security-Policy, X-Frame-Options: DENY, X-XSS-Protection, HSTS |
+| **3. Input Validation** | Zod schemas | Mọi request body đều validate qua middleware `validateBody(schema)`. Ví dụ: email phải đúng format, password min 6 ký tự, content max 5000 ký tự, coordinates trong range -90 đến 90 |
+| **4. Password Hashing** | bcryptjs | Hash với **salt rounds: 12**. Password không bao giờ trả về trong response (`const { password: _, ...userWithoutSensitive } = user`) |
+| **5. SQL Injection** | Prisma ORM | 100% queries đều dùng Prisma API (parameterized queries). Không có raw SQL query nào trong codebase |
+| **6. 2FA (TOTP)** | otplib + QR code | Hỗ trợ Google Authenticator. Tắt 2FA yêu cầu cả password LẪN mã 2FA |
+| **7. Authorization** | Middleware + ownership check | Mọi mutation đều kiểm tra `post.authorId !== userId` -> throw 403 Forbidden |
+
+**Xử lý lỗi bảo mật** (file `backend/src/middleware/error.middleware.ts`):
+- Zod errors: trả chi tiết field nào sai (status 400)
+- Prisma errors: trả generic "Database operation failed" (không expose schema)
+- Production mode: ẩn error message chi tiết, chỉ trả "Internal server error"
+- Không bao giờ expose stack trace trong response
+
+**Forgot Password** có biện pháp chống email enumeration: nếu email không tồn tại, vẫn trả HTTP 200 success (không tiết lộ email có tồn tại hay không).
+
+---
+
+### Q4: Socket.io hoạt động như thế nào? Xử lý khi user offline ra sao?
+
+**Trả lời:**
+
+**Kiến trúc:** Socket.io chạy **cùng server HTTP** trên port 3001 (file `backend/src/index.ts`):
+
+```typescript
+const httpServer = createServer(app);
+const io = new SocketServer(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+```
+
+**Luồng gửi tin nhắn** (kết hợp HTTP + Socket):
+
+```
+Bước 1: Client gửi HTTP POST /chat/conversations/{id}/messages
+  -> Lưu message vào DB (PostgreSQL)
+  -> Tạo MessageReadStatus cho sender
+  -> Cập nhật conversation.lastMessageContent (denormalization)
+  -> Trả HTTP response 201
+
+Bước 2: Client emit socket event 'sendMessage'
+  -> Server broadcast 'newMessage' đến room của mỗi participant
+  -> io.to(participantId).emit('newMessage', data)
+
+Bước 3: Client nhận socket event 'newMessage'
+  -> Update UI real-time (không cần refresh)
+```
+
+**Tại sao cần cả HTTP lẫn Socket?**
+- HTTP đảm bảo **message persistence** (lưu vào DB)
+- Socket chỉ phục vụ **real-time delivery** (best-effort, không retry)
+- Nếu Socket fail -> message vẫn an toàn trong DB
+
+**Khi user offline:**
+1. Socket tự disconnect -> user rời khỏi room
+2. Tin nhắn mới vẫn được lưu vào DB qua HTTP API
+3. Push notification được gửi qua **Expo Push API** (async, non-blocking)
+4. Khi user mở app lại -> fetch messages qua `GET /chat/conversations/{id}/messages` (phân trang)
+5. Gọi `POST /chat/conversations/{id}/read` -> đánh dấu đã đọc
+
+**Online Status:**
+- Dựa trên field `lastActiveAt` trong bảng User
+- Cập nhật mỗi khi user gửi tin nhắn
+- **Online = lastActiveAt trong vòng 5 phút gần nhất** (hằng số `ONLINE_THRESHOLD_MS = 5 * 60 * 1000`)
+- Không dùng socket connection status (vì socket có thể reconnect liên tục)
+
+**Typing Indicator:**
+```
+User A gõ -> emit 'typing' { conversationId, userId }
+Server -> broadcast 'userTyping' đến conversation room
+User B -> hiển thị animation "đang nhập..." (3 dots)
+```
+
+**Frontend** (file `src/services/socket/socketService.ts`): Singleton class, auto-reconnect 10 lần (delay 2s), chỉ dùng WebSocket transport.
+
+---
+
+### Q5: Prisma ORM có ưu/nhược điểm gì so với raw SQL?
+
+**Trả lời:**
+
+**Ưu điểm (tại sao chọn Prisma cho dự án này):**
+
+1. **Type-safe queries**: Mọi query đều có TypeScript type checking. Ví dụ `prisma.post.findMany()` trả về `Post[]` tự động, IDE báo lỗi nếu truy cập field không tồn tại.
+
+2. **Schema-first approach**: Chỉ cần viết 1 file `schema.prisma`, Prisma tự generate:
+   - TypeScript types cho tất cả models
+   - Migration SQL scripts
+   - Client API methods
+
+3. **Migration management**: Dự án có **3 migrations** (Feb-Mar 2026):
+   - `add_chat_models` (tạo toàn bộ schema ban đầu)
+   - `add_email_verify_2fa` (thêm VerificationCode, 2FA fields)
+   - `rename_swipe_pass_to_unlike` (đổi tên enum value)
+
+4. **Relation handling dễ dàng**: Nested includes, connect/disconnect relations.
+   ```typescript
+   // Ví dụ: lấy post kèm author, media, poll, likes count
+   prisma.post.findMany({
+     include: {
+       author: { select: { id: true, fullName: true, avatar: true } },
+       media: true,
+       poll: { include: { options: { include: { _count: { select: { votes: true } } } } } },
+       _count: { select: { likes: true, comments: true, shares: true } }
+     }
+   })
+   ```
+
+5. **Transaction support**: Dùng `prisma.$transaction()` cho các operations cần atomicity. Ví dụ: tạo message + read status + update conversation trong 1 transaction.
+
+**Nhược điểm:**
+
+1. **N+1 queries**: Nếu không cẩn thận với `include`, có thể phát sinh nhiều queries. Dự án xử lý bằng cách dùng `select` và `include` có chọn lọc.
+
+2. **Không hỗ trợ full-text search native**: Tìm kiếm user dùng `contains` filter (LIKE query), không phải full-text search index.
+
+3. **Pagination chỉ offset-based**: Dự án dùng `skip/take` (tương đương OFFSET/LIMIT SQL). Với dataset lớn (>100k records), cursor-based pagination sẽ hiệu quả hơn.
+
+---
+
+### Q6: Tại sao dùng MinIO thay vì lưu file trên server?
+
+**Trả lời:**
+
+**MinIO** là object storage server tương thích **AWS S3 API**. Dự án dùng MinIO vì:
+
+1. **S3-compatible**: Dùng `@aws-sdk/client-s3` để tương tác. Khi deploy production, chỉ cần đổi endpoint URL sang AWS S3 thật, không cần sửa code.
+
+2. **Tách biệt storage khỏi app server**: File không lưu trên ổ cứng server API. MinIO chạy container riêng với volume `minio-data`, dễ backup, migrate, scale.
+
+3. **Public URL riêng biệt**: Config phân biệt `MINIO_INTERNAL_URL` (http://minio:9000 trong Docker network) và `MINIO_PUBLIC_URL` (http://localhost:9000 cho client truy cập). Production có thể đặt CDN trước public URL.
+
+**Tổ chức bucket:**
+
+| Bucket | Nội dung | Resize |
+|--------|----------|--------|
+| `avatars` | Avatar (512x512) + Cover (1920x1080) | Sharp, JPEG 85% |
+| `posts` | Media bài viết (max 1920x1920) | Sharp, JPEG 85% |
+| `dating` | Ảnh hẹn hò | Sharp, JPEG 85% |
+| `messages` | File đính kèm tin nhắn | Tùy loại |
+
+**Xử lý upload** (file `backend/src/modules/media/media.service.ts`):
+1. Multer nhận file vào memory buffer (không ghi disk)
+2. Nếu là image (không phải HEIC): Sharp resize + compress JPEG 85%
+3. Generate filename: `{uuid}.jpg` (ngăn path traversal, collision-safe)
+4. Upload lên MinIO qua S3 PutObject command
+5. Trả public URL: `http://localhost:9000/posts/{uuid}.jpg`
+6. Lưu metadata vào bảng Media (url, type, size, dimensions)
+
+**Cleanup file cũ**: Khi user đổi avatar, hệ thống parse URL cũ ra bucket+key, gọi DeleteObject xóa file cũ trên MinIO trước khi upload file mới. Nếu xóa fail -> chỉ log warning, không block operation.
+
+---
+
+### Q7: Hệ thống Notification hoạt động như thế nào?
+
+**Trả lời:**
+
+Hệ thống gồm **2 tầng**: In-app notification (database) + Push notification (Expo Push API).
+
+**Tầng 1 - In-app Notification (Database):**
+
+Notification tự động được tạo khi có event:
+
+| Event | Notification Type | Trigger Location |
+|-------|-------------------|-----------------|
+| Like bài viết | `LIKE` | `postService.likePost()` |
+| Comment bài viết | `COMMENT` | `postService.createComment()` |
+| Follow user | `FOLLOW` | `userService.followUser()` |
+| Like comment | `LIKE` | `postService.likeComment()` |
+
+Điều kiện: **Không tạo notification nếu tự tương tác với bài của mình** (senderId !== receiverId).
+
+Mỗi notification lưu: `type`, `senderId`, `receiverId`, `referenceId` (postId/commentId), `isRead`, `createdAt`.
+
+**Tầng 2 - Push Notification (Expo Push API):**
+
+```
+Luồng đăng ký device:
+1. App khởi động -> checkPermission() (expo-notifications)
+2. Nếu chưa có -> requestPermission()
+3. Lấy Expo Push Token: getExpoPushTokenAsync({ projectId })
+4. Gửi token lên backend: POST /notifications/device { token, platform: 'ios'|'android' }
+5. Backend lưu vào bảng DeviceToken (unique token, isActive: true)
+
+Luồng gửi push:
+1. Event xảy ra (ví dụ: có tin nhắn mới)
+2. Backend lấy device tokens của receiver: getUserTokens(receiverId)
+3. Gửi batch request đến Expo Push API:
+   POST https://exp.host/--/api/v2/push/send
+   Body: [{ to: token, title: "Tin nhắn mới", body: "Nội dung...", data: { type, conversationId }, sound: 'default', priority: 'high' }]
+4. Expo server forward đến APNs (iOS) / FCM (Android)
+5. Device hiển thị notification
+```
+
+**Xử lý token hết hạn**: Nếu Expo API trả error `DeviceNotRegistered`, backend tự động set `isActive: false` cho token đó, tránh gửi lại lần sau.
+
+**Frontend hiển thị** (file `src/screens/notification/NotificationScreen.tsx`):
+- Filter chips: Tất cả / Follows / Likes / Comments
+- Group theo thời gian: Hôm nay, Hôm qua, Tuần này, Trước đó
+- Unread indicator dot (chấm xanh)
+- Button "Follow lại" cho notification type FOLLOW
+- Haptics feedback khi tương tác
+
+**Android Notification Channels**: Tạo 2 channel:
+- `default`: thông báo chung (MAX importance)
+- `dating`: thông báo hẹn hò (HIGH importance, vibration, light color #FF4458)
+
+---
+
+### Q8: Xử lý upload file và media như thế nào?
+
+**Trả lời:**
+
+**Cấu hình** (file `backend/src/config/index.ts`):
+- Max file size: **10MB** (`MAX_FILE_SIZE || '10485760'`)
+- Allowed MIME types: `image/jpeg, image/png, image/gif, image/webp, image/heic, image/heif, video/mp4, video/quicktime, video/mov, audio/m4a, audio/mp4, audio/mpeg, audio/wav, audio/x-m4a, audio/aac`
+- Max files per request: **10** (uploadMultiple)
+
+**Pipeline xử lý:**
+
+```
+Request (multipart/form-data)
+  -> Multer middleware (memory storage, validate MIME + size)
+  -> Sharp image processing (nếu là ảnh)
+  -> UUID filename generation
+  -> Upload lên MinIO (S3 PutObject)
+  -> Lưu metadata vào DB (bảng Media)
+  -> Trả response với URL
+```
+
+**Resize cụ thể:**
+
+| Loại | Kích thước | Fit mode | Chất lượng |
+|------|-----------|----------|------------|
+| Avatar | 512 x 512 | `cover` (crop to fill) | JPEG 85% |
+| Cover | 1920 x 1080 | `inside` (không crop, không phóng to) | JPEG 85% |
+| Post media | 1920 x 1920 | `inside` (không phóng to) | JPEG 85% |
+| HEIC/HEIF | Giữ nguyên | Không xử lý | Giữ nguyên |
+| Video/Audio | Giữ nguyên | Không xử lý | Giữ nguyên |
+
+**Bảo mật upload:**
+- Whitelist MIME type (chỉ cho phép các loại cụ thể)
+- UUID filename: `{uuid}.jpg` -> ngăn path traversal attack, không dùng tên file gốc
+- File filter reject ngay tại middleware nếu MIME không hợp lệ
+- Ownership check khi xóa: chỉ tác giả bài viết mới được xóa media
+
+**Multiple upload** dùng `Promise.all()` -> upload song song tất cả files. Nếu bất kỳ file nào fail -> toàn bộ request fail (all-or-nothing).
+
+---
+
+### Q9: Feed (bảng tin) được generate như thế nào?
+
+**Trả lời:**
+
+Feed hiện tại sử dụng thuật toán **chronological** (sắp xếp theo thời gian, mới nhất lên đầu):
+
+```typescript
+// backend/src/modules/post/post.service.ts - getFeed()
+const [posts, total] = await Promise.all([
+  prisma.post.findMany({
+    include: postInclude,  // author, media, poll, _count
+    skip,
+    take: limit,
+    orderBy: { createdAt: 'desc' },  // Mới nhất lên đầu
+  }),
+  prisma.post.count(),
+]);
+```
+
+**Enrichment sau khi fetch:**
+1. Lấy danh sách following của user hiện tại
+2. Bulk query: kiểm tra `isLiked` cho tất cả posts (`postId: { in: postIds }`)
+3. Bulk query: kiểm tra `isShared` cho tất cả posts
+4. Thêm `isFollowing` cho author của mỗi bài
+
+**Pagination**: Offset-based (`skip/take`), default 20 posts/page, max 100.
+
+**Tại sao không dùng algorithmic feed?**
+- Dự án hướng đến cộng đồng sinh viên PTIT (quy mô nhỏ-vừa)
+- Chronological feed đơn giản, dễ hiểu, phù hợp cho social network nội bộ
+- Không cần recommendation engine phức tạp
+
+**Nếu cần cải thiện**: Có thể thêm filter theo following (chỉ hiện bài từ người đang follow), hoặc weighted sort (ưu tiên bài nhiều like/comment).
+
+---
+
+### Q10: Database được thiết kế như thế nào? Có gì đặc biệt?
+
+**Trả lời:**
+
+Database PostgreSQL với **21 bảng chính**, thiết kế qua Prisma schema.
+
+**Design patterns đáng chú ý:**
+
+1. **Self-referential relation (Comment replies)**:
+   ```
+   Comment.parentId -> Comment.id
+   ```
+   Cho phép comment lồng nhau (reply). Khi lấy comments, chỉ fetch top-level (`parentId: null`), include 3 replies đầu tiên, load thêm qua API riêng.
+
+2. **Composite unique constraints (ngăn duplicate)**:
+   - `Like: @@unique([userId, postId])` -> 1 user chỉ like 1 lần
+   - `Follow: @@unique([followerId, followingId])` -> không follow 2 lần
+   - `PollVote: @@unique([optionId, voterId])` -> 1 vote/user/poll
+
+3. **Denormalization cho performance (Conversation)**:
+   ```
+   Conversation.lastMessageContent    -- cache nội dung tin nhắn cuối
+   Conversation.lastMessageSenderId   -- cache người gửi cuối
+   Conversation.lastMessageCreatedAt  -- cache thời gian cuối
+   ```
+   Tránh JOIN bảng Message khi hiển thị danh sách conversations. Cập nhật mỗi khi có tin nhắn mới trong transaction.
+
+4. **Conversation uniqueness với context**:
+   ```
+   @@unique([participantAId, participantBId, context])
+   ```
+   Cùng 2 user có thể có 2 conversations khác nhau: 1 SOCIAL (chat thường) + 1 DATING (chat hẹn hò). Trick: sort 2 userId trước khi lưu để đảm bảo `participantAId < participantBId`.
+
+5. **Strategic indexing**: Compound index cho query hay dùng:
+   ```
+   Message: @@index([conversationId, createdAt(sort: Desc)])
+   ```
+   Tối ưu cho query "lấy tin nhắn mới nhất của conversation X".
+
+6. **Cascade delete**: Xóa User -> cascade xóa tất cả Posts, Comments, Likes, Tokens... Xóa Post -> cascade xóa Comments, Likes, Shares, Poll. Riêng Message.sharedPostId dùng `onDelete: SetNull` (xóa post không xóa message, chỉ null reference).
+
+7. **Transaction usage**: Các operations quan trọng đều dùng `prisma.$transaction()`:
+   - Tạo conversation + participants
+   - Gửi message + read status + update conversation
+   - Swipe + check match + tạo conversation (dating)
+
+---
+
+### Q11: State management trên mobile hoạt động ra sao?
+
+**Trả lời:**
+
+Dùng kết hợp **Zustand** (global state) + **React Query** (server state):
+
+**Zustand** (file `src/store/slices/authSlice.ts`):
+- Quản lý: user, tokens, isAuthenticated, isLoading, error
+- Persist tokens vào **Expo SecureStore** (encrypted storage)
+- Actions: login, register, logout, refreshToken, updateUser
+
+**React Query** (`@tanstack/react-query`):
+- Config: `staleTime: 5 phút`, `retry: 2 lần`, `refetchOnWindowFocus: false`
+- Dùng cho: fetch feed, conversations, notifications, dating profiles
+- Cache invalidation: `queryClient.invalidateQueries()` sau mutation
+
+**Tại sao không dùng Redux?** Zustand nhẹ hơn (không cần boilerplate: actions, reducers, selectors), API đơn giản hơn, performance tốt hơn cho React Native. React Query xử lý server state (caching, refetching, pagination) tốt hơn Redux.
+
+**App initialization** (file `src/hooks/useAuthInitializer.ts`):
+```
+1. Load tokens từ SecureStore
+2. Nếu có token -> restore vào Zustand store
+3. Verify với server: GET /auth/me
+4. Nếu 401 -> thử refreshToken()
+5. Nếu refresh fail -> logout (clear store + SecureStore)
+6. Set isInitialized = true -> ẩn splash screen
+```
+
+---
+
+### Q12: Xử lý xác thực email và 2FA như thế nào?
+
+**Trả lời:**
+
+**Email Verification (OTP):**
+
+```
+1. User đăng ký -> backend tạo OTP 6 số (crypto.randomInt(100000, 999999))
+2. Lưu vào bảng VerificationCode:
+   - code: "123456"
+   - type: EMAIL_VERIFY
+   - expiresAt: now + 15 phút
+   - isUsed: false
+3. Gửi email qua SMTP (Nodemailer, host: smtp.gmail.com)
+4. User nhập OTP -> POST /auth/verify-email-public
+5. Backend kiểm tra: code đúng + chưa hết hạn + chưa dùng
+6. Đánh dấu isUsed = true, cập nhật user.isVerified = true
+```
+
+Mỗi lần tạo OTP mới, tất cả OTP cũ chưa dùng của cùng type sẽ bị invalidate (tránh OTP cũ vẫn valid).
+
+**Two-Factor Authentication (2FA - TOTP):**
+
+```
+Bước 1: Setup (POST /auth/2fa/setup)
+  -> Generate TOTP secret bằng otplib.generateSecret()
+  -> Lưu secret vào user.twoFactorSecret (chưa enable)
+  -> Tạo QR code URI (otpauth://totp/PTIT%20Social:email?secret=...)
+  -> Convert sang QR data URL bằng thư viện qrcode
+  -> Trả: { secret, qrCode (base64 PNG), otpauthUrl }
+  -> User quét QR bằng Google Authenticator
+
+Bước 2: Enable (POST /auth/2fa/enable)
+  -> User nhập mã 6 số từ Authenticator
+  -> Backend verify bằng otplib.verifySync(code, secret)
+  -> Nếu đúng: set twoFactorEnabled = true
+  -> Generate 8 backup codes (crypto.randomBytes(4).toString('hex'))
+  -> Trả backup codes cho user lưu trữ
+
+Bước 3: Login với 2FA
+  -> User nhập email + password
+  -> Backend phát hiện twoFactorEnabled = true
+  -> Trả: { requiresTwoFactor: true } (HTTP 200, chưa cấp token)
+  -> User nhập mã 2FA -> gửi lại request với twoFactorCode
+  -> Backend verify -> cấp tokens
+
+Tắt 2FA: Yêu cầu CẢ password LẪN mã 2FA (ngăn attacker tắt 2FA nếu chỉ có session)
+```
+
+---
+
+### Q13: Ứng dụng hỗ trợ Dark Mode không? Hoạt động như thế nào?
+
+**Trả lời:**
+
+Có, hỗ trợ **3 chế độ**: Light / Dark / System (tự động theo thiết bị).
+
+**Theme Store** (file `src/store/slices/themeSlice.ts`):
+- Lưu preference vào SecureStore (key: `app_theme_mode`)
+- Khi mode = `system`: lắng nghe `Appearance.addChangeListener()` để tự động đổi
+
+**Color palette:**
+- Light: nền trắng, text `#111827`, primary PTIT Red `#B3261E`
+- Dark: nền `#111827`, text sáng, primary `#E53935`
+
+Mọi screen đều dùng hook `useTheme()` để lấy colors hiện tại, không hardcode màu.
+
+---
+
+### Q14: Dự án có những hạn chế gì? Hướng phát triển?
+
+**Trả lời:**
+
+**Hạn chế hiện tại:**
+1. Feed chỉ chronological, chưa có recommendation algorithm
+2. Chưa có full-text search (dùng LIKE query, chậm với dataset lớn)
+3. Pagination offset-based (chậm khi offset lớn, nên chuyển cursor-based)
+4. Socket.io chưa có authentication middleware (chỉ dùng userId join room, chưa verify JWT)
+5. CORS đang mở `origin: '*'` (cần restrict cho production)
+6. Chưa có image CDN (client truy cập trực tiếp MinIO)
+
+**Hướng phát triển:**
+1. Thêm algorithmic feed (weighted by engagement, recency, following)
+2. Implement full-text search với PostgreSQL tsvector hoặc Elasticsearch
+3. Thêm Group Chat (đã có model ConversationType.GROUP nhưng chưa implement đầy đủ)
+4. Video/voice call (WebRTC)
+5. Story/Reel feature
+6. Admin dashboard để quản lý users, posts, reports
+7. CDN cho static assets (CloudFront hoặc Cloudflare)
+8. Horizontal scaling: tách Socket.io server riêng với Redis adapter
 
 ---
 
