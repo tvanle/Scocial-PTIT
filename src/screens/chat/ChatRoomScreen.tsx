@@ -24,6 +24,7 @@ import { useTheme } from '../../hooks/useThemeColors';
 import { Message, User, Conversation, RootStackParamList } from '../../types';
 import { useAuthStore } from '../../store/slices/authSlice';
 import { chatService } from '../../services/chat/chatService';
+import { socketService } from '../../services/socket/socketService';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import VoiceMessage from '../../components/chat/VoiceMessage';
 
@@ -91,6 +92,33 @@ const ChatRoomScreen: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [routeConversationId, userId]);
+
+  // Listen for real-time messages
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+
+    // Connect socket if not connected
+    if (!socketService.isConnected) {
+      socketService.connect(user.id);
+    }
+
+    const unsubscribe = socketService.onNewMessage((data) => {
+      // Only add message if it belongs to this conversation and not from current user
+      if (data.conversationId === conversationId && data.sender?.id !== user.id) {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m.id === data.id)) return prev;
+          return [...prev, data];
+        });
+        // Auto scroll to bottom
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [conversationId, user?.id]);
 
   const handleSend = useCallback(async () => {
     if (!inputText.trim() || !conversationId) return;

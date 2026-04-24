@@ -78,7 +78,11 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT type, content, \\\\\"mediaUrl\\\\\" FROM \\\\\"Message\\\\\" WHERE type = 'AUDIO' LIMIT 3;\" 2>/dev/null)",
       "Bash(git config:*)",
       "Bash(grep:*)",
-      "Bash(find /Users/duongwthuj/develop/Scocial-PTIT/src/screens/dating/onboarding -type f -name *.tsx)"
+      "Bash(find /Users/duongwthuj/develop/Scocial-PTIT/src/screens/dating/onboarding -type f -name *.tsx)",
+      "Bash(killall:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(open:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

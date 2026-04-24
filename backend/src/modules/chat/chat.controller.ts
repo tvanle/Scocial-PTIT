@@ -3,6 +3,8 @@ import { chatService } from './chat.service';
 import { AuthRequest } from '../../shared/types';
 import { HTTP_STATUS } from '../../shared/constants';
 import { sendSuccess } from '../../shared/utils';
+import { getIO } from '../../config/socket';
+import { prisma } from '../../config/database';
 
 export class ChatController {
   async getOrCreateConversation(req: AuthRequest, res: Response, next: NextFunction) {
@@ -67,6 +69,24 @@ export class ChatController {
         mediaUrl,
         postId
       );
+
+      // Emit socket event to all participants for real-time update
+      try {
+        const participants = await prisma.conversationParticipant.findMany({
+          where: { conversationId },
+          select: { userId: true },
+        });
+        const io = getIO();
+        participants.forEach((p) => {
+          io.to(p.userId).emit('newMessage', {
+            ...message,
+            conversationId,
+          });
+        });
+      } catch (socketError) {
+        console.error('Socket emit error:', socketError);
+      }
+
       sendSuccess(res, message, undefined, HTTP_STATUS.CREATED);
     } catch (error) {
       next(error);
