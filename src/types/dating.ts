@@ -198,6 +198,7 @@ export interface SwipeResponse {
   swipe: DatingSwipe;
   matched: boolean;
   match: MatchItem | null;
+  isSuperLike?: boolean;
 }
 
 // --- Match ---

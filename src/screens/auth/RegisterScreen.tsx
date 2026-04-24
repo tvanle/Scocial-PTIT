@@ -110,6 +110,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           autoCapitalize={options?.capitalize || 'none'}
           onFocus={() => setFocusedField(field)}
           onBlur={() => setFocusedField(null)}
+          selectionColor={colors.primary}
+          cursorColor={colors.primary}
         />
         {options?.secure && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>

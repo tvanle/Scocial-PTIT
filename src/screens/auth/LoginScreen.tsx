@@ -129,6 +129,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   keyboardType="email-address"
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
+                  selectionColor={colors.primary}
+                  cursorColor={colors.primary}
                 />
               </View>
               {errors.email && (
@@ -172,6 +174,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   secureTextEntry={!showPassword}
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
+                  selectionColor={colors.primary}
+                  cursorColor={colors.primary}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                   <Ionicons

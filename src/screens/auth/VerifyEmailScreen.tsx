@@ -172,6 +172,8 @@ const VerifyEmailScreen: React.FC = () => {
                     keyboardType="number-pad"
                     maxLength={index === 0 ? OTP_LENGTH : 1}
                     selectTextOnFocus
+                    selectionColor={colors.primary}
+                    cursorColor={colors.primary}
                   />
                 ))}
               </View>

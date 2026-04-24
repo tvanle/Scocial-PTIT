@@ -66,7 +66,19 @@
       "Bash(git commit:*)",
       "Bash(git reset:*)",
       "Bash(git checkout:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT url FROM \\\\\"Media\\\\\" LIMIT 5;\" 2>/dev/null)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT photos FROM \\\\\"DatingProfile\\\\\" WHERE photos IS NOT NULL LIMIT 3;\" 2>/dev/null)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c '\\\\d DatingProfile')",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT url FROM \\\\\"DatingProfilePhoto\\\\\" LIMIT 5;\" 2>/dev/null)",
+      "Bash(npx ts-node:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT url FROM \\\\\"Media\\\\\" LIMIT 3;\" 2>/dev/null)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT avatar FROM \\\\\"User\\\\\" WHERE avatar LIKE '%localhost:9002%' LIMIT 2;\" 2>/dev/null)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT url FROM \\\\\"DatingProfilePhoto\\\\\" WHERE url LIKE '%localhost:9002%' LIMIT 3;\" 2>/dev/null)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d ptit_social -c \"SELECT type, content, \\\\\"mediaUrl\\\\\" FROM \\\\\"Message\\\\\" WHERE type = 'AUDIO' LIMIT 3;\" 2>/dev/null)",
+      "Bash(git config:*)",
+      "Bash(grep:*)",
+      "Bash(find /Users/duongwthuj/develop/Scocial-PTIT/src/screens/dating/onboarding -type f -name *.tsx)"
     ]
   }
 }

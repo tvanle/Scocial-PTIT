@@ -16,6 +16,7 @@ export function useDiscoveryFeed() {
   const cardsLengthRef = useRef(0);
   const currentCardRef = useRef<DiscoveryCard | null>(null);
   const [matchedCard, setMatchedCard] = useState<DiscoveryCard | null>(null);
+  const [matchIsSuperLike, setMatchIsSuperLike] = useState(false);
   const removedUserIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -83,11 +84,12 @@ export function useDiscoveryFeed() {
   const swipeMutation = useMutation({
     mutationFn: (params: { targetUserId: string; action: SwipeAction }) =>
       datingService.swipe(params),
-    onSuccess: (data: { matched?: boolean | null }) => {
+    onSuccess: (data: { matched?: boolean | null; isSuperLike?: boolean }) => {
       // Không invalidate discovery feed để tránh refetch reset cards + currentIdx
       if (data?.matched) {
         const matched = currentCardRef.current;
         setMatchedCard(matched);
+        setMatchIsSuperLike(data?.isSuperLike ?? false);
         if (matched) {
           removedUserIdsRef.current.add(matched.userId);
           setCards((prev) =>
@@ -95,24 +97,43 @@ export function useDiscoveryFeed() {
           );
         }
       }
+      // Invalidate subscription to refresh super like count
+      if (data?.isSuperLike) {
+        queryClient.invalidateQueries({ queryKey: ['dating', 'subscription'] });
+      }
     },
-    onError: () => {
-      // Silently handle error - just move to next card
-      // This prevents crash when backend is unavailable
+    onError: (error: any) => {
+      // For limit errors (403), don't advance card - user should retry later
+      // For other errors, silently handle - just move to next card
+      const isLimitError = error?.response?.status === 403;
+      if (!isLimitError) {
+        setCurrentIdx((prev) => {
+          const nextIdx = prev + 1;
+          if (
+            nextIdx >= cardsLengthRef.current - prefetchThreshold &&
+            hasMoreRef.current
+          ) {
+            loadMore();
+          }
+          return nextIdx;
+        });
+      }
     },
-    onSettled: (_data, error) => {
-      // Only advance card if not a match (or if there was an error)
-      setCurrentIdx((prev) => {
-        const shouldAdvance = error || !swipeMutation.data?.matched;
-        const nextIdx = shouldAdvance ? prev + 1 : prev;
-        if (
-          nextIdx >= cardsLengthRef.current - prefetchThreshold &&
-          hasMoreRef.current
-        ) {
-          loadMore();
-        }
-        return nextIdx;
-      });
+    onSettled: (data, error) => {
+      // Only advance card on success if not a match
+      // Don't advance on error - handled in onError
+      if (!error && !data?.matched) {
+        setCurrentIdx((prev) => {
+          const nextIdx = prev + 1;
+          if (
+            nextIdx >= cardsLengthRef.current - prefetchThreshold &&
+            hasMoreRef.current
+          ) {
+            loadMore();
+          }
+          return nextIdx;
+        });
+      }
     },
   });
 
@@ -124,6 +145,7 @@ export function useDiscoveryFeed() {
   const consumeMatch = useCallback(() => {
     swipeMutation.reset();
     setMatchedCard(null);
+    setMatchIsSuperLike(false);
   }, [swipeMutation]);
 
   const currentCard = cards[currentIdx] ?? null;
@@ -138,6 +160,7 @@ export function useDiscoveryFeed() {
     isSwiping: swipeMutation.isPending,
     isMatched: (swipeMutation.data?.matched ?? false) && !!matchedCard,
     matchedCard,
+    matchIsSuperLike,
     consumeMatch,
     refresh,
   };

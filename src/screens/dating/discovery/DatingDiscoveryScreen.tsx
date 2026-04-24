@@ -87,13 +87,14 @@ const DiscoveryScreenInner: React.FC = () => {
   const { requestAndUpdate: updateLocation, hasPermission } = useDatingDistance();
 
   // Subscription status for premium features
-  const { data: subscriptionData } = useQuery({
+  const { data: subscriptionData, isLoading: subscriptionLoading } = useQuery({
     queryKey: ['dating', 'subscription'],
     queryFn: () => datingPaymentService.getSubscriptionInfo(),
   });
 
   const canRewind = subscriptionData?.usage?.canRewind ?? false;
-  const canSuperLike = subscriptionData?.usage?.canSuperLike ?? true;
+  // Default to false to prevent super likes before subscription data loads
+  const canSuperLike = subscriptionData?.usage?.canSuperLike ?? false;
 
   // Use existing hook
   const {
@@ -105,6 +106,7 @@ const DiscoveryScreenInner: React.FC = () => {
     isSwiping,
     isMatched,
     matchedCard,
+    matchIsSuperLike,
     consumeMatch,
     refresh,
   } = useDiscoveryFeed();
@@ -126,6 +128,7 @@ const DiscoveryScreenInner: React.FC = () => {
     if (!isMatched || !matchedCard) return;
 
     const profile = matchedCard;
+    const isSuperLike = matchIsSuperLike;
     consumeMatch();
 
     // Haptic for match
@@ -134,8 +137,9 @@ const DiscoveryScreenInner: React.FC = () => {
     navigation.navigate('DatingMatchSuccess', {
       profile,
       matchedUserId: profile.userId,
+      isSuperLike,
     } as any);
-  }, [isMatched, matchedCard, navigation, consumeMatch]);
+  }, [isMatched, matchedCard, matchIsSuperLike, navigation, consumeMatch]);
 
   // Transform cards for stack
   const profiles = useMemo<ProfileData[]>(() => {
@@ -193,6 +197,11 @@ const DiscoveryScreenInner: React.FC = () => {
   const handleSuperLike = useCallback(async () => {
     if (!currentCard) return;
 
+    // If subscription is still loading, wait
+    if (subscriptionLoading) {
+      return;
+    }
+
     // If can't super like, navigate to upgrade screen
     if (!canSuperLike) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -205,10 +214,16 @@ const DiscoveryScreenInner: React.FC = () => {
 
     try {
       await swipe({ targetUserId: currentCard.userId, action: 'SUPER_LIKE' });
-    } catch {
-      // Silently ignore errors
+      // Refetch subscription to update remaining super likes
+      queryClient.invalidateQueries({ queryKey: ['dating', 'subscription'] });
+    } catch (error: any) {
+      // Show error haptic and navigate to premium if limit exceeded
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (error?.response?.status === 403) {
+        navigation.navigate('DatingPremium');
+      }
     }
-  }, [currentCard, swipe, canSuperLike, navigation]);
+  }, [currentCard, swipe, canSuperLike, subscriptionLoading, navigation, queryClient]);
 
   const handleRewind = useCallback(async () => {
     // If not premium, navigate to upgrade screen

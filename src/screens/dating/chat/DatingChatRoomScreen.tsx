@@ -17,6 +17,9 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -156,15 +159,15 @@ const Bubble: React.FC<BubbleProps> = React.memo(({ message, isMine, showAvatar,
                 <View style={styles.promptReplyQuoteHeader}>
                   <MaterialCommunityIcons
                     name="format-quote-open"
-                    size={12}
+                    size={14}
                     color={isMine ? 'rgba(255,255,255,0.7)' : theme.text.muted}
                   />
                   <Text
                     style={[
                       styles.promptReplyQuoteQuestion,
-                      { color: isMine ? 'rgba(255,255,255,0.7)' : theme.text.muted },
+                      { color: isMine ? 'rgba(255,255,255,0.8)' : theme.text.secondary },
                     ]}
-                    numberOfLines={1}
+                    numberOfLines={2}
                   >
                     {promptReply.prompt.question}
                   </Text>
@@ -172,11 +175,11 @@ const Bubble: React.FC<BubbleProps> = React.memo(({ message, isMine, showAvatar,
                 <Text
                   style={[
                     styles.promptReplyQuoteAnswer,
-                    { color: isMine ? 'rgba(255,255,255,0.85)' : theme.text.secondary },
+                    { color: isMine ? 'rgba(255,255,255,0.9)' : theme.text.primary },
                   ]}
-                  numberOfLines={2}
+                  numberOfLines={3}
                 >
-                  {promptReply.prompt.answer}
+                  "{promptReply.prompt.answer}"
                 </Text>
               </View>
             </View>
@@ -369,6 +372,14 @@ const ChatRoomInner: React.FC = () => {
   const me = useAuthStore((st) => st.user);
   const listRef = useRef<FlatList>(null);
   const [text, setText] = useState('');
+  const [replyingToPrompt, setReplyingToPrompt] = useState<{ question: string; answer: string } | null>(null);
+  const [showPromptsModal, setShowPromptsModal] = useState(false);
+  const [tempMessages, setTempMessages] = useState<DatingMessage[]>([]);
+
+  // Debug: log tempMessages changes
+  useEffect(() => {
+    console.log('[tempMessages] Changed, count:', tempMessages.length, tempMessages.map(m => m.id));
+  }, [tempMessages]);
 
   const { conversationId, otherUser, prefillMessage } = route.params as any;
   const queryKey = ['dating', 'chat', 'messages', conversationId] as const;
@@ -387,80 +398,116 @@ const ChatRoomInner: React.FC = () => {
     enabled: !!otherUser?.id,
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey,
     queryFn: () => datingChatService.getMessages(conversationId),
     enabled: !!conversationId,
   });
-  const messages = data?.messages ?? [];
 
-  const enrichedMessages = useMemo(
-    () =>
-      messages.map((m, i) => ({
-        message: m,
-        isMine: m.senderId === me?.id,
-        showAvatar: !messages[i - 1] || messages[i - 1].senderId !== m.senderId,
-        isLast: !messages[i + 1] || messages[i + 1].senderId !== m.senderId,
-      })),
-    [messages, me?.id],
-  );
+  // Combine server messages with temp messages
+  const messages = useMemo(() => {
+    const serverMessages = data?.messages ?? [];
+    // Filter out temp messages that now exist on server (by content match)
+    const serverContents = new Set(serverMessages.map((m: DatingMessage) => m.content));
+    const pendingTemp = tempMessages.filter(m => !serverContents.has(m.content));
+    console.log('[messages] server:', serverMessages.length, 'temp:', tempMessages.length, 'pending:', pendingTemp.length);
+    return [...serverMessages, ...pendingTemp];
+  }, [data?.messages, tempMessages, dataUpdatedAt]);
+
+  const enrichedMessages = useMemo(() => {
+    console.log('[enrichedMessages] Computing, messages count:', messages.length);
+    return messages.map((m, i) => ({
+      message: m,
+      isMine: m.senderId === me?.id,
+      showAvatar: !messages[i - 1] || messages[i - 1].senderId !== m.senderId,
+      isLast: !messages[i + 1] || messages[i + 1].senderId !== m.senderId,
+    }));
+  }, [messages, me?.id]);
 
   useEffect(() => {
     const unsubscribe = socketService.onNewMessage((incoming: any) => {
       if (incoming.conversationId !== conversationId || incoming.senderId === me?.id) return;
-      const newMessage: DatingMessage = {
-        id: incoming.id,
-        content: incoming.content,
-        senderId: incoming.senderId,
-        createdAt: incoming.createdAt,
-        sender: incoming.sender,
-      };
-      queryClient.setQueryData(queryKey, (old: any) => {
-        const existing = old?.messages ?? [];
-        if (existing.some((x: DatingMessage) => x.id === newMessage.id)) return old;
-        return { ...old, messages: [...existing, newMessage] };
-      });
+      // Invalidate query to get new message from server
+      queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
     });
     return unsubscribe;
-  }, [conversationId, me?.id, queryClient]);
+  }, [conversationId, me?.id, queryClient, queryKey]);
 
-  const sendMutation = useMutation({
-    mutationFn: (content: string) => datingChatService.sendMessage(conversationId, content),
-    onMutate: async (content) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData(queryKey);
-      queryClient.setQueryData(queryKey, (old: any) => ({
-        ...old,
-        messages: [
-          ...(old?.messages ?? []),
-          {
-            id: `temp-${Date.now()}`,
-            content,
-            senderId: me?.id ?? '',
-            createdAt: new Date().toISOString(),
-            sender: { id: me?.id ?? '', fullName: me?.fullName ?? '', avatar: me?.avatar ?? null },
-          },
-        ],
-      }));
-      return { previous };
-    },
-    onError: (_err, _content, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
-    },
-  });
+  // Track if sending to prevent double sends
+  const [isSending, setIsSending] = useState(false);
 
   const handleSend = useCallback(() => {
+    console.log('[handleSend] Called, text:', text, 'isSending:', isSending);
     const trimmed = text.trim();
-    if (!trimmed || sendMutation.isPending) return;
+    if (!trimmed || isSending) {
+      console.log('[handleSend] Early return - trimmed:', trimmed, 'isSending:', isSending);
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSending(true);
+    console.log('[handleSend] Processing message...');
+
+    let messageContent = trimmed;
+
+    // If replying to a prompt, format as JSON
+    if (replyingToPrompt) {
+      messageContent = JSON.stringify({
+        type: 'prompt_reply',
+        prompt: {
+          question: replyingToPrompt.question,
+          answer: replyingToPrompt.answer,
+        },
+        reply: trimmed,
+      });
+      setReplyingToPrompt(null);
+    }
+
+    // Create temp message
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage: DatingMessage = {
+      id: tempId,
+      content: messageContent,
+      senderId: me?.id ?? '',
+      createdAt: new Date().toISOString(),
+      sender: { id: me?.id ?? '', fullName: me?.fullName ?? '', avatar: me?.avatar ?? null },
+    };
+
+    // Clear input first
     setText('');
-    sendMutation.mutate(trimmed);
-  }, [text, sendMutation]);
+
+    // Add to temp messages immediately for instant display
+    setTempMessages(prev => [...prev, tempMessage]);
+    console.log('[handleSend] Added temp message:', tempId);
+
+    // Scroll to bottom
+    setTimeout(() => {
+      listRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+
+    // Send to server
+    datingChatService.sendMessage(conversationId, messageContent)
+      .then(() => {
+        console.log('[handleSend] Message sent successfully, refetching...');
+        // Refetch to get server message with real ID
+        return queryClient.invalidateQueries({ queryKey });
+      })
+      .then(() => {
+        // Remove temp message after server data is loaded
+        setTempMessages(prev => prev.filter(m => m.id !== tempId));
+        console.log('[handleSend] Removed temp message:', tempId);
+      })
+      .catch((err) => {
+        console.error('Failed to send message:', err);
+        // Remove temp message on error
+        setTempMessages(prev => prev.filter(m => m.id !== tempId));
+      })
+      .finally(() => {
+        setIsSending(false);
+        queryClient.invalidateQueries({ queryKey: ['dating', 'chat', 'conversations'] });
+      });
+  }, [text, isSending, replyingToPrompt, me, conversationId, queryClient, queryKey]);
 
   const handleGoProfile = useCallback(async () => {
     if (!otherUser?.id) return;
@@ -501,6 +548,7 @@ const ChatRoomInner: React.FC = () => {
   );
 
   const isEmpty = messages.length === 0 && !isLoading;
+  console.log('[Render] isEmpty:', isEmpty, 'messages:', messages.length, 'text:', text, 'replyingToPrompt:', !!replyingToPrompt);
   const firstName = otherUser?.fullName?.split(' ').pop() ?? 'bạn ấy';
 
   // Get prompts from the other user's profile
@@ -519,9 +567,23 @@ const ChatRoomInner: React.FC = () => {
     [firstName],
   );
 
-  // Handle prompt click - create a reply message
+  // Handle prompt click - set up reply mode
   const handlePromptPress = useCallback((prompt: { question: string; answer: string }) => {
-    setText(`Về "${prompt.question.replace('...', '')}" - ${prompt.answer.slice(0, 50)}${prompt.answer.length > 50 ? '...' : ''} 👀\n\n`);
+    setReplyingToPrompt(prompt);
+    setShowPromptsModal(false);
+    setText('');
+  }, []);
+
+  // Cancel prompt reply
+  const handleCancelPromptReply = useCallback(() => {
+    setReplyingToPrompt(null);
+    setText('');
+  }, []);
+
+  // Toggle prompts modal
+  const handleTogglePromptsModal = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowPromptsModal((prev) => !prev);
   }, []);
 
   return (
@@ -625,6 +687,7 @@ const ChatRoomInner: React.FC = () => {
             <FlatList
               ref={listRef}
               data={enrichedMessages}
+              extraData={[messages.length, tempMessages.length]}
               keyExtractor={(item) => item.message.id}
               renderItem={renderMessage}
               contentContainerStyle={styles.messageList}
@@ -654,12 +717,40 @@ const ChatRoomInner: React.FC = () => {
 
           {/* Input Bar */}
           <View style={[styles.inputBar, { backgroundColor: theme.bg.base, borderTopColor: theme.border.subtle }]}>
+            {/* Prompt Reply Preview */}
+            {replyingToPrompt && (
+              <View style={[styles.replyPreview, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+                <View style={[styles.replyPreviewBar, { backgroundColor: theme.brand.primary }]} />
+                <View style={styles.replyPreviewContent}>
+                  <Text style={[styles.replyPreviewLabel, { color: theme.text.muted }]} numberOfLines={1}>
+                    Tra loi: {replyingToPrompt.question}
+                  </Text>
+                  <Text style={[styles.replyPreviewText, { color: theme.text.secondary }]} numberOfLines={1}>
+                    "{replyingToPrompt.answer}"
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.replyPreviewClose} onPress={handleCancelPromptReply}>
+                  <Ionicons name="close" size={18} color={theme.text.muted} />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={[styles.inputRow, { backgroundColor: theme.bg.surface }]}>
+              {/* Prompt button - show if other user has prompts */}
+              {otherPrompts.length > 0 && !replyingToPrompt && (
+                <TouchableOpacity
+                  style={styles.promptButton}
+                  onPress={handleTogglePromptsModal}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name="format-quote-open" size={20} color={theme.brand.primary} />
+                </TouchableOpacity>
+              )}
               <TextInput
                 style={[styles.input, { color: theme.text.primary }]}
                 value={text}
                 onChangeText={setText}
-                placeholder="Nhap tin nhan..."
+                placeholder={replyingToPrompt ? "Nhap phan hoi cua ban..." : "Nhap tin nhan..."}
                 placeholderTextColor={theme.text.muted}
                 multiline
                 maxLength={2000}
@@ -667,7 +758,10 @@ const ChatRoomInner: React.FC = () => {
               {text.trim() ? (
                 <TouchableOpacity
                   style={[styles.sendButton, { backgroundColor: theme.brand.primary }]}
-                  onPress={handleSend}
+                  onPress={() => {
+                    console.log('[SendButton] Pressed!');
+                    handleSend();
+                  }}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="send" size={16} color="#FFFFFF" />
@@ -688,6 +782,49 @@ const ChatRoomInner: React.FC = () => {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Prompts Modal */}
+      <Modal
+        visible={showPromptsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPromptsModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowPromptsModal(false)}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.bg.base }]} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: theme.text.primary }]}>
+              Tra loi cau hoi cua {firstName}
+            </Text>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {otherPrompts.map((prompt: any, i: number) => (
+                <TouchableOpacity
+                  key={`modal-prompt-${i}`}
+                  style={[styles.modalPromptCard, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}
+                  onPress={() => handlePromptPress(prompt)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.modalPromptHeader}>
+                    <MaterialCommunityIcons name="format-quote-open" size={16} color={theme.brand.primary} />
+                    <Text style={[styles.modalPromptQuestion, { color: theme.text.secondary }]}>
+                      {prompt.question}
+                    </Text>
+                  </View>
+                  <Text style={[styles.modalPromptAnswer, { color: theme.text.primary }]} numberOfLines={3}>
+                    {prompt.answer}
+                  </Text>
+                  <View style={styles.modalPromptHint}>
+                    <MaterialCommunityIcons name="message-reply-text" size={14} color={theme.brand.primary} />
+                    <Text style={[styles.modalPromptHintText, { color: theme.brand.primary }]}>
+                      Nhan de tra loi
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -983,8 +1120,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: RADIUS.xl,
     minHeight: 44,
-    paddingLeft: SPACING.md,
+    paddingLeft: SPACING.sm,
     paddingRight: SPACING.xxs,
+  },
+  promptButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
@@ -1008,9 +1151,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  // Reply Preview (above input)
+  replyPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+    paddingVertical: SPACING.xs,
+    paddingRight: SPACING.xs,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  replyPreviewBar: {
+    width: 3,
+    alignSelf: 'stretch',
+    marginRight: SPACING.sm,
+  },
+  replyPreviewContent: {
+    flex: 1,
+  },
+  replyPreviewLabel: {
+    ...TEXT_STYLES.tiny,
+    marginBottom: 2,
+  },
+  replyPreviewText: {
+    ...TEXT_STYLES.bodySmall,
+  },
+  replyPreviewClose: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // Prompt Reply Bubble
   promptReplyBubbleContent: {
-    maxWidth: '85%',
+    maxWidth: '88%',
+    minWidth: 220,
   },
   promptReplyCard: {
     borderRadius: RADIUS.lg,
@@ -1019,12 +1196,12 @@ const styles = StyleSheet.create({
   },
   promptReplyQuote: {
     flexDirection: 'row',
-    padding: SPACING.xs,
+    padding: SPACING.sm,
   },
   promptReplyQuoteBar: {
     width: 3,
     borderRadius: 2,
-    marginRight: SPACING.xs,
+    marginRight: SPACING.sm,
   },
   promptReplyQuoteContent: {
     flex: 1,
@@ -1033,21 +1210,81 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xxs,
-    marginBottom: 2,
+    marginBottom: SPACING.xxs,
   },
   promptReplyQuoteQuestion: {
-    ...TEXT_STYLES.tiny,
+    ...TEXT_STYLES.labelSmall,
     flex: 1,
   },
   promptReplyQuoteAnswer: {
     ...TEXT_STYLES.bodySmall,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   promptReplyText: {
     ...TEXT_STYLES.bodyMedium,
     lineHeight: 21,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.sm,
+  },
+
+  // Prompts Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    maxHeight: '70%',
+    paddingBottom: SPACING.xl,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    alignSelf: 'center',
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  modalTitle: {
+    ...TEXT_STYLES.headingSmall,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+  },
+  modalScroll: {
+    paddingHorizontal: SPACING.md,
+  },
+  modalPromptCard: {
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    marginBottom: SPACING.sm,
+  },
+  modalPromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  modalPromptQuestion: {
+    ...TEXT_STYLES.labelMedium,
+    flex: 1,
+  },
+  modalPromptAnswer: {
+    ...TEXT_STYLES.bodyMedium,
+    lineHeight: 22,
+    marginBottom: SPACING.sm,
+  },
+  modalPromptHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xxs,
+  },
+  modalPromptHintText: {
+    ...TEXT_STYLES.tiny,
   },
 });
 

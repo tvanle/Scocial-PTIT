@@ -1,12 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { useDatingTheme } from '../../../../../contexts/DatingThemeContext';
 import { BRAND } from '../../../../../constants/dating/design-system/colors';
-
-const layout = DATING_LAYOUT.preferences.distance;
-const colors = DATING_COLORS.preferences;
 
 const DISTANCE_OPTIONS: { value: number | null; label: string }[] = [
   { value: null, label: 'Anywhere' },
@@ -25,20 +21,21 @@ export const PreferencesDistanceSection: React.FC<PreferencesDistanceSectionProp
   value,
   onChange,
 }) => {
+  const { theme } = useDatingTheme();
   const selectedLabel = DISTANCE_OPTIONS.find(opt => opt.value === value)?.label ?? 'Anywhere';
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.bg.card }]}>
       <View style={styles.headerRow}>
-        <View style={styles.iconWrap}>
-          <MaterialIcons name="place" size={20} color={BRAND.primary} />
+        <View style={[styles.iconWrap, { backgroundColor: theme.brand.primaryMuted }]}>
+          <MaterialIcons name="place" size={20} color={theme.brand.primary} />
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Distance</Text>
-          <Text style={styles.hint}>How far are you willing to travel?</Text>
+          <Text style={[styles.title, { color: theme.text.primary }]}>Distance</Text>
+          <Text style={[styles.hint, { color: theme.text.secondary }]}>How far are you willing to travel?</Text>
         </View>
-        <View style={styles.currentValue}>
-          <Text style={styles.currentValueText}>{selectedLabel}</Text>
+        <View style={[styles.currentValue, { backgroundColor: theme.brand.primaryMuted }]}>
+          <Text style={[styles.currentValueText, { color: theme.brand.primary }]}>{selectedLabel}</Text>
         </View>
       </View>
       <View style={styles.chipsRow}>
@@ -47,7 +44,11 @@ export const PreferencesDistanceSection: React.FC<PreferencesDistanceSectionProp
           return (
             <Pressable
               key={opt.value ?? 'unlimited'}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+              style={[
+                styles.chip,
+                { backgroundColor: theme.bg.elevated, borderColor: theme.border.light },
+                isSelected && [styles.chipSelected, { backgroundColor: theme.brand.primary, borderColor: theme.brand.primary }]
+              ]}
               onPress={() => onChange(opt.value)}
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
@@ -57,10 +58,10 @@ export const PreferencesDistanceSection: React.FC<PreferencesDistanceSectionProp
                 <MaterialIcons
                   name="public"
                   size={14}
-                  color={isSelected ? '#fff' : '#666'}
+                  color={isSelected ? '#fff' : theme.text.secondary}
                 />
               )}
-              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+              <Text style={[styles.chipText, { color: theme.text.secondary }, isSelected && styles.chipTextSelected]}>
                 {opt.label}
               </Text>
             </Pressable>
@@ -73,7 +74,6 @@ export const PreferencesDistanceSection: React.FC<PreferencesDistanceSectionProp
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: BRAND.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -109,16 +108,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1A1A1A',
     marginBottom: 4,
   },
   hint: {
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
   currentValue: {
-    backgroundColor: BRAND.primaryMuted,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -126,7 +122,6 @@ const styles = StyleSheet.create({
   currentValueText: {
     fontSize: 13,
     fontWeight: '700',
-    color: BRAND.primary,
   },
   chipsRow: {
     flexDirection: 'row',
@@ -140,13 +135,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 24,
-    backgroundColor: '#F7F7F7',
     borderWidth: 1.5,
-    borderColor: '#E8E8E8',
   },
   chipSelected: {
-    backgroundColor: BRAND.primary,
-    borderColor: BRAND.primary,
     ...Platform.select({
       ios: {
         shadowColor: BRAND.primary,
@@ -162,7 +153,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
   },
   chipTextSelected: {
     color: '#fff',

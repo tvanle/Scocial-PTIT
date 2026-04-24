@@ -4,12 +4,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
-import { DATING_STRINGS } from '../../../../../constants/dating/strings';
+import { useDatingTheme } from '../../../../../contexts/DatingThemeContext';
+import { DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { BRAND } from '../../../../../constants/dating/design-system/colors';
 
 const layout = DATING_LAYOUT.preferences.ageRange;
-const colors = DATING_COLORS.preferences;
 
 function valueToPercent(value: number): number {
   const { ageMinDefault, ageMaxCap } = layout;
@@ -36,6 +35,7 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
   value,
   onChange,
 }) => {
+  const { theme } = useDatingTheme();
   const [trackWidth, setTrackWidth] = useState(0);
   const dragStartRef = useRef<{ min: number; max: number }>({ min: value.min, max: value.max });
 
@@ -125,27 +125,27 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
       height: layout.thumbSize,
       borderRadius: layout.thumbSize / 2,
       borderWidth: layout.thumbBorderWidth,
-      backgroundColor: colors.thumbBg,
-      borderColor: colors.thumbBorder,
+      backgroundColor: theme.bg.card,
+      borderColor: theme.brand.primary,
     }),
-    []
+    [theme]
   );
 
   const leftThumbLeft = trackWidth > 0 ? (trackWidth * leftPercent) / 100 - layout.thumbSize / 2 : 0;
   const rightThumbLeft = trackWidth > 0 ? (trackWidth * rightPercent) / 100 - layout.thumbSize / 2 : 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.bg.card }]}>
       <View style={styles.headerRow}>
-        <View style={styles.iconWrap}>
-          <MaterialIcons name="cake" size={20} color={BRAND.primary} />
+        <View style={[styles.iconWrap, { backgroundColor: theme.brand.primaryMuted }]}>
+          <MaterialIcons name="cake" size={20} color={theme.brand.primary} />
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Age Range</Text>
-          <Text style={styles.hint}>Set your preferred age range</Text>
+          <Text style={[styles.title, { color: theme.text.primary }]}>Age Range</Text>
+          <Text style={[styles.hint, { color: theme.text.secondary }]}>Set your preferred age range</Text>
         </View>
-        <View style={styles.ageDisplay}>
-          <Text style={styles.ageDisplayText}>
+        <View style={[styles.ageDisplay, { backgroundColor: theme.brand.primaryMuted }]}>
+          <Text style={[styles.ageDisplayText, { color: theme.brand.primary }]}>
             {value.min} - {value.max}
           </Text>
         </View>
@@ -157,7 +157,7 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
           onLayout={handleTrackLayout}
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={handleTrackPress} />
-          <View style={styles.trackBg}>
+          <View style={[styles.trackBg, { backgroundColor: theme.border.light }]}>
             <LinearGradient
               colors={[BRAND.primaryLight, BRAND.primary]}
               start={{ x: 0, y: 0 }}
@@ -173,28 +173,28 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
           </View>
           <GestureDetector gesture={leftPanGesture}>
             <View style={[styles.thumb, thumbStyle, { left: leftThumbLeft }]}>
-              <View style={styles.thumbInner}>
+              <View style={[styles.thumbInner, { backgroundColor: theme.bg.card, borderColor: theme.brand.primary }]}>
                 <View style={styles.thumbLines}>
-                  <View style={styles.thumbLine} />
-                  <View style={styles.thumbLine} />
+                  <View style={[styles.thumbLine, { backgroundColor: theme.brand.primary }]} />
+                  <View style={[styles.thumbLine, { backgroundColor: theme.brand.primary }]} />
                 </View>
               </View>
             </View>
           </GestureDetector>
           <GestureDetector gesture={rightPanGesture}>
             <View style={[styles.thumb, thumbStyle, { left: rightThumbLeft }]}>
-              <View style={styles.thumbInner}>
+              <View style={[styles.thumbInner, { backgroundColor: theme.bg.card, borderColor: theme.brand.primary }]}>
                 <View style={styles.thumbLines}>
-                  <View style={styles.thumbLine} />
-                  <View style={styles.thumbLine} />
+                  <View style={[styles.thumbLine, { backgroundColor: theme.brand.primary }]} />
+                  <View style={[styles.thumbLine, { backgroundColor: theme.brand.primary }]} />
                 </View>
               </View>
             </View>
           </GestureDetector>
         </View>
         <View style={styles.labels}>
-          <Text style={styles.axisLabel}>{layout.ageMinDefault}</Text>
-          <Text style={styles.axisLabel}>{layout.ageMaxCap}+</Text>
+          <Text style={[styles.axisLabel, { color: theme.text.tertiary }]}>{layout.ageMinDefault}</Text>
+          <Text style={[styles.axisLabel, { color: theme.text.tertiary }]}>{layout.ageMaxCap}+</Text>
         </View>
       </View>
     </View>
@@ -203,7 +203,6 @@ export const PreferencesAgeRangeSection: React.FC<PreferencesAgeRangeSectionProp
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
@@ -229,7 +228,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: BRAND.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -239,16 +237,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1A1A1A',
     marginBottom: 4,
   },
   hint: {
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
   ageDisplay: {
-    backgroundColor: BRAND.primaryMuted,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
@@ -256,7 +251,6 @@ const styles = StyleSheet.create({
   ageDisplayText: {
     fontSize: 15,
     fontWeight: '700',
-    color: BRAND.primary,
   },
   sliderContainer: {
     paddingHorizontal: 4,
@@ -271,7 +265,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#E8E8E8',
     position: 'absolute',
     overflow: 'hidden',
   },
@@ -300,9 +293,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#fff',
     borderWidth: 3,
-    borderColor: BRAND.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -314,7 +305,6 @@ const styles = StyleSheet.create({
     width: 2,
     height: 10,
     borderRadius: 1,
-    backgroundColor: BRAND.primary,
   },
   labels: {
     flexDirection: 'row',
@@ -324,6 +314,5 @@ const styles = StyleSheet.create({
   axisLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#999',
   },
 });

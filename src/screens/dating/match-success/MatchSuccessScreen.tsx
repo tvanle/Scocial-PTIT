@@ -470,7 +470,7 @@ const MatchSuccessInner: React.FC = () => {
   const { theme, isDark } = useDatingTheme();
   const currentUser = useAuthStore((s) => s.user);
 
-  const { profile } = route.params as any;
+  const { profile, isSuperLike } = route.params as any;
   const matchedUser = profile?.user;
 
   // Animation values
@@ -628,6 +628,12 @@ const MatchSuccessInner: React.FC = () => {
 
         {/* Text Section */}
         <View style={styles.textSection}>
+          {isSuperLike && (
+            <Animated.View style={[styles.superLikeBadge, titleStyle]}>
+              <MaterialCommunityIcons name="star" size={24} color="#FFD700" />
+              <Text style={styles.superLikeText}>Super Like</Text>
+            </Animated.View>
+          )}
           <Animated.Text
             style={[
               styles.title,
@@ -820,6 +826,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xxl,
     paddingHorizontal: SPACING.md,
+  },
+  superLikeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.full,
+    marginBottom: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  superLikeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFD700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   title: {
     fontSize: 36,

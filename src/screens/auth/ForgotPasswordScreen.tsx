@@ -244,6 +244,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                       keyboardType="email-address"
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField(null)}
+                      selectionColor={colors.primary}
+                      cursorColor={colors.primary}
                     />
                   </View>
                   {error && (
@@ -289,6 +291,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                         keyboardType="number-pad"
                         maxLength={index === 0 ? 6 : 1}
                         selectTextOnFocus
+                        selectionColor={colors.primary}
+                        cursorColor={colors.primary}
                       />
                     ))}
                   </View>
@@ -340,6 +344,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                       secureTextEntry={!showPassword}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField(null)}
+                      selectionColor={colors.primary}
+                      cursorColor={colors.primary}
                     />
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                       <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={colors.gray400} />
@@ -368,6 +374,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                       secureTextEntry={!showPassword}
                       onFocus={() => setFocusedField('confirmPassword')}
                       onBlur={() => setFocusedField(null)}
+                      selectionColor={colors.primary}
+                      cursorColor={colors.primary}
                     />
                   </View>
                   {error && (

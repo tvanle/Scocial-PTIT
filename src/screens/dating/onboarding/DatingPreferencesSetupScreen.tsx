@@ -101,11 +101,11 @@ const PreferencesInner: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.intro}>
-            <View style={styles.introIconWrap}>
-              <MaterialIcons name="tune" size={28} color={BRAND.primary} />
+            <View style={[styles.introIconWrap, { backgroundColor: theme.brand.primaryMuted }]}>
+              <MaterialIcons name="tune" size={28} color={theme.brand.primary} />
             </View>
-            <Text style={styles.introTitle}>Find Your Perfect Match</Text>
-            <Text style={styles.introHint}>
+            <Text style={[styles.introTitle, { color: theme.text.primary }]}>Find Your Perfect Match</Text>
+            <Text style={[styles.introHint, { color: theme.text.secondary }]}>
               Set your preferences to help us find the best matches for you
             </Text>
           </View>
@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: BRAND.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -182,14 +181,12 @@ const styles = StyleSheet.create({
   introTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1A1A1A',
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: -0.5,
   },
   introHint: {
     fontSize: 15,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 20,

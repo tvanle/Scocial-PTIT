@@ -11,7 +11,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "bot:liker": "tsx scripts/auto-liker-bot.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

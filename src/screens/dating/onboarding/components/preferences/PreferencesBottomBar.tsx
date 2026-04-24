@@ -3,11 +3,9 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from '
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { DATING_COLORS, DATING_LAYOUT } from '../../../../../constants/dating/theme';
 import { DATING_STRINGS, SPRING_BUTTON, PRESS_SCALE_DOWN } from '../../../../../constants/dating';
 import { BRAND } from '../../../../../constants/dating/design-system/colors';
-
-const layout = DATING_LAYOUT.preferences.bottomBar;
+import { useDatingTheme } from '../../../../../contexts/DatingThemeContext';
 
 interface PreferencesBottomBarProps {
   onFinish: () => void;
@@ -22,6 +20,7 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
   loading = false,
   buttonLabel = DATING_STRINGS.preferences.finish,
 }) => {
+  const { theme, isDark } = useDatingTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -36,13 +35,18 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
     scale.value = withSpring(1, SPRING_BUTTON);
   };
 
+  const bgColor = theme.bg.card;
+  const gradientColors: [string, string, string] = isDark
+    ? ['rgba(30,30,30,0)', 'rgba(30,30,30,0.95)', bgColor]
+    : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)', bgColor];
+
   return (
     <View style={styles.wrapper}>
       <LinearGradient
-        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)', '#fff']}
+        colors={gradientColors}
         style={styles.gradientBg}
       />
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: theme.bg.card }]}>
         <AnimatedPressable
           style={[animatedStyle, loading && { opacity: 0.7 }]}
           onPress={onFinish}
@@ -53,7 +57,7 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
           accessibilityLabel={buttonLabel}
         >
           <LinearGradient
-            colors={[BRAND.primary, BRAND.primaryDark]}
+            colors={[theme.brand.primary, BRAND.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.button}
@@ -64,13 +68,13 @@ export const PreferencesBottomBar: React.FC<PreferencesBottomBarProps> = ({
               <>
                 <Text style={styles.buttonText}>{buttonLabel}</Text>
                 <View style={styles.iconWrap}>
-                  <MaterialIcons name="check" size={18} color={BRAND.primary} />
+                  <MaterialIcons name="check" size={18} color={theme.brand.primary} />
                 </View>
               </>
             )}
           </LinearGradient>
         </AnimatedPressable>
-        <Text style={styles.footerText}>You can change these anytime in settings</Text>
+        <Text style={[styles.footerText, { color: theme.text.tertiary }]}>You can change these anytime in settings</Text>
       </View>
     </View>
   );
@@ -91,7 +95,6 @@ const styles = StyleSheet.create({
     height: 40,
   },
   content: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
@@ -131,7 +134,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#999',
     textAlign: 'center',
     marginTop: 14,
   },

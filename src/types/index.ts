@@ -326,7 +326,11 @@ export type RootStackParamList = {
   DatingTabs: { screen?: 'DatingDiscoverTab' | 'DatingLikesTab' | 'DatingChatsTab' | 'DatingProfileTab' } | undefined;
   DatingProfileDetail: { profile: import('./dating').DiscoveryCard };
   DatingMatch: { profile: import('./dating').DiscoveryCard; source: 'discovery' | 'detail' };
-  DatingMatchSuccess: { match: import('./dating').MatchItem };
+  DatingMatchSuccess: {
+    profile: import('./dating').DiscoveryCard;
+    matchedUserId: string;
+    isSuperLike?: boolean;
+  };
   DatingPaused: undefined;
   DatingChatRoom: {
     conversationId: string;

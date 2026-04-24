@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,16 +21,17 @@ import { useFocusEffect } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import { FontSize, FontWeight, Spacing, BorderRadius, Layout, Shadow } from '../../constants/theme';
 import { useAuthStore } from '../../store/slices/authSlice';
-import { Post, Media, Comment } from '../../types';
+import { Post, Media, Comment, Poll } from '../../types';
 import { postService } from '../../services/post/postService';
 import { userService } from '../../services/user/userService';
 import { formatTimeAgo } from '../../utils/dateUtils';
-import { DEFAULT_AVATAR } from '../../constants/strings';
+import { DEFAULT_AVATAR, Strings } from '../../constants/strings';
 import { usePostActions } from '../../hooks/usePostActions';
 import { BottomMenu, MusicPicker, SharePostModal } from '../../components/common';
 import type { BottomMenuItem, SelectedSong } from '../../components/common';
 import songsData from '../../../songs.json';
 import { useTheme } from '../../hooks/useThemeColors';
+import { getImageUrl } from '../../utils/image';
 
 interface SongItem {
   title: string;
@@ -46,101 +49,254 @@ interface ProfileScreenProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Image layout component (same as HomeScreen)
-const PostImages: React.FC<{ media: Media[]; colors: any }> = React.memo(({ media, colors }) => {
-  if (!media || media.length === 0) return null;
+// Poll component
+const PostPoll: React.FC<{
+  poll: Poll;
+  postId: string;
+  colors: any;
+  onVote: (optionId: string) => void;
+}> = React.memo(({ poll, postId, colors, onVote }) => {
+  const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
 
-  if (media.length === 1) {
-    return (
-      <View style={imgStyles.singleContainer}>
-        <Image source={{ uri: media[0].url }} style={[imgStyles.singleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-      </View>
-    );
-  }
+  // Calculate total votes
+  const totalVotes = poll.options.reduce((sum, opt) => sum + (opt._count?.votes || 0), 0);
 
-  if (media.length === 2) {
-    return (
-      <View style={imgStyles.doubleContainer}>
-        <Image source={{ uri: media[0].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-        <Image source={{ uri: media[1].url }} style={[imgStyles.doubleImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-      </View>
-    );
-  }
+  const handleVote = async (optionId: string) => {
+    if (votedOptionId) return; // Already voted
+    setVotedOptionId(optionId);
+    onVote(optionId);
+  };
+
+  const getPercentage = (votes: number) => {
+    if (totalVotes === 0) return 0;
+    return Math.round((votes / totalVotes) * 100);
+  };
 
   return (
-    <View style={imgStyles.tripleContainer}>
-      <Image source={{ uri: media[0].url }} style={[imgStyles.tripleLeft, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-      <View style={imgStyles.tripleRight}>
-        <Image source={{ uri: media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-        <Image source={{ uri: media[2]?.url || media[1].url }} style={[imgStyles.tripleRightImage, { backgroundColor: colors.gray100 }]} resizeMode="cover" />
-      </View>
+    <View style={pollStyles.container}>
+      {poll.options.map((option) => {
+        const votes = option._count?.votes || 0;
+        const percentage = getPercentage(votes);
+        const isVoted = votedOptionId === option.id;
+        const hasVoted = votedOptionId !== null;
+
+        return (
+          <TouchableOpacity
+            key={option.id}
+            onPress={() => handleVote(option.id)}
+            disabled={hasVoted}
+            style={[
+              pollStyles.option,
+              { borderColor: isVoted ? colors.primary : colors.borderLight },
+            ]}
+            activeOpacity={0.7}
+          >
+            {/* Progress bar background */}
+            <View
+              style={[
+                pollStyles.progressBar,
+                {
+                  width: hasVoted ? `${percentage}%` : '0%',
+                  backgroundColor: isVoted ? colors.primary + '30' : colors.gray200,
+                },
+              ]}
+            />
+            <View style={pollStyles.optionContent}>
+              <Text style={[pollStyles.optionText, { color: colors.textPrimary }]}>
+                {option.text}
+              </Text>
+              {hasVoted && (
+                <Text style={[pollStyles.percentageText, { color: colors.textSecondary }]}>
+                  {percentage}%
+                </Text>
+              )}
+            </View>
+            {isVoted && (
+              <Ionicons name="checkmark-circle" size={18} color={colors.primary} style={pollStyles.checkIcon} />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+      <Text style={[pollStyles.totalVotes, { color: colors.textTertiary }]}>
+        {totalVotes} lượt bình chọn
+      </Text>
     </View>
   );
 });
 
-const imgStyles = StyleSheet.create({
-  singleContainer: {
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+const pollStyles = StyleSheet.create({
+  container: {
     marginTop: Spacing.md,
   },
-  singleImage: {
-    width: '100%',
-    height: 280,
+  option: {
+    position: 'relative',
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
   },
-  doubleContainer: {
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    borderRadius: BorderRadius.md,
+  },
+  optionContent: {
     flexDirection: 'row',
-    gap: Spacing.xs,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginTop: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
   },
-  doubleImage: {
-    flex: 1,
-    height: 220,
-  },
-  tripleContainer: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginTop: Spacing.md,
-    height: 300,
-  },
-  tripleLeft: {
+  optionText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
     flex: 1,
   },
-  tripleRight: {
-    flex: 1,
-    gap: Spacing.xs,
+  percentageText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    marginLeft: Spacing.sm,
   },
-  tripleRightImage: {
-    flex: 1,
+  checkIcon: {
+    position: 'absolute',
+    right: Spacing.md,
+    top: '50%',
+    marginTop: -9,
+  },
+  totalVotes: {
+    fontSize: FontSize.sm,
+    marginTop: Spacing.xs,
   },
 });
 
-// Full PostCard component (same style as HomeScreen)
+// Full PostCard component with all features (matches HomeScreen)
 const ProfilePostCard: React.FC<{
   post: Post;
   onLike: () => void;
   onComment: () => void;
-  onRepost: () => void;
   onShare: () => void;
   onProfile: () => void;
   onMore: () => void;
+  onVote: (optionId: string) => void;
   colors: any;
-}> = React.memo(({ post, onLike, onComment, onRepost, onShare, onProfile, onMore, colors }) => {
+}> = React.memo(({ post, onLike, onComment, onShare, onProfile, onMore, onVote, colors }) => {
   const timeAgo = formatTimeAgo(post.createdAt);
+  const [showFullContent, setShowFullContent] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const getPrivacyIcon = () => {
+    switch (post.privacy) {
+      case 'PUBLIC':
+        return 'globe-outline';
+      case 'FOLLOWERS':
+        return 'people-outline';
+      case 'PRIVATE':
+        return 'lock-closed-outline';
+      default:
+        return 'globe-outline';
+    }
+  };
+
+  // Card content width = SCREEN_WIDTH - marginHorizontal*2 - padding*2 = SCREEN_WIDTH - 16 - 32 = SCREEN_WIDTH - 48
+  const cardContentWidth = SCREEN_WIDTH - 48;
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / cardContentWidth);
+    setCurrentImageIndex(index);
+  };
+
+  const renderMedia = () => {
+    if (!post.media || post.media.length === 0) return null;
+
+    const mediaCount = post.media.length;
+
+    if (mediaCount === 1) {
+      return (
+        <TouchableOpacity onPress={onComment} activeOpacity={0.9} style={postStyles.singleContainer}>
+          <Image
+            source={{ uri: getImageUrl(post.media[0].url) }}
+            style={[postStyles.singleImage, { backgroundColor: colors.gray100 }]}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      );
+    }
+
+    // Multiple images - horizontal scroll with pagination dots
+    return (
+      <View style={postStyles.carouselContainer}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          snapToInterval={cardContentWidth}
+          snapToAlignment="start"
+        >
+          {post.media.map((media) => (
+            <TouchableOpacity
+              key={media.id}
+              onPress={onComment}
+              activeOpacity={0.9}
+            >
+              <Image
+                source={{ uri: getImageUrl(media.url) }}
+                style={[postStyles.carouselImage, { width: cardContentWidth, backgroundColor: colors.gray100 }]}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Pagination dots */}
+        <View style={postStyles.paginationContainer}>
+          {post.media.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                postStyles.paginationDot,
+                {
+                  backgroundColor: index === currentImageIndex ? colors.primary : colors.gray300,
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* Image counter */}
+        <View style={[postStyles.imageCounter, { backgroundColor: colors.overlay }]}>
+          <Text style={[postStyles.imageCounterText, { color: colors.white }]}>
+            {currentImageIndex + 1}/{mediaCount}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  const contentLength = post.content?.length || 0;
+  const shouldTruncate = contentLength > 200 && !showFullContent;
 
   return (
     <View style={[styles.postCard, { backgroundColor: colors.cardBackground }]}>
       {/* User Header */}
       <View style={styles.postHeader}>
         <TouchableOpacity onPress={onProfile} style={styles.postHeaderLeft}>
-          <Image
-            source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
-            style={[styles.postAvatar, { backgroundColor: colors.gray200 }]}
-          />
+          <View style={postStyles.avatarContainer}>
+            <Image
+              source={{ uri: post.author.avatar || DEFAULT_AVATAR }}
+              style={[styles.postAvatar, { backgroundColor: colors.gray200 }]}
+            />
+            {post.author.isOnline && (
+              <View style={[postStyles.onlineIndicator, { backgroundColor: colors.success, borderColor: colors.cardBackground }]} />
+            )}
+          </View>
           <View style={styles.postHeaderInfo}>
             <View style={styles.postUsernameRow}>
               <Text style={[styles.username, { color: colors.textPrimary }]}>{post.author.fullName}</Text>
@@ -148,7 +304,15 @@ const ProfilePostCard: React.FC<{
                 <Ionicons name="checkmark-circle" size={14} color={colors.verified} style={{ marginLeft: 4 }} />
               )}
             </View>
-            <Text style={[styles.timeAgo, { color: colors.textTertiary }]}>{timeAgo}</Text>
+            <View style={postStyles.postMeta}>
+              <Text style={[styles.timeAgo, { color: colors.textTertiary }]}>{timeAgo}</Text>
+              <Ionicons
+                name={getPrivacyIcon()}
+                size={12}
+                color={colors.textTertiary}
+                style={{ marginLeft: 4 }}
+              />
+            </View>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={onMore} style={styles.moreButton}>
@@ -156,24 +320,74 @@ const ProfilePostCard: React.FC<{
         </TouchableOpacity>
       </View>
 
-      {/* Content - tappable to navigate */}
-      <TouchableOpacity onPress={onComment} activeOpacity={0.7}>
-        <Text style={[styles.postContent, { color: colors.textPrimary }]}>{post.content}</Text>
-
-        {/* Media */}
-        {post.media && post.media.length > 0 && (
-          <PostImages media={post.media} colors={colors} />
-        )}
-
-        {/* Stats Text Line */}
-        {(post.likesCount > 0 || post.commentsCount > 0) && (
-          <Text style={[styles.statsText, { color: colors.textSecondary }]}>
-            {post.likesCount > 0 ? `${post.likesCount} Likes` : ''}
-            {post.likesCount > 0 && post.commentsCount > 0 ? ' . ' : ''}
-            {post.commentsCount > 0 ? `${post.commentsCount} Comments` : ''}
+      {/* Content */}
+      {post.content && (
+        <View style={postStyles.contentContainer}>
+          <Text style={[styles.postContent, { color: colors.textPrimary }]}>
+            {shouldTruncate ? post.content.slice(0, 200) + '...' : post.content}
           </Text>
-        )}
-      </TouchableOpacity>
+          {contentLength > 200 && (
+            <TouchableOpacity onPress={() => setShowFullContent(!showFullContent)}>
+              <Text style={[postStyles.seeMore, { color: colors.textSecondary }]}>
+                {showFullContent ? Strings.common.seeLess : Strings.common.seeMore}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Feeling & Location */}
+      {(post.feeling || post.location) && (
+        <View style={postStyles.feelingLocation}>
+          {post.feeling && (
+            <View style={postStyles.feelingContainer}>
+              <Text style={[postStyles.feelingText, { color: colors.textSecondary }]}>
+                dang cam thay {post.feeling}
+              </Text>
+            </View>
+          )}
+          {post.location && (
+            <View style={postStyles.locationContainer}>
+              <Ionicons name="location" size={14} color={colors.textSecondary} />
+              <Text style={[postStyles.locationText, { color: colors.textSecondary }]}>{post.location}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Media */}
+      {renderMedia()}
+
+      {/* Poll */}
+      {post.poll && post.poll.options && post.poll.options.length > 0 && (
+        <PostPoll poll={post.poll} postId={post.id} colors={colors} onVote={onVote} />
+      )}
+
+      {/* Stats */}
+      {(post.likesCount > 0 || post.commentsCount > 0 || post.sharesCount > 0) && (
+        <View style={postStyles.statsContainer}>
+          {post.likesCount > 0 && (
+            <View style={postStyles.likeStat}>
+              <View style={[postStyles.likeIcon, { backgroundColor: colors.like }]}>
+                <Ionicons name="heart" size={10} color={colors.white} />
+              </View>
+              <Text style={[postStyles.statText, { color: colors.textTertiary }]}>{post.likesCount}</Text>
+            </View>
+          )}
+          <View style={postStyles.rightStats}>
+            {post.commentsCount > 0 && (
+              <Text style={[postStyles.statText, { color: colors.textTertiary }]}>
+                {post.commentsCount} {Strings.post.comments}
+              </Text>
+            )}
+            {post.sharesCount > 0 && (
+              <Text style={[postStyles.statText, { color: colors.textTertiary }]}>
+                {post.sharesCount} {Strings.post.shares}
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Interaction Bar */}
       <View style={[styles.interactionBar, { borderTopColor: colors.borderLight }]}>
@@ -184,30 +398,19 @@ const ProfilePostCard: React.FC<{
               size={22}
               color={post.isLiked ? colors.like : colors.textSecondary}
             />
-            {post.likesCount > 0 && (
-              <Text style={[styles.interactionCount, { color: colors.textSecondary }, post.isLiked && { color: colors.like }]}>
-                {post.likesCount}
-              </Text>
-            )}
+            <Text style={[styles.interactionCount, { color: colors.textSecondary }, post.isLiked && { color: colors.like }]}>
+              {Strings.post.like}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onComment} style={styles.interactionButton}>
             <Ionicons name="chatbox-outline" size={20} color={colors.textSecondary} />
-            {post.commentsCount > 0 && (
-              <Text style={[styles.interactionCount, { color: colors.textSecondary }]}>{post.commentsCount}</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={onRepost} style={styles.interactionButton}>
-            <Ionicons
-              name="repeat-outline"
-              size={22}
-              color={post.isShared ? colors.repost : colors.textSecondary}
-            />
+            <Text style={[styles.interactionCount, { color: colors.textSecondary }]}>{Strings.post.comment}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onShare} style={styles.interactionButton}>
-            <Ionicons name="paper-plane-outline" size={20} color={colors.textSecondary} />
+            <Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
+            <Text style={[styles.interactionCount, { color: colors.textSecondary }]}>{Strings.post.share}</Text>
           </TouchableOpacity>
         </View>
 
@@ -221,6 +424,120 @@ const ProfilePostCard: React.FC<{
       </View>
     </View>
   );
+});
+
+const postStyles = StyleSheet.create({
+  avatarContainer: {
+    position: 'relative',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  postMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  contentContainer: {
+    marginTop: Spacing.md,
+  },
+  seeMore: {
+    fontWeight: FontWeight.medium,
+    marginTop: Spacing.xs,
+  },
+  feelingLocation: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: Spacing.sm,
+  },
+  feelingContainer: {
+    marginRight: Spacing.md,
+  },
+  feelingText: {
+    fontSize: FontSize.sm,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    fontSize: FontSize.sm,
+    marginLeft: Spacing.xs,
+  },
+  singleContainer: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.md,
+  },
+  singleImage: {
+    width: '100%',
+    height: 280,
+  },
+  carouselContainer: {
+    marginTop: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  carouselImage: {
+    height: 300,
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    gap: 6,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  imageCounter: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  imageCounterText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.md,
+    paddingTop: Spacing.sm,
+  },
+  likeStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  likeIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.xs,
+  },
+  rightStats: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  statText: {
+    fontSize: FontSize.sm,
+  },
 });
 
 // Reply Card component for showing user's comments (thread style)
@@ -514,6 +831,45 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
     }
   }, [navigation, currentUser]);
 
+  const handleVote = useCallback(async (postId: string, optionId: string) => {
+    try {
+      await postService.votePoll(postId, optionId);
+      // Optimistically update the UI - increment vote count for the selected option
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId || !p.poll) return p;
+        return {
+          ...p,
+          poll: {
+            ...p.poll,
+            options: p.poll.options.map(opt => ({
+              ...opt,
+              _count: {
+                votes: opt.id === optionId ? (opt._count?.votes || 0) + 1 : (opt._count?.votes || 0),
+              },
+            })),
+          },
+        };
+      }));
+      setSharedPosts(prev => prev.map(p => {
+        if (p.id !== postId || !p.poll) return p;
+        return {
+          ...p,
+          poll: {
+            ...p.poll,
+            options: p.poll.options.map(opt => ({
+              ...opt,
+              _count: {
+                votes: opt.id === optionId ? (opt._count?.votes || 0) + 1 : (opt._count?.votes || 0),
+              },
+            })),
+          },
+        };
+      }));
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   const handleMore = useCallback((postId: string) => {
     const allPosts = [...posts, ...sharedPosts];
     const post = allPosts.find(p => p.id === postId);
@@ -660,10 +1016,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
       post={post}
       onLike={() => handleLike(post.id)}
       onComment={() => handleComment(post.id)}
-      onRepost={() => handleRepostToggle(post.id)}
       onShare={() => handleSharePost(post)}
       onProfile={() => handleProfile(post.author.id)}
       onMore={() => handleMore(post.id)}
+      onVote={(optionId) => handleVote(post.id, optionId)}
       colors={colors}
     />
   );
@@ -1067,29 +1423,27 @@ const styles = StyleSheet.create({
   postContent: {
     fontSize: FontSize.md,
     lineHeight: 22,
-    marginTop: Spacing.md,
-  },
-  statsText: {
-    fontSize: FontSize.sm,
-    marginTop: Spacing.md,
   },
   interactionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
   },
   interactionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xl,
+    flex: 1,
   },
   interactionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
   },
   interactionCount: {
     fontSize: FontSize.sm,
